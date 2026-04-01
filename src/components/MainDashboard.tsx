@@ -1,6 +1,9 @@
 import StatCard from "./StatCard"
-
 import type {Player} from "../types"
+import ScoreEntryPanel from "./ScoreEntryPanel"
+import AvgTrendCard from "./AvgTrendCard"
+
+
 type MainDashboardProps = {
   activePlayer: Player
 }
@@ -22,6 +25,9 @@ export default function MainDashboard({ activePlayer }: MainDashboardProps) {
       
         ))}
       </div>
+
+      <ScoreEntryPanel/>
+      <AvgTrendCard avgTrend={activePlayer.avgTrend}/>
     </main>
   )
 }
