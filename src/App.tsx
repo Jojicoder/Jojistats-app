@@ -1,10 +1,19 @@
 import { useState } from "react"
 import Layout from "./components/Layout"
-import type { Player } from "./types"
+import type { Player, Team } from "./types"
+
+const initialTeams: Team[] = [
+  {
+    id: "team-1",
+    name: "My Team",
+    isArchived: false,
+  },
+]
 
 const initialPlayers: Player[] = [
   {
-    id: "p1",
+    id: "player-1",
+    teamId: "team-1",
     name: "Joji",
     position: "2B",
     jerseyNumber: 7,
@@ -13,15 +22,22 @@ const initialPlayers: Player[] = [
 ]
 
 export default function App() {
+  const [teams, setTeams] = useState<Team[]>(initialTeams)
   const [players, setPlayers] = useState<Player[]>(initialPlayers)
-  const [activeIndex, setActiveIndex] = useState(0)
+
+  const [activeTeamId, setActiveTeamId] = useState("team-1")
+  const [activePlayerId, setActivePlayerId] = useState("player-1")
 
   return (
     <Layout
+      teams={teams}
+      setTeams={setTeams}
       players={players}
       setPlayers={setPlayers}
-      activeIndex={activeIndex}
-      setActiveIndex={setActiveIndex}
+      activeTeamId={activeTeamId}
+      setActiveTeamId={setActiveTeamId}
+      activePlayerId={activePlayerId}
+      setActivePlayerId={setActivePlayerId}
     />
   )
 }

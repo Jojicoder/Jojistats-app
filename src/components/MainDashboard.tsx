@@ -13,6 +13,8 @@ import MyStatsPage from "./MyStatsPage"
 type MainDashboardProps = {
   activePlayer: Player
   activeView: "stats" | "record"
+  teamName: string
+  seasonYear: number
 }
 
 const createInitialEntry = (): BattingEntryData => ({
@@ -31,18 +33,23 @@ const getTodayDate = (): string => {
 export default function MainDashboard({
   activePlayer,
   activeView,
+  teamName,
+  seasonYear,
 }: MainDashboardProps) {
   const [gameMeta, setGameMeta] = useState<DraftGameMeta>({
     date: getTodayDate(),
     opponent: "",
-    seasonYear: 2026,
+    seasonYear,
     matchNumber: 1,
   })
 
+  // Draft entry is still keyed by player id.
   const [entriesByPlayer, setEntriesByPlayer] = useState<
     Record<string, BattingEntryData>
   >({})
 
+  // Saved history is still grouped by player id,
+  // but each saved record now also stores teamId.
   const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
     Record<string, SavedBattingGameEntry[]>
   >({})
@@ -50,7 +57,13 @@ export default function MainDashboard({
   const currentEntry =
     entriesByPlayer[activePlayer.id] ?? createInitialEntry()
 
-  const savedEntries = savedEntriesByPlayer[activePlayer.id] ?? []
+  // Pull this player's saved entries first.
+  const allPlayerEntries = savedEntriesByPlayer[activePlayer.id] ?? []
+
+  // Then filter them to only the currently selected team.
+  const savedEntries = allPlayerEntries.filter(
+    (entry) => entry.teamId === activePlayer.teamId
+  )
 
   const savedStatLines = savedEntries.map((entry) => entry.statLine)
 
@@ -72,6 +85,7 @@ export default function MainDashboard({
 
   const handleSaveEntry = () => {
     const savedEntry: SavedBattingGameEntry = {
+      teamId: activePlayer.teamId,
       gameMeta,
       statLine: currentEntry,
     }
@@ -107,6 +121,8 @@ export default function MainDashboard({
       onGameMetaChange={setGameMeta}
       onEntryChange={handleEntryChange}
       onSave={handleSaveEntry}
+      teamName={teamName}
+      seasonYear={gameMeta.seasonYear}
     />
   ) : (
     <MyStatsPage

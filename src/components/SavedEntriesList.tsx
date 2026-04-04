@@ -6,9 +6,6 @@ type SavedEntriesListProps = {
   emptyMessage?: string
 }
 
-// Displays saved batting game records for the selected player.
-// This component supports both analysis pages and record pages
-// by allowing a custom title and empty-state message.
 export default function SavedEntriesList({
   savedEntries,
   title = "Saved Entries",
@@ -34,7 +31,12 @@ export default function SavedEntriesList({
                 {savedEntry.gameMeta.opponent || "Unknown Opponent"}
               </div>
 
-              <div className="mt-1 text-gray-600">
+              <div className="mt-1 text-gray-500">
+                Season {savedEntry.gameMeta.seasonYear} · Match #
+                {savedEntry.gameMeta.matchNumber}
+              </div>
+
+              <div className="mt-2 text-gray-600">
                 AB: {savedEntry.statLine.AB}, H: {savedEntry.statLine.H}, HR:{" "}
                 {savedEntry.statLine.HR}, RBI: {savedEntry.statLine.RBI}, BB:{" "}
                 {savedEntry.statLine.BB}, SO: {savedEntry.statLine.SO}

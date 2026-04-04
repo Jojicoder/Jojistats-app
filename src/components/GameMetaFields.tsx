@@ -1,38 +1,49 @@
 import type { DraftGameMeta } from "../types"
 
 // Props for the game metadata input section.
-// This component is responsible only for editing game-level fields,
-// such as date, opponent, season year, and match number.
+// This component edits game-level fields such as date, opponent,
+// season year, and match number.
 type GameMetaFieldsProps = {
   gameMeta: DraftGameMeta
   onGameMetaChange: (nextMeta: DraftGameMeta) => void
 }
 
+// Available season year options shown in the picker.
+// This keeps the UI simple while still allowing manual override.
+const seasonOptions = [2024, 2025, 2026, 2027, 2028]
+
 // Renders the inputs for game metadata.
-// It does not store state internally; it receives the current values
-// and update handler from the parent component.
+// Date is the primary source of truth for the year,
+// and seasonYear is auto-synced when the date changes.
 export default function GameMetaFields({
   gameMeta,
   onGameMetaChange,
 }: GameMetaFieldsProps) {
+  const handleDateChange = (nextDate: string) => {
+    const derivedYear =
+      nextDate.trim() !== "" ? Number(nextDate.slice(0, 4)) : gameMeta.seasonYear
+
+    onGameMetaChange({
+      ...gameMeta,
+      date: nextDate,
+      seasonYear: derivedYear,
+    })
+  }
+
   return (
     <>
-      {/* Game-level metadata fields shown above the batting stat inputs */}
+      {/* Primary game metadata fields */}
       <div className="grid grid-cols-2 gap-4 mb-6">
-        {/* Date input for the current game being recorded */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600">Game Date</label>
           <input
             type="date"
             value={gameMeta.date}
-            onChange={(e) =>
-              onGameMetaChange({ ...gameMeta, date: e.target.value })
-            }
+            onChange={(e) => handleDateChange(e.target.value)}
             className="rounded-lg border border-gray-200 px-3 py-2"
           />
         </div>
 
-        {/* Opponent name input for the current game */}
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600">Opponent</label>
           <input
@@ -47,12 +58,11 @@ export default function GameMetaFields({
         </div>
       </div>
 
-      {/* Secondary game metadata fields for season structure */}
+      {/* Secondary metadata fields */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600">Season Year</label>
-          <input
-            type="number"
+          <select
             value={gameMeta.seasonYear}
             onChange={(e) =>
               onGameMetaChange({
@@ -60,8 +70,17 @@ export default function GameMetaFields({
                 seasonYear: Number(e.target.value),
               })
             }
-            className="rounded-lg border border-gray-200 px-3 py-2"
-          />
+            className="rounded-lg border border-gray-200 px-3 py-2 bg-white"
+          >
+            {seasonOptions.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-gray-400">
+            Auto-filled from Game Date. You can override it if needed.
+          </p>
         </div>
 
         <div className="flex flex-col gap-2">

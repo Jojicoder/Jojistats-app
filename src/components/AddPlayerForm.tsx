@@ -2,8 +2,8 @@ import { useState } from "react"
 import type { Player, Position } from "../types"
 
 type AddPlayerFormProps = {
+  teamId: string
   onAddPlayer: (player: Player) => void
-  onClose: () => void
 }
 
 const createPlayerId = () => {
@@ -24,11 +24,9 @@ const positionOptions: Position[] = [
   "UTIL",
 ]
 
-// Simple player creation form for expanding the roster.
-// Jersey number is editable, but internal player identity still uses a separate id.
 export default function AddPlayerForm({
+  teamId,
   onAddPlayer,
-  onClose,
 }: AddPlayerFormProps) {
   const [name, setName] = useState("")
   const [position, setPosition] = useState<Position>("UTIL")
@@ -41,6 +39,7 @@ export default function AddPlayerForm({
 
     onAddPlayer({
       id: createPlayerId(),
+      teamId,
       name: name.trim(),
       position,
       jerseyNumber: jerseyNumber.trim() === "" ? null : Number(jerseyNumber),
@@ -50,11 +49,10 @@ export default function AddPlayerForm({
     setName("")
     setPosition("UTIL")
     setJerseyNumber("")
-    onClose()
   }
 
   return (
-    <div className="mt-4 bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
+    <div className="mt-6 bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
       <h3 className="text-sm font-semibold text-gray-700 mb-3">
         Add New Player
       </h3>
@@ -105,22 +103,13 @@ export default function AddPlayerForm({
         </div>
       </div>
 
-      <div className="mt-4 flex gap-2">
-        <button
-          onClick={handleSubmit}
-          disabled={isDisabled}
-          className="flex-1 rounded-lg bg-green-900 text-white py-2 text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
-        >
-          Save Player
-        </button>
-
-        <button
-          onClick={onClose}
-          className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700"
-        >
-          Cancel
-        </button>
-      </div>
+      <button
+        onClick={handleSubmit}
+        disabled={isDisabled}
+        className="mt-4 w-full rounded-lg bg-green-900 text-white py-2 text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+      >
+        Save Player
+      </button>
     </div>
   )
 }

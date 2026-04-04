@@ -11,8 +11,15 @@ export type Position =
   | "DH"
   | "UTIL"
 
+export type Team = {
+  id: string
+  name: string
+  isArchived?: boolean
+}
+
 export type Player = {
   id: string
+  teamId: string
   name: string
   position: Position
   jerseyNumber?: number | null
@@ -30,8 +37,6 @@ export type DraftGameMeta = {
   seasonYear: number
   matchNumber: number
 }
-
-export type SetActiveIndex = React.Dispatch<React.SetStateAction<number>>
 
 export type DisplayStat = {
   label: string
@@ -51,18 +56,10 @@ export type BattingEntryData = {
   SO: number
 }
 
-export type DraftBattingStatEntry = BattingEntryData
-
-export type PlayerGameBattingStat = {
-  id: string
-  playerId: string
-  gameId: string
-  ab: number
-  h: number
-  hr: number
-  rbi: number
-  bb: number
-  so: number
+export type SavedBattingGameEntry = {
+  teamId: string
+  gameMeta: DraftGameMeta
+  statLine: BattingEntryData
 }
 
 export type BattingCalculatedKPI = {
@@ -71,11 +68,6 @@ export type BattingCalculatedKPI = {
   hr: number
   rbi: number
   gamesPlayed: number
-}
-
-export type SavedBattingGameEntry = {
-  gameMeta: DraftGameMeta
-  statLine: BattingEntryData
 }
 
 /* ========================================
@@ -90,17 +82,9 @@ export type PitchingEntryData = {
   strikeouts: number
 }
 
-export type DraftPitchingStatEntry = PitchingEntryData
-
-export type PlayerGamePitchingStat = {
-  id: string
-  playerId: string
-  gameId: string
-  outs: number
-  hitsAllowed: number
-  earnedRuns: number
-  walks: number
-  strikeouts: number
+export type SavedPitchingGameEntry = {
+  gameMeta: DraftGameMeta
+  statLine: PitchingEntryData
 }
 
 export type PitchingCalculatedKPI = {
@@ -109,9 +93,4 @@ export type PitchingCalculatedKPI = {
   strikeouts: number
   inningsPitched: string
   gamesPitched: number
-}
-
-export type SavedPitchingGameEntry = {
-  gameMeta: DraftGameMeta
-  statLine: PitchingEntryData
 }

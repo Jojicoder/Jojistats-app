@@ -1,84 +1,141 @@
 import { useState } from "react"
+import type { Team } from "../types"
 
 type TeamSetupPageProps = {
-  teamName: string
-  seasonYear: number
-  onChangeTeamName: (name: string) => void
-  onChangeSeasonYear: (year: number) => void
+  teams: Team[]
+  activeTeamId: string | null
+  setActiveTeamId: (teamId: string) => void
+  onAddTeam: (name: string) => void
+  onUpdateTeamName: (teamId: string, name: string) => void
+  onArchiveTeam: (teamId: string) => void
 }
 
-// Team Setup page is focused on team-level information only.
-// Player management is intentionally handled in the separate Roster page.
 export default function TeamSetupPage({
-  teamName,
-  seasonYear,
-  onChangeTeamName,
-  onChangeSeasonYear,
+  teams,
+  activeTeamId,
+  setActiveTeamId,
+  onAddTeam,
+  onUpdateTeamName,
+  onArchiveTeam,
 }: TeamSetupPageProps) {
-  const [saveMessage, setSaveMessage] = useState("")
-
-  const handleSave = () => {
-    setSaveMessage("Team settings saved.")
-  }
+  const activeTeam = teams.find((team) => team.id === activeTeamId) ?? null
+  const [newTeamName, setNewTeamName] = useState("")
 
   return (
-    <main className="flex-1 p-6 bg-gray-50">
-      <div className="bg-white rounded-xl p-6 shadow-sm">
-        <p className="text-sm font-medium text-green-900">Team Setup</p>
-        <h1 className="text-2xl font-bold mt-2">Set up your team</h1>
-        <p className="text-gray-600 mt-2">
-          Configure the team first, then manage players in the Roster tab.
-        </p>
-      </div>
+    <main className="w-full">
+      <div className="max-w-6xl">
+        {/* Header */}
+        <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <p className="text-sm font-medium text-green-900">Team Setup</p>
+          <h1 className="mt-2 text-2xl font-bold">Manage teams</h1>
+          <p className="mt-2 text-gray-600">
+            Create teams here. Season year is handled in Record Game.
+          </p>
+        </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
-        <h2 className="text-lg font-semibold mb-4">Team Information</h2>
+        {/* Add team */}
+        <div className="mt-6 max-w-3xl rounded-2xl bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-semibold">Add Team</h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-600">
-              Team Name
-            </label>
+          <div className="flex gap-2">
             <input
               type="text"
-              value={teamName}
-              onChange={(e) => {
-                onChangeTeamName(e.target.value)
-                setSaveMessage("")
-              }}
+              value={newTeamName}
+              onChange={(e) => setNewTeamName(e.target.value)}
               placeholder="e.g. Brooklyn Waves"
-              className="rounded-lg border border-gray-200 px-3 py-2"
+              className="flex-1 rounded-lg border border-gray-200 px-3 py-2"
             />
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-600">
-              Season Year
-            </label>
-            <input
-              type="number"
-              value={seasonYear}
-              onChange={(e) => {
-                onChangeSeasonYear(Number(e.target.value))
-                setSaveMessage("")
+            <button
+              onClick={() => {
+                if (newTeamName.trim() === "") return
+                onAddTeam(newTeamName.trim())
+                setNewTeamName("")
               }}
-              className="rounded-lg border border-gray-200 px-3 py-2"
-            />
+              className="rounded-lg bg-green-900 px-4 py-2 text-sm font-medium text-white"
+            >
+              Add Team
+            </button>
           </div>
         </div>
 
-        {saveMessage && (
-          <p className="mt-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-            {saveMessage}
-          </p>
-        )}
+        {/* Team list */}
+        <div className="mt-6 flex justify-start">
+          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-sm">
+            <h2 className="mb-4 text-lg font-semibold">Team List</h2>
 
-        <button
-          onClick={handleSave}
-          className="mt-6 bg-green-900 text-white px-5 py-2 rounded-xl font-medium"
-        >
-          Save Team Settings
-        </button>
+            {teams.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
+                No teams yet.
+              </div>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {teams.map((team, index) => {
+                  const isActive = team.id === activeTeamId
+
+                  return (
+                    <div
+                      key={team.id}
+                      className={`rounded-xl border px-4 py-3 ${
+                        isActive
+                          ? "border-green-900 bg-green-50"
+                          : "border-gray-200 bg-white"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-4">
+                        <button
+                          onClick={() => setActiveTeamId(team.id)}
+                          className="flex min-w-0 flex-1 items-center gap-4 text-left"
+                        >
+                          <div className="w-7 shrink-0 text-sm font-semibold text-gray-400">
+                            {index + 1}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-semibold text-gray-800">
+                              {team.name}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-400">
+                              {isActive ? "Selected Team" : "Click to select"}
+                            </p>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => onArchiveTeam(team.id)}
+                          className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
+                        >
+                          Archive
+                        </button>
+                      </div>
+
+                      {isActive && (
+                        <div className="mt-4">
+                          <label className="text-xs font-medium text-gray-500">
+                            Edit Team Name
+                          </label>
+                          <input
+                            type="text"
+                            value={team.name}
+                            onChange={(e) =>
+                              onUpdateTeamName(team.id, e.target.value)
+                            }
+                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+                Current Team: {activeTeam?.name ?? "None"}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </main>
   )
