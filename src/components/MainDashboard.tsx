@@ -1,11 +1,13 @@
+import { useState } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import type {
   Player,
   BattingEntryData,
   DraftGameMeta,
+  PendingBattingEntry,
   SavedBattingGameEntry,
   DisplayStat,
 } from "../types"
-import { useState } from "react"
 import { useGameStats } from "../hooks/useGameStats"
 import RecordGamePage from "./RecordGamePage"
 import MyStatsPage from "./MyStatsPage"
@@ -15,15 +17,23 @@ type MainDashboardProps = {
   activeView: "stats" | "record"
   teamName: string
   seasonYear: number
+  gameMeta: DraftGameMeta
+  setGameMeta: Dispatch<SetStateAction<DraftGameMeta>>
+  entriesByPlayer: Record<string, BattingEntryData>
+  setEntriesByPlayer: Dispatch<SetStateAction<Record<string, BattingEntryData>>>
+  savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
+  setSavedEntriesByPlayer: Dispatch<
+    SetStateAction<Record<string, SavedBattingGameEntry[]>>
+  >
 }
 
 const createInitialEntry = (): BattingEntryData => ({
-  AB: 4,
-  H: 2,
-  HR: 1,
-  RBI: 3,
+  AB: 0,
+  H: 0,
+  HR: 0,
+  RBI: 0,
   BB: 0,
-  SO: 1,
+  SO: 0,
 })
 
 const getTodayDate = (): string => {
@@ -35,32 +45,22 @@ export default function MainDashboard({
   activeView,
   teamName,
   seasonYear,
+  gameMeta,
+  setGameMeta,
+  entriesByPlayer,
+  setEntriesByPlayer,
+  savedEntriesByPlayer,
+  setSavedEntriesByPlayer,
 }: MainDashboardProps) {
-  const [gameMeta, setGameMeta] = useState<DraftGameMeta>({
-    date: getTodayDate(),
-    opponent: "",
-    seasonYear,
-    matchNumber: 1,
-  })
-
-  // Draft entry is still keyed by player id.
-  const [entriesByPlayer, setEntriesByPlayer] = useState<
-    Record<string, BattingEntryData>
-  >({})
-
-  // Saved history is still grouped by player id,
-  // but each saved record now also stores teamId.
-  const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
-    Record<string, SavedBattingGameEntry[]>
-  >({})
+  const [editingSavedEntryId, setEditingSavedEntryId] = useState<string | null>(
+    null
+  )
 
   const currentEntry =
     entriesByPlayer[activePlayer.id] ?? createInitialEntry()
 
-  // Pull this player's saved entries first.
   const allPlayerEntries = savedEntriesByPlayer[activePlayer.id] ?? []
 
-  // Then filter them to only the currently selected team.
   const savedEntries = allPlayerEntries.filter(
     (entry) => entry.teamId === activePlayer.teamId
   )
@@ -83,20 +83,33 @@ export default function MainDashboard({
     }))
   }
 
-  const handleSaveEntry = () => {
-    const savedEntry: SavedBattingGameEntry = {
-      teamId: activePlayer.teamId,
-      gameMeta,
-      statLine: currentEntry,
-    }
-
+  const handleSaveGame = (
+    nextGameMeta: DraftGameMeta,
+    entries: PendingBattingEntry[]
+  ) => {
     setSavedEntriesByPlayer((prev) => {
-      const currentSaved = prev[activePlayer.id] ?? []
+      const nextSaved = { ...prev }
 
-      return {
-        ...prev,
-        [activePlayer.id]: [...currentSaved, savedEntry],
-      }
+      entries.forEach((entry) => {
+        const savedEntry: SavedBattingGameEntry = {
+          id: crypto.randomUUID(),
+          teamId: activePlayer.teamId,
+          gameMeta: nextGameMeta,
+          statLine: {
+            AB: entry.AB,
+            H: entry.H,
+            HR: entry.HR,
+            RBI: entry.RBI,
+            BB: entry.BB,
+            SO: entry.SO,
+          },
+        }
+
+        const currentSaved = nextSaved[entry.playerId] ?? []
+        nextSaved[entry.playerId] = [...currentSaved, savedEntry]
+      })
+
+      return nextSaved
     })
 
     setEntriesByPlayer((prev) => ({
@@ -112,6 +125,64 @@ export default function MainDashboard({
     }))
   }
 
+  const handleStartEditSavedEntry = (savedEntry: SavedBattingGameEntry) => {
+    setGameMeta(savedEntry.gameMeta)
+
+    setEntriesByPlayer((prev) => ({
+      ...prev,
+      [activePlayer.id]: {
+        AB: savedEntry.statLine.AB,
+        H: savedEntry.statLine.H,
+        HR: savedEntry.statLine.HR,
+        RBI: savedEntry.statLine.RBI,
+        BB: savedEntry.statLine.BB,
+        SO: savedEntry.statLine.SO,
+      },
+    }))
+
+    setEditingSavedEntryId(savedEntry.id)
+  }
+
+  const handleUpdateSavedEntry = (
+    nextGameMeta: DraftGameMeta,
+    nextStatLine: BattingEntryData
+  ) => {
+    if (!editingSavedEntryId) return
+
+    setSavedEntriesByPlayer((prev) => {
+      const nextSaved = { ...prev }
+      const currentSaved = nextSaved[activePlayer.id] ?? []
+
+      nextSaved[activePlayer.id] = currentSaved.map((entry) =>
+        entry.id === editingSavedEntryId
+          ? {
+              ...entry,
+              gameMeta: nextGameMeta,
+              statLine: nextStatLine,
+            }
+          : entry
+      )
+
+      return nextSaved
+    })
+
+    setEntriesByPlayer((prev) => ({
+      ...prev,
+      [activePlayer.id]: createInitialEntry(),
+    }))
+
+    setEditingSavedEntryId(null)
+  }
+
+  const handleCancelEditSavedEntry = () => {
+    setEntriesByPlayer((prev) => ({
+      ...prev,
+      [activePlayer.id]: createInitialEntry(),
+    }))
+
+    setEditingSavedEntryId(null)
+  }
+
   return activeView === "record" ? (
     <RecordGamePage
       activePlayer={activePlayer}
@@ -120,9 +191,14 @@ export default function MainDashboard({
       savedEntries={savedEntries}
       onGameMetaChange={setGameMeta}
       onEntryChange={handleEntryChange}
-      onSave={handleSaveEntry}
+      onSaveGame={handleSaveGame}
       teamName={teamName}
       seasonYear={gameMeta.seasonYear}
+      isEditingSavedEntry={editingSavedEntryId !== null}
+      editingSavedEntryId={editingSavedEntryId}
+      onStartEditSavedEntry={handleStartEditSavedEntry}
+      onUpdateSavedEntry={handleUpdateSavedEntry}
+      onCancelEditSavedEntry={handleCancelEditSavedEntry}
     />
   ) : (
     <MyStatsPage

@@ -2,49 +2,68 @@ import type { SavedBattingGameEntry } from "../types"
 
 type SavedEntriesListProps = {
   savedEntries: SavedBattingGameEntry[]
-  title?: string
-  emptyMessage?: string
+  title: string
+  emptyMessage: string
+  onEdit?: (entry: SavedBattingGameEntry) => void
+  editingSavedEntryId?: string | null
 }
 
 export default function SavedEntriesList({
   savedEntries,
-  title = "Saved Entries",
-  emptyMessage = "No saved entries yet.",
+  title,
+  emptyMessage,
+  onEdit,
+  editingSavedEntryId = null,
 }: SavedEntriesListProps) {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-sm mt-6">
-      <h2 className="text-lg font-semibold mb-4">{title}</h2>
+    <section className="rounded-2xl bg-white p-6 shadow-sm">
+      <p className="text-sm font-medium text-green-900">{title}</p>
 
       {savedEntries.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500 text-center">
-          {emptyMessage}
-        </div>
+        <p className="mt-4 text-sm text-gray-500">{emptyMessage}</p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {savedEntries.map((savedEntry, index) => (
+        <div className="mt-4 space-y-3">
+          {savedEntries.map((entry) => (
             <div
-              key={index}
-              className="bg-gray-50 rounded-lg px-4 py-3 text-sm text-gray-700"
+              key={entry.id}
+              className={`rounded-xl border px-4 py-3 ${
+                editingSavedEntryId === entry.id
+                  ? "border-blue-300 bg-blue-50"
+                  : "border-gray-200 bg-white"
+              }`}
             >
-              <div className="font-medium text-gray-800">
-                G{index + 1} - {savedEntry.gameMeta.date} vs{" "}
-                {savedEntry.gameMeta.opponent || "Unknown Opponent"}
-              </div>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-gray-800">
+                    {entry.gameMeta.date} vs {entry.gameMeta.opponent}
+                  </p>
 
-              <div className="mt-1 text-gray-500">
-                Season {savedEntry.gameMeta.seasonYear} · Match #
-                {savedEntry.gameMeta.matchNumber}
-              </div>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Season {entry.gameMeta.seasonYear} · Game #
+                    {entry.gameMeta.matchNumber}
+                  </p>
 
-              <div className="mt-2 text-gray-600">
-                AB: {savedEntry.statLine.AB}, H: {savedEntry.statLine.H}, HR:{" "}
-                {savedEntry.statLine.HR}, RBI: {savedEntry.statLine.RBI}, BB:{" "}
-                {savedEntry.statLine.BB}, SO: {savedEntry.statLine.SO}
+                  <p className="mt-2 text-sm text-gray-600">
+                    AB {entry.statLine.AB} · H {entry.statLine.H} · HR{" "}
+                    {entry.statLine.HR} · RBI {entry.statLine.RBI} · BB{" "}
+                    {entry.statLine.BB} · SO {entry.statLine.SO}
+                  </p>
+                </div>
+
+                {onEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(entry)}
+                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    {editingSavedEntryId === entry.id ? "Editing" : "Edit"}
+                  </button>
+                )}
               </div>
             </div>
           ))}
         </div>
       )}
-    </div>
+    </section>
   )
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import type { Player, Position } from "../types"
 
 type PlayerFormProps = {
@@ -34,28 +34,14 @@ export default function PlayerForm({
   onSave,
   onCancel,
 }: PlayerFormProps) {
-  const [name, setName] = useState("")
-  const [position, setPosition] = useState<Position>("UTIL")
-  const [jerseyNumber, setJerseyNumber] = useState("")
-  const [isActive, setIsActive] = useState(true)
-
-  useEffect(() => {
-    if (mode === "edit" && initialPlayer) {
-      setName(initialPlayer.name)
-      setPosition(initialPlayer.position)
-      setJerseyNumber(
-        initialPlayer.jerseyNumber != null ? String(initialPlayer.jerseyNumber) : ""
-      )
-      setIsActive(initialPlayer.isActive !== false)
-    }
-
-    if (mode === "add") {
-      setName("")
-      setPosition("UTIL")
-      setJerseyNumber("")
-      setIsActive(true)
-    }
-  }, [mode, initialPlayer])
+  const [name, setName] = useState(initialPlayer?.name ?? "")
+  const [position, setPosition] = useState<Position>(
+    initialPlayer?.position ?? "UTIL"
+  )
+  const [jerseyNumber, setJerseyNumber] = useState(
+    initialPlayer?.jerseyNumber != null ? String(initialPlayer.jerseyNumber) : ""
+  )
+  const [isActive, setIsActive] = useState(initialPlayer?.isActive !== false)
 
   const isDisabled = name.trim() === ""
 

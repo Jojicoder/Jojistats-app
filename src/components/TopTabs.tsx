@@ -1,6 +1,6 @@
 type TopTabsProps = {
-  activeView: "stats" | "record" | "roster" | "team"
-  onChangeView: (view: "stats" | "record" | "roster" | "team") => void
+  activeView: "stats" | "record" | "team"
+  onChangeView: (view: "stats" | "record" | "team") => void
 }
 
 export default function TopTabs({
@@ -8,8 +8,9 @@ export default function TopTabs({
   onChangeView,
 }: TopTabsProps) {
   return (
-    <nav className="flex gap-6 px-6 py-3 bg-white border-b border-gray-200">
+    <nav className="flex gap-6 border-b border-gray-200 bg-white px-6 py-3">
       <button
+        type="button"
         onClick={() => onChangeView("stats")}
         className={`text-sm ${
           activeView === "stats"
@@ -21,6 +22,7 @@ export default function TopTabs({
       </button>
 
       <button
+        type="button"
         onClick={() => onChangeView("record")}
         className={`text-sm ${
           activeView === "record"
@@ -32,17 +34,7 @@ export default function TopTabs({
       </button>
 
       <button
-        onClick={() => onChangeView("roster")}
-        className={`text-sm ${
-          activeView === "roster"
-            ? "font-semibold text-green-900"
-            : "text-gray-600 hover:text-green-900"
-        }`}
-      >
-        Roster
-      </button>
-
-      <button
+        type="button"
         onClick={() => onChangeView("team")}
         className={`text-sm ${
           activeView === "team"

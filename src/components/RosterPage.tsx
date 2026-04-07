@@ -37,7 +37,7 @@ export default function RosterPage({
     <main className="w-full">
       <div className="max-w-6xl">
         {/* Header */}
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+        <div className="rounded-2xl bg-white p-6 shadow-sm max-w-3xl">
           <p className="text-sm font-medium text-green-900">Roster</p>
           <h1 className="mt-2 text-2xl font-bold">{teamName}</h1>
           <p className="mt-2 text-gray-600">
@@ -62,6 +62,7 @@ export default function RosterPage({
         {/* Add form */}
         <div className="mt-6 max-w-3xl">
           <PlayerForm
+            key={`add-${activeTeamId}`}
             teamId={activeTeamId}
             mode="add"
             onSave={onAddPlayer}
@@ -72,6 +73,7 @@ export default function RosterPage({
         {editingPlayer && (
           <div className="mt-6 max-w-3xl">
             <PlayerForm
+              key={`edit-${editingPlayer.id}`}
               teamId={activeTeamId}
               mode="edit"
               initialPlayer={editingPlayer}

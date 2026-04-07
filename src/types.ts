@@ -56,7 +56,13 @@ export type BattingEntryData = {
   SO: number
 }
 
+export type PendingBattingEntry = BattingEntryData & {
+  playerId: string
+  playerName: string
+}
+
 export type SavedBattingGameEntry = {
+  id: string
   teamId: string
   gameMeta: DraftGameMeta
   statLine: BattingEntryData
