@@ -35,31 +35,27 @@ export default function TeamSetupPage({
   onUpdatePlayer,
   onDeletePlayer,
 }: TeamSetupPageProps) {
-  const activeTeam = teams.find((team) => team.id === activeTeamId) ?? null
-  const activePlayer =
-    players.find((player) => player.id === activePlayerId) ?? null
-
+  const [editingTeamName, setEditingTeamName] = useState("")
+  const [isEditingTeam, setIsEditingTeam] = useState(false)
   const [newTeamName, setNewTeamName] = useState("")
   const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
+
+  const activePlayer =
+    players.find((player) => player.id === activePlayerId) ?? null
 
   const editingPlayer =
     players.find((player) => player.id === editingPlayerId) ?? null
 
   return (
     <main className="w-full">
-      <div className="max-w-7xl space-y-6">
-        {/* Page header */}
+      <div className="w-full space-y-6">
         <div className="rounded-2xl bg-white p-6 shadow-sm">
           <p className="text-sm font-medium text-green-900">Team Setup</p>
           <h1 className="mt-2 text-2xl font-bold">Manage team and roster</h1>
-          <p className="mt-2 text-gray-600">
-            Team management is on the left. Roster management is on the right.
-          </p>
         </div>
 
-        {/* Main two-column layout */}
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
-          {/* LEFT COLUMN: Team Setup */}
+        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          {/* LEFT COLUMN */}
           <section className="space-y-6">
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold">Add Team</h2>
@@ -94,14 +90,14 @@ export default function TeamSetupPage({
                   No teams yet.
                 </div>
               ) : (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
                   {teams.map((team, index) => {
                     const isActive = team.id === activeTeamId
 
                     return (
                       <div
                         key={team.id}
-                        className={`rounded-xl border px-4 py-3 ${
+                        className={`rounded-xl border px-4 py-3 transition ${
                           isActive
                             ? "border-green-900 bg-green-50"
                             : "border-gray-200 bg-white"
@@ -110,7 +106,11 @@ export default function TeamSetupPage({
                         <div className="flex items-center justify-between gap-4">
                           <button
                             type="button"
-                            onClick={() => setActiveTeamId(team.id)}
+                            onClick={() => {
+                              setActiveTeamId(team.id)
+                              setEditingTeamName(team.name)
+                              setIsEditingTeam(false)
+                            }}
                             className="flex min-w-0 flex-1 items-center gap-4 text-left"
                           >
                             <div className="w-7 shrink-0 text-sm font-semibold text-gray-400">
@@ -121,34 +121,75 @@ export default function TeamSetupPage({
                               <p className="truncate text-sm font-semibold text-gray-800">
                                 {team.name}
                               </p>
-                              <p className="mt-1 text-xs text-gray-400">
-                                {isActive ? "Selected Team" : "Click to select"}
-                              </p>
                             </div>
                           </button>
 
-                          <button
-                            type="button"
-                            onClick={() => onArchiveTeam(team.id)}
-                            className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
-                          >
-                            Archive
-                          </button>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button
+                                type="button"
+                                 onClick={() => {
+      if (!isEditingTeam) {
+        setEditingTeamName(team.name)
+      }
+      setIsEditingTeam((prev) => !prev)
+    }}
+    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
+  >
+                                {isEditingTeam ? "Close" : "Edit"}
+                              </button>
+
+                           
+                          </div>
                         </div>
 
-                        {isActive && (
-                          <div className="mt-4">
-                            <label className="text-xs font-medium text-gray-500">
-                              Edit Team Name
-                            </label>
-                            <input
-                              type="text"
-                              value={team.name}
-                              onChange={(e) =>
-                                onUpdateTeamName(team.id, e.target.value)
-                              }
-                              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                            />
+                        {isActive && isEditingTeam && (
+                          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+                              <div >
+                                <label className="text-xs font-medium text-gray-500">
+                                  Edit Team Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={editingTeamName}
+                                  onChange={(e) =>
+                                    setEditingTeamName(e.target.value)
+                                  }
+                                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                                />
+
+                                <div className="mt-4 flex items-center justify-end gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      if (editingTeamName.trim() === "") return
+                                      onUpdateTeamName(
+                                        team.id,
+                                        editingTeamName.trim()
+                                      )
+                                      setIsEditingTeam(false)
+                                    }}
+                                    className="rounded-lg bg-green-900 px-4 py-2 text-sm text-white"
+                                  >
+                                    Update
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const confirmed = window.confirm(
+                                        `Archive team "${team.name}"?\n\nThis team will be hidden from the active list.`
+                                      )
+                                      if (!confirmed) return
+                                      onArchiveTeam(team.id)
+                                      setIsEditingTeam(false)
+                                    }}
+                                    className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white"
+                                  >
+                                    Archive
+                                  </button>
+                                </div>
+                              </div>
+                          
                           </div>
                         )}
                       </div>
@@ -156,16 +197,10 @@ export default function TeamSetupPage({
                   })}
                 </div>
               )}
-
-              <div className="mt-6">
-                <div className="inline-block rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                  Current Team: {activeTeam?.name ?? "None"}
-                </div>
-              </div>
             </div>
           </section>
 
-          {/* RIGHT COLUMN: Roster */}
+          {/* CENTER COLUMN */}
           <section className="space-y-6">
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <p className="text-sm font-medium text-green-900">Roster</p>
@@ -189,139 +224,124 @@ export default function TeamSetupPage({
               </div>
             </div>
 
-            {/* NEW: roster inner two-column layout */}
-            <div className="grid grid-cols-1 gap-6 2xl:grid-cols-[minmax(0,1fr)_360px]">
-              {/* LEFT SIDE INSIDE ROSTER: forms */}
-              <div className="space-y-6">
-                {activeTeamId ? (
-                  <div className="rounded-2xl bg-white p-6 shadow-sm">
-                    <h3 className="text-lg font-semibold">Add Player</h3>
+            {activeTeamId ? (
+              <div className="rounded-2xl bg-white p-6 shadow-sm">
+                <h3 className="text-lg font-semibold">Add Player</h3>
 
-                    <div className="mt-4">
-                      <PlayerForm
-                        teamId={activeTeamId}
-                        mode="add"
-                        onSave={onAddPlayer}
-                      />
-                    </div>
-                  </div>
-                ) : (
-                  <div className="rounded-2xl bg-yellow-50 p-6 text-sm text-yellow-800">
-                    Please create or select a team first before adding players.
-                  </div>
-                )}
-
-                {editingPlayer && activeTeamId && (
-                  <div className="rounded-2xl bg-white p-6 shadow-sm">
-                    <h3 className="text-lg font-semibold">Edit Player</h3>
-
-                    <div className="mt-4">
-                      <PlayerForm
-                        teamId={activeTeamId}
-                        mode="edit"
-                        initialPlayer={editingPlayer}
-                        onSave={(player) => {
-                          onUpdatePlayer(player)
-                          setEditingPlayerId(null)
-                        }}
-                        onCancel={() => setEditingPlayerId(null)}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* RIGHT SIDE INSIDE ROSTER: player list */}
-              <div className="self-start">
-                <div className="rounded-2xl bg-white p-6 shadow-sm">
-                  <h3 className="mb-4 text-lg font-semibold">Player List</h3>
-
-                  {players.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
-                      No players yet. Add your first player on the left.
-                    </div>
-                  ) : (
-                    <div className="flex flex-col gap-2">
-                      {players.map((player, index) => {
-                        const isActive = player.id === activePlayerId
-                        const isEditing = player.id === editingPlayerId
-
-                        return (
-                          <div
-                            key={player.id}
-                            className={`rounded-xl border px-4 py-3 transition ${
-                              isActive
-                                ? "border-green-900 bg-green-50"
-                                : "border-gray-200 bg-white"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between gap-4">
-                              <button
-                                type="button"
-                                onClick={() => setActivePlayerId(player.id)}
-                                className="flex min-w-0 flex-1 items-center gap-4 text-left"
-                              >
-                                <div className="w-7 shrink-0 text-sm font-semibold text-gray-400">
-                                  {index + 1}
-                                </div>
-
-                                <div className="min-w-0 flex-1">
-                                  <p className="truncate text-sm font-semibold text-gray-800">
-                                    {player.jerseyNumber != null
-                                      ? `#${player.jerseyNumber} `
-                                      : ""}
-                                    {player.name}
-                                  </p>
-                                  <p className="mt-1 text-xs text-gray-400">
-                                    {player.isActive === false
-                                      ? "Inactive"
-                                      : "Available"}
-                                  </p>
-                                </div>
-
-                                <div className="shrink-0 text-sm text-gray-600">
-                                  {player.position}
-                                </div>
-                              </button>
-
-                              <div className="flex shrink-0 items-center gap-2">
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    setEditingPlayerId(
-                                      isEditing ? null : player.id
-                                    )
-                                  }
-                                  className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
-                                >
-                                  {isEditing ? "Close" : "Edit"}
-                                </button>
-
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const confirmed = window.confirm(
-                                      `Delete ${player.name}?`
-                                    )
-                                    if (!confirmed) return
-                                    onDeletePlayer(player.id)
-                                    if (editingPlayerId === player.id) {
-                                      setEditingPlayerId(null)
-                                    }
-                                  }}
-                                  className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  )}
+                <div className="mt-4">
+                  <PlayerForm
+                    teamId={activeTeamId}
+                    mode="add"
+                    onSave={onAddPlayer}
+                  />
                 </div>
               </div>
+            ) : (
+              <div className="rounded-2xl bg-yellow-50 p-6 text-sm text-yellow-800">
+                Please create or select a team first before adding players.
+              </div>
+            )}
+          </section>
+
+          {/* RIGHT COLUMN */}
+          <section className="self-start">
+            <div className="rounded-2xl bg-white p-6 shadow-sm">
+              <h3 className="mb-4 text-lg font-semibold">Player List</h3>
+
+              {players.length === 0 ? (
+                <div className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
+                  No players yet. Add your first player in the center column.
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {players.map((player, index) => {
+                    const isActive = player.id === activePlayerId
+                    const isEditing = player.id === editingPlayerId
+
+                    return (
+                      <div
+                        key={player.id}
+                        className={`rounded-xl border px-4 py-3 transition ${
+                          isActive
+                            ? "border-green-900 bg-green-50"
+                            : "border-gray-200 bg-white"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between gap-4">
+                          <button
+                            type="button"
+                            onClick={() => setActivePlayerId(player.id)}
+                            className="flex min-w-0 flex-1 items-center gap-4 text-left"
+                          >
+                            <div className="w-7 shrink-0 text-sm font-semibold text-gray-400">
+                              {index + 1}
+                            </div>
+
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-semibold text-gray-800">
+                                {player.jerseyNumber != null
+                                  ? `#${player.jerseyNumber} `
+                                  : ""}
+                                {player.name}
+                              </p>
+                            </div>
+
+                            <div className="shrink-0 text-sm text-gray-600">
+                              {player.position}
+                            </div>
+                          </button>
+
+                          <div className="flex shrink-0 items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEditingPlayerId(
+                                  isEditing ? null : player.id
+                                )
+                              }
+                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
+                            >
+                              {isEditing ? "Close" : "Edit"}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const confirmed = window.confirm(
+                                  `Delete ${player.name}?`
+                                )
+                                if (!confirmed) return
+                                onDeletePlayer(player.id)
+                                if (editingPlayerId === player.id) {
+                                  setEditingPlayerId(null)
+                                }
+                              }}
+                              className="rounded-lg bg-red-600 px-3 py-1.5 text-sm text-white"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="mt-1">
+                          {isEditing && editingPlayer && activeTeamId && (
+                            <PlayerForm
+                              teamId={activeTeamId}
+                              mode="edit"
+                              initialPlayer={editingPlayer}
+                              onSave={(player) => {
+                                onUpdatePlayer(player)
+                                setEditingPlayerId(null)
+                              }}
+                              onCancel={() => setEditingPlayerId(null)}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </section>
         </div>

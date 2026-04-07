@@ -41,7 +41,6 @@ export default function PlayerForm({
   const [jerseyNumber, setJerseyNumber] = useState(
     initialPlayer?.jerseyNumber != null ? String(initialPlayer.jerseyNumber) : ""
   )
-  const [isActive, setIsActive] = useState(initialPlayer?.isActive !== false)
 
   const isDisabled = name.trim() === ""
 
@@ -66,25 +65,24 @@ export default function PlayerForm({
       name: name.trim(),
       position,
       jerseyNumber: jerseyNumber.trim() === "" ? null : Number(jerseyNumber),
-      isActive,
+      isActive: true,
     })
 
     if (mode === "add") {
       setName("")
       setPosition("UTIL")
       setJerseyNumber("")
-      setIsActive(true)
     }
   }
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-gray-700">
         {mode === "add" ? "Add New Player" : "Edit Player"}
       </h3>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-2.5">
+        <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-gray-500">Player Name</label>
           <input
             type="text"
@@ -95,7 +93,7 @@ export default function PlayerForm({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-gray-500">Jersey Number</label>
           <input
             type="number"
@@ -107,12 +105,12 @@ export default function PlayerForm({
           />
         </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-gray-500">Position</label>
           <select
             value={position}
             onChange={(e) => setPosition(e.target.value as Position)}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
           >
             {positionOptions.map((option) => (
               <option key={option} value={option}>
@@ -121,28 +119,21 @@ export default function PlayerForm({
             ))}
           </select>
         </div>
-
-        <label className="flex items-center gap-2 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            checked={isActive}
-            onChange={(e) => setIsActive(e.target.checked)}
-          />
-          Available
-        </label>
       </div>
 
       <div className="mt-4 flex gap-2">
         <button
+          type="button"
           onClick={handleSubmit}
           disabled={isDisabled}
-          className="flex-1 rounded-lg bg-green-900 text-white py-2 text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+          className="flex-1 rounded-lg bg-green-900 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
         >
           {mode === "add" ? "Save Player" : "Update Player"}
         </button>
 
         {onCancel && (
           <button
+            type="button"
             onClick={onCancel}
             className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-gray-700"
           >
