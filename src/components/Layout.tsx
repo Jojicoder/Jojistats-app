@@ -184,7 +184,7 @@ export default function Layout({
                 activePlayer={activePlayer}
                 activeView={activeView}
                 teamName={activeTeam?.name ?? "No Team"}
-                seasonYear={new Date().getFullYear()}
+         
                 gameMeta={gameMeta}
                 setGameMeta={setGameMeta}
                 entriesByPlayer={entriesByPlayer}

@@ -128,13 +128,13 @@ export default function TeamSetupPage({
                             <button
                                 type="button"
                                  onClick={() => {
-      if (!isEditingTeam) {
-        setEditingTeamName(team.name)
-      }
-      setIsEditingTeam((prev) => !prev)
-    }}
-    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
-  >
+                                      if (!isEditingTeam) {
+                                        setEditingTeamName(team.name)
+                                      }
+                                      setIsEditingTeam((prev) => !prev)
+                                    }}
+                                    className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
+                                  >
                                 {isEditingTeam ? "Close" : "Edit"}
                               </button>
 

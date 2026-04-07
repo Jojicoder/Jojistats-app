@@ -16,7 +16,6 @@ type MainDashboardProps = {
   activePlayer: Player
   activeView: "stats" | "record"
   teamName: string
-  seasonYear: number
   gameMeta: DraftGameMeta
   setGameMeta: Dispatch<SetStateAction<DraftGameMeta>>
   entriesByPlayer: Record<string, BattingEntryData>
@@ -44,7 +43,6 @@ export default function MainDashboard({
   activePlayer,
   activeView,
   teamName,
-  seasonYear,
   gameMeta,
   setGameMeta,
   entriesByPlayer,
