@@ -5,6 +5,7 @@ type SavedEntriesListProps = {
   title: string
   emptyMessage: string
   onEdit?: (entry: SavedBattingGameEntry) => void
+  onDelete?: (entry: SavedBattingGameEntry) => void
   editingSavedEntryId?: string | null
 }
 
@@ -13,6 +14,7 @@ export default function SavedEntriesList({
   title,
   emptyMessage,
   onEdit,
+  onDelete,
   editingSavedEntryId = null,
 }: SavedEntriesListProps) {
   return (
@@ -43,22 +45,38 @@ export default function SavedEntriesList({
                     {entry.gameMeta.matchNumber}
                   </p>
 
-                  <p className="mt-2 text-sm text-gray-600">
-                    AB {entry.statLine.AB} · H {entry.statLine.H} · HR{" "}
-                    {entry.statLine.HR} · RBI {entry.statLine.RBI} · BB{" "}
-                    {entry.statLine.BB} · SO {entry.statLine.SO}
+                              <div className="mt-2 text-sm text-gray-600 space-y-1">
+                  <p>Position {entry.gamePosition}</p>
+                  <p>
+                    AB {entry.statLine.AB} · H {entry.statLine.H} · HR {entry.statLine.HR}
+                  </p>
+                  <p>
+                    RBI {entry.statLine.RBI} · BB {entry.statLine.BB} · SO {entry.statLine.SO}
                   </p>
                 </div>
+                </div>
 
-                {onEdit && (
-                  <button
-                    type="button"
-                    onClick={() => onEdit(entry)}
-                    className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    {editingSavedEntryId === entry.id ? "Editing" : "Edit"}
-                  </button>
-                )}
+                <div className="flex items-center gap-2">
+                  {onEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(entry)}
+                      className="rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                    >
+                      {editingSavedEntryId === entry.id ? "Editing" : "Edit"}
+                    </button>
+                  )}
+
+                  {onDelete && editingSavedEntryId === entry.id && (
+                    <button
+                      type="button"
+                      onClick={() => onDelete(entry)}
+                      className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Remove
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           ))}

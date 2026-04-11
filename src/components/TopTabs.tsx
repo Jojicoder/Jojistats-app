@@ -8,7 +8,7 @@ export default function TopTabs({
   onChangeView,
 }: TopTabsProps) {
   return (
-    <nav className="flex gap-6 border-b border-gray-200 bg-white px-6 py-3">
+    <nav className="flex gap-6 border-b border-gray-200 bg-white px-4 py-2">
       <button
         type="button"
         onClick={() => onChangeView("stats")}

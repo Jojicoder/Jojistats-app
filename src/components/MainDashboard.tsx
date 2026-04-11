@@ -93,6 +93,7 @@ export default function MainDashboard({
           id: crypto.randomUUID(),
           teamId: activePlayer.teamId,
           gameMeta: nextGameMeta,
+          gamePosition: entry.gamePosition,
           statLine: {
             AB: entry.AB,
             H: entry.H,
@@ -181,6 +182,32 @@ export default function MainDashboard({
     setEditingSavedEntryId(null)
   }
 
+  const handleDeleteSavedEntry = (savedEntry: SavedBattingGameEntry) => {
+    const confirmed = window.confirm(
+      `Remove this saved entry?\n\n${savedEntry.gameMeta.date} vs ${savedEntry.gameMeta.opponent}`
+    )
+    if (!confirmed) return
+
+    setSavedEntriesByPlayer((prev) => {
+      const nextSaved = { ...prev }
+      const currentSaved = nextSaved[activePlayer.id] ?? []
+
+      nextSaved[activePlayer.id] = currentSaved.filter(
+        (entry) => entry.id !== savedEntry.id
+      )
+
+      return nextSaved
+    })
+
+    if (editingSavedEntryId === savedEntry.id) {
+      setEntriesByPlayer((prev) => ({
+        ...prev,
+        [activePlayer.id]: createInitialEntry(),
+      }))
+      setEditingSavedEntryId(null)
+    }
+  }
+
   return activeView === "record" ? (
     <RecordGamePage
       activePlayer={activePlayer}
@@ -197,6 +224,7 @@ export default function MainDashboard({
       onStartEditSavedEntry={handleStartEditSavedEntry}
       onUpdateSavedEntry={handleUpdateSavedEntry}
       onCancelEditSavedEntry={handleCancelEditSavedEntry}
+      onDeleteSavedEntry={handleDeleteSavedEntry}
     />
   ) : (
     <MyStatsPage

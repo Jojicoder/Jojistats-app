@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react"
 import type {
   Player,
+  Position,
   BattingEntryData,
   DraftGameMeta,
-  PendingBattingEntry,
   SavedBattingGameEntry,
+  PendingBattingEntry,
 } from "../types"
 import ScoreEntryPanel from "./ScoreEntryPanel"
 import SavedEntriesList from "./SavedEntriesList"
@@ -28,7 +29,22 @@ type RecordGamePageProps = {
     nextStatLine: BattingEntryData
   ) => void
   onCancelEditSavedEntry: () => void
+  onDeleteSavedEntry: (savedEntry: SavedBattingGameEntry) => void
 }
+
+const gamePositionOptions: Position[] = [
+  "P",
+  "C",
+  "1B",
+  "2B",
+  "3B",
+  "SS",
+  "LF",
+  "CF",
+  "RF",
+  "DH",
+  "UTIL",
+]
 
 export default function RecordGamePage({
   activePlayer,
@@ -45,23 +61,30 @@ export default function RecordGamePage({
   onStartEditSavedEntry,
   onUpdateSavedEntry,
   onCancelEditSavedEntry,
+  onDeleteSavedEntry,
 }: RecordGamePageProps) {
   const [statusMessage, setStatusMessage] = useState("")
   const [pendingEntries, setPendingEntries] = useState<PendingBattingEntry[]>([])
+  const [gamePosition, setGamePosition] = useState<Position>(
+    activePlayer.position
+  )
 
   useEffect(() => {
     setStatusMessage("")
   }, [
-    activePlayer.id,
+    activePlayer,
     gameMeta.date,
     gameMeta.opponent,
     gameMeta.matchNumber,
     gameMeta.seasonYear,
   ])
 
+  useEffect(() => {
+    setGamePosition(activePlayer.position)
+  }, [activePlayer.id, activePlayer.position])
+
   const isMetaComplete =
-    gameMeta.date.trim() !== "" &&
-    gameMeta.opponent.trim() !== ""
+    gameMeta.date.trim() !== "" && gameMeta.opponent.trim() !== ""
 
   const hasInvalidCurrentStats =
     currentEntry.H > currentEntry.AB || currentEntry.HR > currentEntry.H
@@ -71,15 +94,7 @@ export default function RecordGamePage({
   )
 
   const canAddPlayerEntry =
-    !isEditingSavedEntry &&
-    isMetaComplete &&
-    !hasInvalidCurrentStats &&
-    !isPlayerAlreadyAdded
-
-  const canUpdateSavedEntry =
-    isEditingSavedEntry &&
-    isMetaComplete &&
-    !hasInvalidCurrentStats
+    isMetaComplete && !hasInvalidCurrentStats && !isPlayerAlreadyAdded
 
   const currentAvg =
     currentEntry.AB > 0
@@ -95,6 +110,7 @@ export default function RecordGamePage({
       BB: 0,
       SO: 0,
     })
+    setGamePosition(activePlayer.position)
   }
 
   const handleAddPlayerEntry = () => {
@@ -103,10 +119,8 @@ export default function RecordGamePage({
     const nextEntry: PendingBattingEntry = {
       ...currentEntry,
       playerId: activePlayer.id,
-      playerName:
-        activePlayer.jerseyNumber != null
-          ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
-          : activePlayer.name,
+      playerName: activePlayer.name,
+      gamePosition,
     }
 
     setPendingEntries((prev) => [...prev, nextEntry])
@@ -122,9 +136,7 @@ export default function RecordGamePage({
   }
 
   const handleSaveGame = () => {
-    if (!isMetaComplete || pendingEntries.length === 0 || isEditingSavedEntry) {
-      return
-    }
+    if (!isMetaComplete || pendingEntries.length === 0) return
 
     onSaveGame(gameMeta, pendingEntries)
     setPendingEntries([])
@@ -132,17 +144,23 @@ export default function RecordGamePage({
     setStatusMessage("Game saved successfully.")
   }
 
-  const handleUpdateSavedEntryClick = () => {
-    if (!canUpdateSavedEntry) return
+  const handlePrimaryAction = () => {
+    if (isEditingSavedEntry) {
+      onUpdateSavedEntry(gameMeta, currentEntry)
+      setStatusMessage("Saved entry updated.")
+      return
+    }
 
-    onUpdateSavedEntry(gameMeta, currentEntry)
-    setStatusMessage("Saved entry updated successfully.")
+    handleAddPlayerEntry()
   }
 
-  const handleCancelEditClick = () => {
-    onCancelEditSavedEntry()
-    setStatusMessage("Edit cancelled.")
-  }
+  const primaryActionLabel = isEditingSavedEntry
+    ? "Update Saved Entry"
+    : "Add Player Entry"
+
+  const primaryActionDisabled = isEditingSavedEntry
+    ? !isMetaComplete || hasInvalidCurrentStats
+    : !canAddPlayerEntry
 
   return (
     <main className="w-full">
@@ -162,47 +180,50 @@ export default function RecordGamePage({
 
             <div className="rounded-2xl bg-white p-6 shadow-sm">
               <p className="text-sm font-medium text-green-900">Active Player</p>
+
               <h1 className="mt-3 text-2xl font-bold">
                 {activePlayer.jerseyNumber != null
                   ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
                   : activePlayer.name}
               </h1>
+
               <p className="mt-3 text-gray-600">
-                {teamName} · Season {seasonYear} · {activePlayer.position}
+                {teamName} · Season {seasonYear} · {gamePosition}
               </p>
+
+              <div className="mt-4 max-w-xs">
+                <label className="text-xs font-medium text-gray-500">
+                  Game Position
+                </label>
+                <select
+                  value={gamePosition}
+                  onChange={(e) => setGamePosition(e.target.value as Position)}
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                >
+                  {gamePositionOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             {isMetaComplete ? (
               <div className="rounded-2xl bg-white p-6 shadow-sm">
-                {isEditingSavedEntry && (
-                  <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
-                    Editing saved entry for this player.
-                  </div>
-                )}
-
                 <ScoreEntryPanel
                   entry={currentEntry}
                   onEntryChange={onEntryChange}
-                  onPrimaryAction={
-                    isEditingSavedEntry
-                      ? handleUpdateSavedEntryClick
-                      : handleAddPlayerEntry
-                  }
-                  primaryActionLabel={
-                    isEditingSavedEntry
-                      ? "Update Saved Entry"
-                      : "Add Player Entry"
-                  }
-                  primaryActionDisabled={
-                    isEditingSavedEntry ? !canUpdateSavedEntry : !canAddPlayerEntry
-                  }
+                  onPrimaryAction={handlePrimaryAction}
+                  primaryActionLabel={primaryActionLabel}
+                  primaryActionDisabled={primaryActionDisabled}
                   calculatedAvg={currentAvg}
                   saveSuccessMessage={statusMessage}
                   showCancelEdit={isEditingSavedEntry}
-                  onCancelEdit={handleCancelEditClick}
+                  onCancelEdit={onCancelEditSavedEntry}
                 />
 
-                {!isEditingSavedEntry && isPlayerAlreadyAdded && (
+                {isPlayerAlreadyAdded && !isEditingSavedEntry && (
                   <p className="mt-3 text-sm text-amber-700">
                     This player has already been added to the current game.
                   </p>
@@ -237,40 +258,32 @@ export default function RecordGamePage({
                 <button
                   type="button"
                   onClick={handleSaveGame}
-                  disabled={
-                    !isMetaComplete ||
-                    pendingEntries.length === 0 ||
-                    isEditingSavedEntry
-                  }
+                  disabled={!isMetaComplete || pendingEntries.length === 0}
                   className="rounded-xl bg-green-900 px-4 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-400 disabled:opacity-80"
                 >
                   Save Game
                 </button>
               </div>
 
-              {isEditingSavedEntry && (
-                <p className="mt-3 text-sm text-amber-700">
-                  Finish editing or cancel edit before saving the current game.
-                </p>
-              )}
-
-              {pendingEntries.length === 0 ? (
-                <p className="mt-4 text-sm text-gray-500">
-                  No player entries have been added to this game yet.
-                </p>
-              ) : (
-                <div className="mt-4 space-y-3">
+              {pendingEntries.length > 0 && (
+                <div className="mt-6 space-y-3">
                   {pendingEntries.map((entry) => (
                     <div
                       key={entry.playerId}
                       className="flex items-center justify-between rounded-xl border border-gray-200 px-4 py-3"
                     >
                       <div className="text-sm text-gray-700">
-                        <p className="font-medium">{entry.playerName}</p>
-                        <p className="mt-1 text-gray-500">
-                          AB {entry.AB} · H {entry.H} · HR {entry.HR} · RBI{" "}
-                          {entry.RBI} · BB {entry.BB} · SO {entry.SO}
+                        <p className="font-medium">
+                          {entry.playerName} · {entry.gamePosition}
                         </p>
+                        <div className="mt-1 space-y-1 text-sm text-gray-500">
+                          <p>
+                            AB {entry.AB} · H {entry.H} · HR {entry.HR}
+                          </p>
+                          <p>
+                            RBI {entry.RBI} · BB {entry.BB} · SO {entry.SO}
+                          </p>
+                        </div>
                       </div>
 
                       <button
@@ -291,6 +304,7 @@ export default function RecordGamePage({
               title="Recent Entries"
               emptyMessage="No games recorded yet. Save your first game to see it here."
               onEdit={onStartEditSavedEntry}
+              onDelete={onDeleteSavedEntry}
               editingSavedEntryId={editingSavedEntryId}
             />
           </div>
