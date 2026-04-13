@@ -1,3 +1,5 @@
+import type { SavedBattingGameEntry } from "../types"
+
 export const demoSavedEntriesByPlayer: Record<string, SavedBattingGameEntry[]> = {
   "player-1": [
     { id: "entry-1", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
