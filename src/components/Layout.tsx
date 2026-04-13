@@ -4,6 +4,7 @@ import Sidebar from "./Sidebar"
 import MainDashboard from "./MainDashboard"
 import TeamSetupPage from "./TeamSetupPage"
 import { useEffect, useMemo, useState } from "react"
+import { demoSavedEntriesByPlayer } from "../demoData"
 import type { Dispatch, SetStateAction } from "react"
 import type {
   Player,
@@ -58,9 +59,9 @@ export default function Layout({
     Record<string, BattingEntryData>
   >({})
 
-  const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
-    Record<string, SavedBattingGameEntry[]>
-  >({})
+const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
+  Record<string, SavedBattingGameEntry[]>
+>(demoSavedEntriesByPlayer)
 
   const visibleTeams = useMemo(
     () => teams.filter((team) => !team.isArchived),

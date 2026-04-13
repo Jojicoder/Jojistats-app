@@ -1,34 +1,131 @@
-import type { TrendPoint } from "../types"
+export const demoSavedEntriesByPlayer: Record<string, SavedBattingGameEntry[]> = {
+  "player-1": [
+    { id: "entry-1", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-2", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-3", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+    { id: "entry-4", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-5", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "DH", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-6", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-7", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-8", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-9", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "2B", statLine: { AB: 5, H: 3, doubles: 1, triples: 0, HR: 1, RBI: 3, BB: 0, SO: 0 } },
+    { id: "entry-10", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "DH", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+  ],
 
-type AvgTrendCardProps = {
-  avgTrend: TrendPoint[]
-}
+  "player-2": [
+    { id: "entry-11", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+    { id: "entry-12", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-13", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-14", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-15", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "CF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
+    { id: "entry-16", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-17", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "CF", statLine: { AB: 5, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-18", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
+    { id: "entry-19", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-20", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+  ],
 
-export default function AvgTrendCard({ avgTrend }: AvgTrendCardProps) {
-  return (
-    <section className="bg-white rounded-xl p-6 shadow-sm mt-6">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold">AVG Trend</h2>
-        <span className="text-sm text-gray-500">Recent Games</span>
-      </div>
+  "player-3": [
+    { id: "entry-21", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-22", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-23", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
+    { id: "entry-24", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-25", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 2 } },
+    { id: "entry-26", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-27", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "SS", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-28", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "SS", statLine: { AB: 5, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+    { id: "entry-29", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 1, SO: 1 } },
+    { id: "entry-30", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+  ],
 
-      {avgTrend.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-sm text-gray-500 text-center">
-          Save game records to see your AVG trend.
-        </div>
-      ) : (
-        <div className="grid grid-cols-4 gap-4">
-          {avgTrend.map((point) => (
-            <div
-              key={point.game}
-              className="bg-gray-50 rounded-lg p-4 text-center"
-            >
-              <p className="text-xs text-gray-500">{point.game}</p>
-              <p className="text-lg font-bold mt-2">{point.value}</p>
-            </div>
-          ))}
-        </div>
-      )}
-    </section>
-  )
+  "player-4": [
+    { id: "entry-31", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "1B", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-32", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-33", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "1B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
+    { id: "entry-34", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-35", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-36", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "1B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-37", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
+    { id: "entry-38", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "1B", statLine: { AB: 5, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+    { id: "entry-39", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "1B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 1, RBI: 3, BB: 0, SO: 0 } },
+    { id: "entry-40", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+  ],
+
+  "player-5": [
+    { id: "entry-41", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-42", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "3B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-43", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-44", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "3B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
+    { id: "entry-45", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-46", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
+    { id: "entry-47", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "3B", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-48", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-49", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "3B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+    { id: "entry-50", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "3B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
+  ],
+
+  "player-6": [
+    { id: "entry-51", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
+    { id: "entry-52", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-53", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
+    { id: "entry-54", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "LF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
+    { id: "entry-55", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 0 } },
+    { id: "entry-56", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-57", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+    { id: "entry-58", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "LF", statLine: { AB: 5, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+    { id: "entry-59", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-60", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+  ],
+
+  "player-7": [
+    { id: "entry-61", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "RF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
+    { id: "entry-62", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-63", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-64", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
+    { id: "entry-65", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "RF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
+    { id: "entry-66", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "RF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-67", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-68", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "RF", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-69", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-70", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "RF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+  ],
+
+  "player-8": [
+    { id: "entry-71", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
+    { id: "entry-72", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "C", statLine: { AB: 3, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-73", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-74", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "C", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+    { id: "entry-75", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "C", statLine: { AB: 3, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-76", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
+    { id: "entry-77", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "C", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-78", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-79", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "C", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-80", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "C", statLine: { AB: 3, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+  ],
+
+  "player-9": [
+    { id: "entry-81", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+    { id: "entry-82", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-83", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+    { id: "entry-84", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-85", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+    { id: "entry-86", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-87", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 0 } },
+    { id: "entry-88", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+    { id: "entry-89", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+    { id: "entry-90", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
+  ],
+
+  "player-10": [
+    { id: "entry-91", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-92", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
+    { id: "entry-93", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+    { id: "entry-94", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "2B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
+    { id: "entry-95", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
+    { id: "entry-96", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
+    { id: "entry-97", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
+    { id: "entry-98", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
+    { id: "entry-99", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
+    { id: "entry-100", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
+  ],
 }

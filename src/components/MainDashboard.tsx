@@ -29,6 +29,8 @@ type MainDashboardProps = {
 const createInitialEntry = (): BattingEntryData => ({
   AB: 0,
   H: 0,
+  doubles: 0,
+  triples: 0,
   HR: 0,
   RBI: 0,
   BB: 0,
@@ -63,16 +65,22 @@ export default function MainDashboard({
     (entry) => entry.teamId === activePlayer.teamId
   )
 
+  const teamSavedEntries = Object.values(savedEntriesByPlayer)
+    .flat()
+    .filter((entry) => entry.teamId === activePlayer.teamId)
+
   const savedStatLines = savedEntries.map((entry) => entry.statLine)
 
-  const { kpi, avgTrend } = useGameStats(savedStatLines)
+  const { kpi } = useGameStats(savedStatLines)
 
-  const calculatedStats: DisplayStat[] = [
-    { label: "AVG", value: kpi.avg },
-    { label: "OBP", value: kpi.obp },
-    { label: "HR", value: String(kpi.hr) },
-    { label: "RBI", value: String(kpi.rbi) },
-  ]
+const calculatedStats: DisplayStat[] = [
+  { label: "AVG", value: kpi.avg },
+  { label: "OBP", value: kpi.obp },
+  { label: "OPS", value: kpi.ops },
+  { label: "BB/K", value: kpi.bbPerK },
+  { label: "HR", value: String(kpi.hr) },
+  { label: "RBI", value: String(kpi.rbi) },
+]
 
   const handleEntryChange = (nextEntry: BattingEntryData) => {
     setEntriesByPlayer((prev) => ({
@@ -97,6 +105,8 @@ export default function MainDashboard({
           statLine: {
             AB: entry.AB,
             H: entry.H,
+            doubles: entry.doubles,
+            triples: entry.triples,
             HR: entry.HR,
             RBI: entry.RBI,
             BB: entry.BB,
@@ -132,6 +142,8 @@ export default function MainDashboard({
       [activePlayer.id]: {
         AB: savedEntry.statLine.AB,
         H: savedEntry.statLine.H,
+        doubles: savedEntry.statLine.doubles,
+        triples: savedEntry.statLine.triples,
         HR: savedEntry.statLine.HR,
         RBI: savedEntry.statLine.RBI,
         BB: savedEntry.statLine.BB,
@@ -230,9 +242,10 @@ export default function MainDashboard({
     <MyStatsPage
       activePlayer={activePlayer}
       calculatedStats={calculatedStats}
-      avgTrend={avgTrend}
       savedEntries={savedEntries}
+      teamSavedEntries={teamSavedEntries}
       gamesPlayed={kpi.gamesPlayed}
+      seasonYear={gameMeta.seasonYear}
     />
   )
 }

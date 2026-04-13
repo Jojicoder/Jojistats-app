@@ -64,7 +64,9 @@ export default function RecordGamePage({
   onDeleteSavedEntry,
 }: RecordGamePageProps) {
   const [statusMessage, setStatusMessage] = useState("")
-  const [pendingEntries, setPendingEntries] = useState<PendingBattingEntry[]>([])
+  const [pendingEntries, setPendingEntries] = useState<PendingBattingEntry[]>(
+    []
+  )
   const [gamePosition, setGamePosition] = useState<Position>(
     activePlayer.position
   )
@@ -87,7 +89,9 @@ export default function RecordGamePage({
     gameMeta.date.trim() !== "" && gameMeta.opponent.trim() !== ""
 
   const hasInvalidCurrentStats =
-    currentEntry.H > currentEntry.AB || currentEntry.HR > currentEntry.H
+    currentEntry.H > currentEntry.AB ||
+    currentEntry.doubles + currentEntry.triples + currentEntry.HR >
+      currentEntry.H
 
   const isPlayerAlreadyAdded = pendingEntries.some(
     (entry) => entry.playerId === activePlayer.id
@@ -105,6 +109,8 @@ export default function RecordGamePage({
     onEntryChange({
       AB: 0,
       H: 0,
+      doubles: 0,
+      triples: 0,
       HR: 0,
       RBI: 0,
       BB: 0,
@@ -231,7 +237,7 @@ export default function RecordGamePage({
 
                 {hasInvalidCurrentStats && (
                   <p className="mt-3 text-sm text-red-600">
-                    Invalid stats: Hits cannot exceed At-Bats, and Home Runs
+                    Invalid stats: Hits cannot exceed At-Bats, and 2B + 3B + HR
                     cannot exceed Hits.
                   </p>
                 )}
@@ -278,7 +284,8 @@ export default function RecordGamePage({
                         </p>
                         <div className="mt-1 space-y-1 text-sm text-gray-500">
                           <p>
-                            AB {entry.AB} · H {entry.H} · HR {entry.HR}
+                            AB {entry.AB} · H {entry.H} · 2B {entry.doubles} ·
+                            3B {entry.triples} · HR {entry.HR}
                           </p>
                           <p>
                             RBI {entry.RBI} · BB {entry.BB} · SO {entry.SO}

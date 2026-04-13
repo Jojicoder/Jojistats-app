@@ -50,6 +50,8 @@ export type DisplayStat = {
 export type BattingEntryData = {
   AB: number
   H: number
+  doubles: number
+  triples: number
   HR: number
   RBI: number
   BB: number
@@ -69,15 +71,17 @@ export type SavedBattingGameEntry = {
   gamePosition: Position
   statLine: BattingEntryData
 }
-
 export type BattingCalculatedKPI = {
   avg: string
   obp: string
+  slg: string
+  ops: string
+  iso: string
+  bbPerK: string
   hr: number
   rbi: number
   gamesPlayed: number
 }
-
 /* ========================================
    Pitching Types
 ======================================== */
