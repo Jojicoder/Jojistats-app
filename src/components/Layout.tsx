@@ -29,8 +29,18 @@ const createTeamId = () => {
   return `team-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 }
 
+const createPlayerId = () => {
+  return `player-${Date.now()}-${Math.floor(Math.random() * 1000)}`
+}
+
 const getTodayDate = (): string => {
   return new Date().toISOString().split("T")[0]
+}
+
+function sortPlayersByJersey(players: Player[]) {
+  return [...players].sort((a, b) => {
+    return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
+  })
 }
 
 export default function Layout({
@@ -47,7 +57,6 @@ export default function Layout({
     "stats"
   )
 
-  // lifted state so it survives page switching
   const [gameMeta, setGameMeta] = useState<DraftGameMeta>({
     date: getTodayDate(),
     opponent: "",
@@ -73,9 +82,26 @@ export default function Layout({
     visibleTeams[0] ??
     null
 
+  const currentSeasonYear =
+    activeTeam?.currentSeasonYear ?? new Date().getFullYear()
+
+  const activeGameMeta = useMemo(
+    () => ({
+      ...gameMeta,
+      seasonYear: currentSeasonYear,
+    }),
+    [gameMeta, currentSeasonYear]
+  )
+
   const teamPlayers = useMemo(
-    () => players.filter((player) => player.teamId === activeTeam?.id),
-    [players, activeTeam?.id]
+    () =>
+      players.filter(
+        (player) =>
+          player.teamId === activeTeam?.id &&
+          player.seasonYear === currentSeasonYear &&
+          !player.isArchived
+      ),
+    [players, activeTeam?.id, currentSeasonYear]
   )
 
   const activePlayer =
@@ -97,6 +123,7 @@ export default function Layout({
 
   const handleAddTeam = (name: string) => {
     const teamId = createTeamId()
+    const currentYear = new Date().getFullYear()
 
     setTeams((prev) => [
       ...prev,
@@ -104,6 +131,7 @@ export default function Layout({
         id: teamId,
         name,
         isArchived: false,
+        currentSeasonYear: currentYear,
       },
     ])
 
@@ -124,15 +152,83 @@ export default function Layout({
     )
   }
 
+  const handleStartNewSeason = () => {
+    if (!activeTeam) return
+
+    const nextSeasonYear = currentSeasonYear + 1
+
+    const previousSeasonPlayers = players.filter(
+      (player) =>
+        player.teamId === activeTeam.id &&
+        player.seasonYear === currentSeasonYear &&
+        !player.isArchived
+    )
+
+    const confirmed = window.confirm(
+      `Start ${nextSeasonYear} season for ${activeTeam.name}?\n\nThe current roster will be copied into the new season.`
+    )
+
+    if (!confirmed) return
+
+    const copiedPlayers = previousSeasonPlayers.map((player) => ({
+      ...player,
+      id: createPlayerId(),
+      seasonYear: nextSeasonYear,
+      isArchived: false,
+    }))
+
+    const sortedCopiedPlayers = sortPlayersByJersey(copiedPlayers)
+
+    setPlayers((prev) => [...prev, ...sortedCopiedPlayers])
+
+    setTeams((prev) =>
+      prev.map((team) =>
+        team.id === activeTeam.id
+          ? {
+              ...team,
+              currentSeasonYear: nextSeasonYear,
+            }
+          : team
+      )
+    )
+
+    setGameMeta({
+      date: getTodayDate(),
+      opponent: "",
+      seasonYear: nextSeasonYear,
+      matchNumber: 1,
+    })
+
+    setEntriesByPlayer({})
+
+    if (sortedCopiedPlayers.length > 0) {
+      setActivePlayerId(sortedCopiedPlayers[0].id)
+    } else {
+      setActivePlayerId("")
+    }
+  }
+
   const handleAddPlayer = (player: Player) => {
-    setPlayers((prev) => [...prev, player])
-    setActivePlayerId(player.id)
+    const nextPlayer: Player = {
+      ...player,
+      seasonYear: currentSeasonYear,
+      isArchived: false,
+    }
+
+    setPlayers((prev) => [...prev, nextPlayer])
+    setActivePlayerId(nextPlayer.id)
   }
 
   const handleUpdatePlayer = (updatedPlayer: Player) => {
     setPlayers((prev) =>
       prev.map((player) =>
-        player.id === updatedPlayer.id ? updatedPlayer : player
+        player.id === updatedPlayer.id
+          ? {
+              ...updatedPlayer,
+              seasonYear: player.seasonYear,
+              isArchived: player.isArchived ?? false,
+            }
+          : player
       )
     )
   }
@@ -144,7 +240,8 @@ export default function Layout({
       const remainingPlayers = teamPlayers.filter(
         (player) => player.id !== playerId
       )
-      setActivePlayerId(remainingPlayers[0]?.id ?? "")
+      const sortedRemainingPlayers = sortPlayersByJersey(remainingPlayers)
+      setActivePlayerId(sortedRemainingPlayers[0]?.id ?? "")
     }
   }
 
@@ -157,7 +254,7 @@ export default function Layout({
 
       <TopTabs activeView={activeView} onChangeView={setActiveView} />
 
-      <div className="flex min-h-0 flex-1 items-start gap-6 overflow-auto px-5 py-5">
+      <div className="flex min-h-0 flex-1 flex-col items-stretch gap-4 overflow-auto px-3 py-4 sm:px-5 sm:py-5 lg:flex-row lg:items-start lg:gap-6">
         {activeView === "team" ? (
           <TeamSetupPage
             teams={visibleTeams}
@@ -166,8 +263,9 @@ export default function Layout({
             onAddTeam={handleAddTeam}
             onUpdateTeamName={handleUpdateTeamName}
             onArchiveTeam={handleArchiveTeam}
+            onStartNewSeason={handleStartNewSeason}
             teamName={activeTeam?.name ?? "No Team"}
-            seasonYear={new Date().getFullYear()}
+            seasonYear={currentSeasonYear}
             players={teamPlayers}
             activePlayerId={activePlayer?.id ?? null}
             setActivePlayerId={setActivePlayerId}
@@ -179,17 +277,18 @@ export default function Layout({
         ) : activePlayer ? (
           <>
             <Sidebar
-                players={teamPlayers}
-                activePlayerId={activePlayer.id}
-                setActivePlayerId={setActivePlayerId}
-                savedEntriesByPlayer={savedEntriesByPlayer}
-              />
+              players={teamPlayers}
+              activePlayerId={activePlayer.id}
+              setActivePlayerId={setActivePlayerId}
+              savedEntriesByPlayer={savedEntriesByPlayer}
+            />
+
             <div className="min-w-0 flex-1">
               <MainDashboard
                 activePlayer={activePlayer}
                 activeView={activeView}
                 teamName={activeTeam?.name ?? "No Team"}
-                gameMeta={gameMeta}
+                gameMeta={activeGameMeta}
                 setGameMeta={setGameMeta}
                 entriesByPlayer={entriesByPlayer}
                 setEntriesByPlayer={setEntriesByPlayer}

@@ -15,6 +15,7 @@ export type Team = {
   id: string
   name: string
   isArchived?: boolean
+  currentSeasonYear: number
 }
 
 export type Player = {
@@ -24,6 +25,8 @@ export type Player = {
   position: Position
   jerseyNumber?: number | null
   isActive?: boolean
+  seasonYear: number
+  isArchived?: boolean
 }
 
 export type TrendPoint = {

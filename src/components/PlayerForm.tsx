@@ -3,6 +3,7 @@ import type { Player, Position } from "../types"
 
 type PlayerFormProps = {
   teamId: string
+  seasonYear: number
   mode: "add" | "edit"
   initialPlayer?: Player | null
   onSave: (player: Player) => void
@@ -29,6 +30,7 @@ const positionOptions: Position[] = [
 
 export default function PlayerForm({
   teamId,
+  seasonYear,
   mode,
   initialPlayer = null,
   onSave,
@@ -57,6 +59,8 @@ export default function PlayerForm({
             position: "UTIL",
             jerseyNumber: null,
             isActive: true,
+            seasonYear,
+            isArchived: false,
           }
 
     onSave({
@@ -66,6 +70,8 @@ export default function PlayerForm({
       position,
       jerseyNumber: jerseyNumber.trim() === "" ? null : Number(jerseyNumber),
       isActive: true,
+      seasonYear,
+      isArchived: basePlayer.isArchived ?? false,
     })
 
     if (mode === "add") {

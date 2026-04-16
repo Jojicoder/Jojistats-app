@@ -24,7 +24,7 @@ const statDescriptions: Record<string, string> = {
   RBI: "Runs Batted In",
 }
 
-function getStatCardClass(label: string, value: string) {
+function getStatCardClass(label: string, value: string, gamesPlayed: number) {
   const baseClass = "rounded-xl border p-4 shadow-sm"
 
   const strongGood = `${baseClass} border-emerald-300 bg-emerald-100`
@@ -32,6 +32,8 @@ function getStatCardClass(label: string, value: string) {
   const neutral = `${baseClass} border-gray-200 bg-white`
   const weak = `${baseClass} border-rose-200 bg-rose-50`
   const bad = `${baseClass} border-red-200 bg-red-50`
+
+  if (gamesPlayed === 0) return neutral
 
   if (label === "AVG") {
     const numericValue = Number(value)
@@ -144,7 +146,7 @@ export default function MyStatsPage({
           {calculatedStats.map((stat) => (
             <div
               key={stat.label}
-              className={getStatCardClass(stat.label, stat.value)}
+              className={getStatCardClass(stat.label, stat.value, gamesPlayed)}
             >
               <div>
                 <p className="text-xs font-semibold text-gray-700">

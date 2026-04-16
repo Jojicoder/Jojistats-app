@@ -98,6 +98,7 @@ export default function RosterPage({
           <PlayerForm
             key={`add-${activeTeamId}`}
             teamId={activeTeamId}
+            seasonYear={seasonYear}
             mode="add"
             onSave={onAddPlayer}
           />
@@ -108,6 +109,7 @@ export default function RosterPage({
             <PlayerForm
               key={`edit-${editingPlayer.id}`}
               teamId={activeTeamId}
+              seasonYear={editingPlayer.seasonYear}
               mode="edit"
               initialPlayer={editingPlayer}
               onSave={(player) => {

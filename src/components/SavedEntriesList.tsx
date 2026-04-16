@@ -3,47 +3,52 @@ import type { SavedBattingGameEntry } from "../types"
 
 type SavedEntriesListProps = {
   savedEntries: SavedBattingGameEntry[]
-  title: string
-  emptyMessage: string
+  title?: string
+  emptyMessage?: string
   onEdit?: (savedEntry: SavedBattingGameEntry) => void
   onDelete?: (savedEntry: SavedBattingGameEntry) => void
   editingSavedEntryId?: string | null
 }
 
+function formatGamePositions(gamePositions: string[]) {
+  if (gamePositions.length === 0) return "-"
+  return gamePositions.join(" / ")
+}
+
 export default function SavedEntriesList({
   savedEntries,
-  title,
-  emptyMessage,
+  title = "Recent Entries",
+  emptyMessage = "No saved entries yet.",
   onEdit,
   onDelete,
-  editingSavedEntryId,
+  editingSavedEntryId = null,
 }: SavedEntriesListProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const hasMoreThanPreview = savedEntries.length > 3
 
   const visibleEntries = useMemo(() => {
     if (isExpanded) return savedEntries
     return savedEntries.slice(0, 3)
-  }, [isExpanded, savedEntries])
-
-  const shouldShowToggle = savedEntries.length > 3
+  }, [savedEntries, isExpanded])
 
   return (
     <section className="rounded-2xl bg-white p-6 shadow-sm">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-green-900">{title}</p>
+          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <p className="mt-1 text-sm text-gray-500">
             Saved batting results for this player
           </p>
         </div>
 
-        {shouldShowToggle && (
+        {hasMoreThanPreview && (
           <button
             type="button"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
-            {isExpanded ? "Show Less" : "View All"}
+            {isExpanded ? "Show Less" : "Expand"}
           </button>
         )}
       </div>
@@ -53,77 +58,83 @@ export default function SavedEntriesList({
           {emptyMessage}
         </div>
       ) : (
-        <div className="mt-6 space-y-4">
-          {visibleEntries.map((entry) => (
-            <div
-              key={entry.id}
-              className={`rounded-xl border px-4 py-4 ${
-                editingSavedEntryId === entry.id
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200"
-              }`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900">
-                    {entry.gameMeta.date} vs {entry.gameMeta.opponent}
-                  </p>
+        <div className="mt-6 space-y-3">
+          {visibleEntries.map((entry) => {
+            const isEditing = editingSavedEntryId === entry.id
 
-                  <p className="mt-1 text-sm text-gray-500">
-                    Match {entry.gameMeta.matchNumber} ·{" "}
-                    {entry.gamePositions.join(" / ")}
-                  </p>
+            return (
+              <div
+                key={entry.id}
+                className={`rounded-xl border px-4 py-4 transition ${
+                  isEditing
+                    ? "border-green-900 bg-green-50"
+                    : "border-gray-200 bg-white"
+                }`}
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-semibold text-gray-900">
+                      {entry.gameMeta.date} vs {entry.gameMeta.opponent}
+                    </p>
 
-                  <div className="mt-3 space-y-1 text-sm text-gray-700">
-                    <p>
-                      AB {entry.statLine.AB} · H {entry.statLine.H} · 2B{" "}
-                      {entry.statLine.doubles} · 3B {entry.statLine.triples} ·
-                      HR {entry.statLine.HR}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Match #{entry.gameMeta.matchNumber} · Season{" "}
+                      {entry.gameMeta.seasonYear}
                     </p>
-                    <p>
-                      RBI {entry.statLine.RBI} · BB {entry.statLine.BB} · SO{" "}
-                      {entry.statLine.SO}
+
+                    <p className="mt-2 text-sm text-gray-600">
+                      Position: {formatGamePositions(entry.gamePositions)}
                     </p>
+
+                    <div className="mt-3 space-y-1 text-sm text-gray-600">
+                      <p>
+                        AB {entry.statLine.AB} · H {entry.statLine.H} · 2B{" "}
+                        {entry.statLine.doubles} · 3B {entry.statLine.triples} ·
+                        HR {entry.statLine.HR}
+                      </p>
+                      <p>
+                        RBI {entry.statLine.RBI} · BB {entry.statLine.BB} · SO{" "}
+                        {entry.statLine.SO}
+                      </p>
+                      {entry.statLine.note?.trim() && (
+                        <p className="text-sm text-gray-500">
+                          Note: {entry.statLine.note}
+                        </p>
+                      )}
+                    </div>
                   </div>
 
-                  {entry.statLine.note?.trim() && (
-                    <div className="mt-3 rounded-lg bg-gray-50 px-3 py-3">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        Note
-                      </p>
-                      <p className="mt-1 text-sm text-gray-700">
-                        {entry.statLine.note}
-                      </p>
+                  {(onEdit || onDelete) && (
+                    <div className="flex shrink-0 items-center gap-2">
+                      {onEdit && (
+                        <button
+                          type="button"
+                          onClick={() => onEdit(entry)}
+                          className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                            isEditing
+                              ? "bg-green-900 text-white"
+                              : "border border-gray-200 text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          {isEditing ? "Editing" : "Edit"}
+                        </button>
+                      )}
+
+                      {onDelete && (
+                        <button
+                          type="button"
+                          onClick={() => onDelete(entry)}
+                          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
-
-                {(onEdit || onDelete) && (
-                  <div className="flex shrink-0 items-center gap-2">
-                    {onEdit && (
-                      <button
-                        type="button"
-                        onClick={() => onEdit(entry)}
-                        className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        Edit
-                      </button>
-                    )}
-
-                    {onDelete && (
-                      <button
-                        type="button"
-                        onClick={() => onDelete(entry)}
-                        className="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
-                      >
-                        Delete
-                      </button>
-                    )}
-                  </div>
-                )}
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </section>

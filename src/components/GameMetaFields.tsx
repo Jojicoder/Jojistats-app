@@ -33,7 +33,7 @@ export default function GameMetaFields({
   return (
     <>
       {/* Primary game metadata fields */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600">Game Date</label>
           <input
@@ -59,7 +59,7 @@ export default function GameMetaFields({
       </div>
 
       {/* Secondary metadata fields */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600">Season Year</label>
           <select
@@ -70,7 +70,7 @@ export default function GameMetaFields({
                 seasonYear: Number(e.target.value),
               })
             }
-            className="rounded-lg border border-gray-200 px-3 py-2 bg-white"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2"
           >
             {seasonOptions.map((year) => (
               <option key={year} value={year}>

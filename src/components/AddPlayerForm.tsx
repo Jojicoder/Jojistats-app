@@ -3,9 +3,9 @@ import type { Player, Position } from "../types"
 
 type AddPlayerFormProps = {
   teamId: string
+  seasonYear: number
   onAddPlayer: (player: Player) => void
 }
-
 const createPlayerId = () => {
   return `player-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 }
@@ -26,6 +26,7 @@ const positionOptions: Position[] = [
 
 export default function AddPlayerForm({
   teamId,
+  seasonYear,
   onAddPlayer,
 }: AddPlayerFormProps) {
   const [name, setName] = useState("")
@@ -43,7 +44,8 @@ export default function AddPlayerForm({
       name: name.trim(),
       position,
       jerseyNumber: jerseyNumber.trim() === "" ? null : Number(jerseyNumber),
-      isActive: true,
+      seasonYear,
+      isArchived: false,
     })
 
     setName("")
@@ -52,8 +54,8 @@ export default function AddPlayerForm({
   }
 
   return (
-    <div className="mt-6 bg-white rounded-xl border border-gray-200 p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-gray-700 mb-3">
+    <div className="mt-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <h3 className="mb-3 text-sm font-semibold text-gray-700">
         Add New Player
       </h3>
 
@@ -92,7 +94,7 @@ export default function AddPlayerForm({
           <select
             value={position}
             onChange={(e) => setPosition(e.target.value as Position)}
-            className="rounded-lg border border-gray-200 px-3 py-2 text-sm bg-white"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
           >
             {positionOptions.map((option) => (
               <option key={option} value={option}>
@@ -104,9 +106,10 @@ export default function AddPlayerForm({
       </div>
 
       <button
+        type="button"
         onClick={handleSubmit}
         disabled={isDisabled}
-        className="mt-4 w-full rounded-lg bg-green-900 text-white py-2 text-sm font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
+        className="mt-4 w-full rounded-lg bg-green-900 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-gray-300"
       >
         Save Player
       </button>

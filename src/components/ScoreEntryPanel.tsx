@@ -46,7 +46,7 @@ export default function ScoreEntryPanel({
         </p>
       )}
 
-      <div className="mt-6 flex gap-3">
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <button
           type="button"
           disabled={primaryActionDisabled}

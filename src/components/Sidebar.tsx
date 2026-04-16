@@ -165,13 +165,15 @@ export default function Sidebar({
   }, [players, savedEntriesByPlayer, sortBy])
 
   return (
-    <aside className="w-full max-w-[240px] rounded-2xl bg-white p-4 shadow-sm">
-      <div>
-        <p className="text-lg font-semibold text-gray-800">Team Roster</p>
-        <p className="mt-1 text-sm text-gray-500">{players.length} players</p>
+    <aside className="w-full rounded-2xl bg-white p-4 shadow-sm lg:max-w-[240px]">
+      <div className="flex items-start justify-between gap-3 lg:block">
+        <div>
+          <p className="text-lg font-semibold text-gray-800">Team Roster</p>
+          <p className="mt-1 text-sm text-gray-500">{players.length} players</p>
+        </div>
       </div>
 
-      <div className="mt-4">
+      <div className="mt-4 max-w-xs">
         <label className="text-xs font-medium text-gray-500">Sort by</label>
         <select
           value={sortBy}
@@ -190,7 +192,7 @@ export default function Sidebar({
         </select>
       </div>
 
-      <div className="mt-4 flex flex-col gap-3">
+      <div className="mt-4 flex gap-3 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
         {sortedPlayers.map((player) => {
           const isActive = player.id === activePlayerId
           const entries = savedEntriesByPlayer[player.id] ?? []
@@ -201,7 +203,7 @@ export default function Sidebar({
               key={player.id}
               type="button"
               onClick={() => setActivePlayerId(player.id)}
-              className={`flex items-center gap-3 rounded-2xl px-4 py-4 text-left transition ${
+              className={`flex min-w-[190px] items-center gap-3 rounded-2xl px-4 py-4 text-left transition lg:min-w-0 ${
                 isActive
                   ? "bg-green-900 text-white"
                   : "bg-gray-50 text-gray-800 hover:bg-gray-100"

@@ -60,19 +60,25 @@ export default function MainDashboard({
   const currentEntry =
     entriesByPlayer[activePlayer.id] ?? createInitialEntry()
 
-  const allPlayerEntries = savedEntriesByPlayer[activePlayer.id] ?? []
+ const allPlayerEntries = savedEntriesByPlayer[activePlayer.id] ?? []
 
-  const savedEntries = allPlayerEntries.filter(
-    (entry) => entry.teamId === activePlayer.teamId
+const savedEntries = allPlayerEntries.filter(
+  (entry) =>
+    entry.teamId === activePlayer.teamId &&
+    entry.gameMeta.seasonYear === gameMeta.seasonYear
+)
+
+const teamSavedEntries = Object.values(savedEntriesByPlayer)
+  .flat()
+  .filter(
+    (entry) =>
+      entry.teamId === activePlayer.teamId &&
+      entry.gameMeta.seasonYear === gameMeta.seasonYear
   )
 
-  const teamSavedEntries = Object.values(savedEntriesByPlayer)
-    .flat()
-    .filter((entry) => entry.teamId === activePlayer.teamId)
+const savedStatLines = savedEntries.map((entry) => entry.statLine)
 
-  const savedStatLines = savedEntries.map((entry) => entry.statLine)
-
-  const { kpi } = useGameStats(savedStatLines)
+const { kpi } = useGameStats(savedStatLines)
 
   const calculatedStats: DisplayStat[] = [
     { label: "AVG", value: kpi.avg },

@@ -100,7 +100,7 @@ export default function BattingStatFields({
         <div key={field.label}>
           {field.label === "H" ? (
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
-              <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3">
+              <div className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-3 sm:px-4">
                 <div>
                   <p className="text-sm font-semibold text-gray-700">H</p>
                   <p className="text-xs text-gray-400">
@@ -131,8 +131,8 @@ export default function BattingStatFields({
                 </div>
               </div>
 
-              <div className="mt-4 rounded-lg bg-white px-4 py-4">
-                <div className="flex items-center justify-between">
+              <div className="mt-4 rounded-lg bg-white px-3 py-4 sm:px-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-medium text-gray-700">
                       Hit Details
@@ -147,7 +147,7 @@ export default function BattingStatFields({
                   </p>
                 </div>
 
-                <div className="mt-4 grid grid-cols-3 gap-3">
+                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {hitDetailFields.map((detailField) => (
                     <div
                       key={detailField.label}
@@ -192,7 +192,7 @@ export default function BattingStatFields({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-3 sm:px-4">
               <div>
                 <p className="text-sm font-semibold text-gray-700">
                   {field.label}

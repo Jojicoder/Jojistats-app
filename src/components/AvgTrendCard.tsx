@@ -25,6 +25,7 @@ type SummaryStats = {
   numericSlg: number
   numericOps: number
   totalAB: number
+  totalPA: number
 }
 
 const chartWidth = 640
@@ -68,12 +69,13 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
 
   const numericAvg = totals.ab > 0 ? totals.h / totals.ab : 0
 
-  const obpDenominator = totals.ab + totals.bb
+  const totalPA = totals.ab + totals.bb
   const numericObp =
-    obpDenominator > 0 ? (totals.h + totals.bb) / obpDenominator : 0
+    totalPA > 0 ? (totals.h + totals.bb) / totalPA : 0
 
   const numericSlg = totals.ab > 0 ? totalBases / totals.ab : 0
-  const numericOps = numericObp + numericSlg
+  const numericOps =
+    totals.ab > 0 && totalPA > 0 ? numericObp + numericSlg : 0
 
   return {
     avg: formatRate(numericAvg),
@@ -85,6 +87,7 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
     numericSlg,
     numericOps,
     totalAB: totals.ab,
+    totalPA,
   }
 }
 
@@ -238,6 +241,11 @@ export default function PerformanceTrendCard({
     [filteredPlayerEntries, filteredTeamEntries]
   )
 
+  const hasAvgData = playerSummary.totalAB > 0
+  const hasObpData = playerSummary.totalPA > 0
+  const hasSlgData = playerSummary.totalAB > 0
+  const hasOpsData = playerSummary.totalAB > 0 && playerSummary.totalPA > 0
+
   const yTicks = [0.6, 0.45, 0.3, 0.15, 0]
   const playerLinePoints = buildPolyline(chartData, "playerY")
   const teamLinePoints = buildPolyline(chartData, "teamY")
@@ -305,7 +313,7 @@ export default function PerformanceTrendCard({
                 playerSummary.numericAvg,
                 teamSummary.numericAvg,
                 "avg",
-                playerSummary.totalAB > 0
+                hasAvgData
               )}
             >
               <p className="text-xs font-medium text-gray-500">AVG</p>
@@ -322,7 +330,7 @@ export default function PerformanceTrendCard({
                 playerSummary.numericObp,
                 teamSummary.numericObp,
                 "obp",
-                playerSummary.totalAB > 0
+                hasObpData
               )}
             >
               <p className="text-xs font-medium text-gray-500">OBP</p>
@@ -338,7 +346,8 @@ export default function PerformanceTrendCard({
               className={getStatCardClass(
                 playerSummary.numericSlg,
                 teamSummary.numericSlg,
-                "neutral"
+                "neutral",
+                hasSlgData
               )}
             >
               <p className="text-xs font-medium text-gray-500">SLG</p>
@@ -354,7 +363,8 @@ export default function PerformanceTrendCard({
               className={getStatCardClass(
                 playerSummary.numericOps,
                 teamSummary.numericOps,
-                "neutral"
+                "neutral",
+                hasOpsData
               )}
             >
               <p className="text-xs font-medium text-gray-500">OPS</p>
@@ -378,7 +388,7 @@ export default function PerformanceTrendCard({
 
             <div className="mt-6 overflow-x-auto">
               <svg
-                className="h-72 min-w-130 w-full"
+                className="h-72 min-w-[520px] w-full"
                 viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                 role="img"
                 aria-label="Player and team batting average trend"
