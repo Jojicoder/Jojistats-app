@@ -8,11 +8,11 @@ export default function TopTabs({
   onChangeView,
 }: TopTabsProps) {
   return (
-    <nav className="flex gap-3 overflow-x-auto border-b border-gray-200 bg-white px-3 py-2 sm:gap-6 sm:px-4">
+    <nav className="flex gap-2 overflow-x-auto border-b border-gray-200 bg-white px-2 py-1 sm:gap-6 sm:px-4 sm:py-2">
       <button
         type="button"
         onClick={() => onChangeView("stats")}
-        className={`shrink-0 rounded-lg px-2 py-1 text-sm ${
+        className={`shrink-0 rounded-lg px-2 py-0.5 text-xs sm:py-1 sm:text-sm ${
           activeView === "stats"
             ? "font-semibold text-green-900"
             : "text-gray-600 hover:text-green-900"
@@ -24,7 +24,7 @@ export default function TopTabs({
       <button
         type="button"
         onClick={() => onChangeView("record")}
-        className={`shrink-0 rounded-lg px-2 py-1 text-sm ${
+        className={`shrink-0 rounded-lg px-2 py-0.5 text-xs sm:py-1 sm:text-sm ${
           activeView === "record"
             ? "font-semibold text-green-900"
             : "text-gray-600 hover:text-green-900"
@@ -36,7 +36,7 @@ export default function TopTabs({
       <button
         type="button"
         onClick={() => onChangeView("team")}
-        className={`shrink-0 rounded-lg px-2 py-1 text-sm ${
+        className={`shrink-0 rounded-lg px-2 py-0.5 text-xs sm:py-1 sm:text-sm ${
           activeView === "team"
             ? "font-semibold text-green-900"
             : "text-gray-600 hover:text-green-900"
