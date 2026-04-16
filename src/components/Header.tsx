@@ -2,11 +2,18 @@ import { useState } from "react"
 
 type HeaderProps = {
   teamName: string
+  onOpenTeamSetup: () => void
 }
 
-export default function Header({ teamName }: HeaderProps) {
+export default function Header({ teamName, onOpenTeamSetup }: HeaderProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isProfileOpen, setIsProfileOpen] = useState(false)
+
+  const openTeamSetup = () => {
+    onOpenTeamSetup()
+    setIsSettingsOpen(false)
+    setIsProfileOpen(false)
+  }
 
   return (
     <header className="border-b border-gray-200 bg-white px-4 py-2">
@@ -64,6 +71,7 @@ export default function Header({ teamName }: HeaderProps) {
 
               <button
                 type="button"
+                onClick={openTeamSetup}
                 className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
               >
                 Team Preferences
@@ -97,6 +105,7 @@ export default function Header({ teamName }: HeaderProps) {
 
                 <button
                   type="button"
+                  onClick={openTeamSetup}
                   className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50"
                 >
                   My Teams

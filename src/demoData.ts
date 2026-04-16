@@ -5,6 +5,19 @@ export const demoTeams: Team[] = [
     id: "team-1",
     name: "My Team",
     isArchived: false,
+    currentSeasonYear: 2026,
+  },
+  {
+    id: "team-2",
+    name: "Ocean Stars",
+    isArchived: false,
+    currentSeasonYear: 2026,
+  },
+  {
+    id: "team-3",
+    name: "River Hawks",
+    isArchived: false,
+    currentSeasonYear: 2026,
   },
 ]
 
@@ -15,7 +28,8 @@ export const demoPlayers: Player[] = [
     name: "Joji",
     position: "UTIL",
     jerseyNumber: 7,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-2",
@@ -23,15 +37,17 @@ export const demoPlayers: Player[] = [
     name: "Ken",
     position: "CF",
     jerseyNumber: 1,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-3",
     teamId: "team-1",
     name: "Mike",
     position: "SS",
-    jerseyNumber: 10,
-    isActive: true,
+    jerseyNumber: 6,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-4",
@@ -39,7 +55,8 @@ export const demoPlayers: Player[] = [
     name: "Taro",
     position: "1B",
     jerseyNumber: 3,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-5",
@@ -47,7 +64,8 @@ export const demoPlayers: Player[] = [
     name: "Ryo",
     position: "3B",
     jerseyNumber: 5,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-6",
@@ -55,7 +73,8 @@ export const demoPlayers: Player[] = [
     name: "Shun",
     position: "LF",
     jerseyNumber: 8,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-7",
@@ -63,7 +82,8 @@ export const demoPlayers: Player[] = [
     name: "Daiki",
     position: "RF",
     jerseyNumber: 9,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-8",
@@ -71,7 +91,8 @@ export const demoPlayers: Player[] = [
     name: "Yuta",
     position: "C",
     jerseyNumber: 2,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-9",
@@ -79,7 +100,8 @@ export const demoPlayers: Player[] = [
     name: "Sota",
     position: "P",
     jerseyNumber: 11,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
   },
   {
     id: "player-10",
@@ -87,7 +109,190 @@ export const demoPlayers: Player[] = [
     name: "Kaito",
     position: "2B",
     jerseyNumber: 4,
-    isActive: true,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+
+  {
+    id: "player-11",
+    teamId: "team-2",
+    name: "Haruto",
+    position: "CF",
+    jerseyNumber: 1,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-12",
+    teamId: "team-2",
+    name: "Ren",
+    position: "2B",
+    jerseyNumber: 4,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-13",
+    teamId: "team-2",
+    name: "Yuki",
+    position: "SS",
+    jerseyNumber: 6,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-14",
+    teamId: "team-2",
+    name: "Takumi",
+    position: "1B",
+    jerseyNumber: 3,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-15",
+    teamId: "team-2",
+    name: "Kosei",
+    position: "3B",
+    jerseyNumber: 5,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-16",
+    teamId: "team-2",
+    name: "Taiga",
+    position: "LF",
+    jerseyNumber: 8,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-17",
+    teamId: "team-2",
+    name: "Ryota",
+    position: "RF",
+    jerseyNumber: 9,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-18",
+    teamId: "team-2",
+    name: "Naoki",
+    position: "C",
+    jerseyNumber: 2,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-19",
+    teamId: "team-2",
+    name: "Kazuma",
+    position: "P",
+    jerseyNumber: 18,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-20",
+    teamId: "team-2",
+    name: "Sena",
+    position: "UTIL",
+    jerseyNumber: 10,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+
+  {
+    id: "player-21",
+    teamId: "team-3",
+    name: "Aoi",
+    position: "CF",
+    jerseyNumber: 7,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-22",
+    teamId: "team-3",
+    name: "Minato",
+    position: "2B",
+    jerseyNumber: 4,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-23",
+    teamId: "team-3",
+    name: "Itsuki",
+    position: "SS",
+    jerseyNumber: 6,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-24",
+    teamId: "team-3",
+    name: "Reo",
+    position: "1B",
+    jerseyNumber: 25,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-25",
+    teamId: "team-3",
+    name: "Hinata",
+    position: "3B",
+    jerseyNumber: 5,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-26",
+    teamId: "team-3",
+    name: "Soma",
+    position: "LF",
+    jerseyNumber: 24,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-27",
+    teamId: "team-3",
+    name: "Riku",
+    position: "RF",
+    jerseyNumber: 9,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-28",
+    teamId: "team-3",
+    name: "Koki",
+    position: "C",
+    jerseyNumber: 22,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-29",
+    teamId: "team-3",
+    name: "Hayate",
+    position: "P",
+    jerseyNumber: 17,
+    seasonYear: 2026,
+    isArchived: false,
+  },
+  {
+    id: "player-30",
+    teamId: "team-3",
+    name: "Yuya",
+    position: "DH",
+    jerseyNumber: 13,
+    seasonYear: 2026,
+    isArchived: false,
   },
 ]
 
@@ -119,7 +324,7 @@ function makeEntries(
       id: `entry-${playerId}-${index + 1}`,
       teamId,
       gameMeta: gameMetas[index],
-      gamePosition: positions[index],
+      gamePositions: [positions[index]],
       statLine: {
         AB,
         H,
@@ -129,6 +334,7 @@ function makeEntries(
         RBI,
         BB,
         SO,
+        note: "",
       },
     }
   })
@@ -312,6 +518,248 @@ export const demoSavedEntriesByPlayer: Record<string, SavedBattingGameEntry[]> =
       [4, 2, 1, 0, 0, 1, 0, 0],
       [4, 1, 0, 0, 0, 1, 1, 1],
       [4, 2, 1, 0, 0, 1, 0, 1],
+    ]
+  ),
+
+  "player-11": makeEntries(
+    "player-11",
+    "team-2",
+    ["CF", "CF", "CF", "CF", "CF"],
+    [
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 0, 0, 1, 0],
+      [5, 2, 0, 1, 0, 1, 0, 1],
+      [4, 0, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 2, 0, 0],
+    ]
+  ),
+  "player-12": makeEntries(
+    "player-12",
+    "team-2",
+    ["2B", "2B", "2B", "2B", "2B"],
+    [
+      [4, 1, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 1, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 0, 1, 1, 0],
+    ]
+  ),
+  "player-13": makeEntries(
+    "player-13",
+    "team-2",
+    ["SS", "SS", "SS", "SS", "SS"],
+    [
+      [4, 2, 0, 0, 1, 2, 0, 1],
+      [4, 1, 1, 0, 0, 1, 0, 1],
+      [4, 0, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 1, 0, 0, 0, 0, 1, 1],
+    ]
+  ),
+  "player-14": makeEntries(
+    "player-14",
+    "team-2",
+    ["1B", "1B", "1B", "1B", "1B"],
+    [
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 0, 0, 0, 0, 0, 1, 2],
+      [4, 1, 0, 0, 1, 3, 0, 1],
+      [4, 2, 1, 0, 0, 1, 1, 0],
+    ]
+  ),
+  "player-15": makeEntries(
+    "player-15",
+    "team-2",
+    ["3B", "3B", "3B", "3B", "3B"],
+    [
+      [4, 1, 1, 0, 0, 1, 0, 1],
+      [4, 0, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 1, 0, 0, 0, 0, 1, 1],
+      [4, 2, 0, 0, 1, 2, 0, 1],
+    ]
+  ),
+  "player-16": makeEntries(
+    "player-16",
+    "team-2",
+    ["LF", "LF", "LF", "LF", "LF"],
+    [
+      [4, 1, 0, 0, 0, 0, 0, 2],
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 0, 0, 1, 1],
+      [4, 2, 0, 0, 1, 2, 0, 0],
+      [4, 1, 1, 0, 0, 1, 0, 1],
+    ]
+  ),
+  "player-17": makeEntries(
+    "player-17",
+    "team-2",
+    ["RF", "RF", "RF", "RF", "RF"],
+    [
+      [4, 0, 0, 0, 0, 0, 1, 2],
+      [4, 1, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 1, 0, 0, 0, 0, 1, 0],
+    ]
+  ),
+  "player-18": makeEntries(
+    "player-18",
+    "team-2",
+    ["C", "C", "C", "C", "C"],
+    [
+      [3, 1, 0, 0, 0, 1, 1, 1],
+      [3, 0, 0, 0, 0, 0, 1, 1],
+      [4, 1, 1, 0, 0, 1, 0, 0],
+      [3, 1, 0, 0, 0, 0, 1, 0],
+      [4, 1, 0, 0, 1, 2, 0, 1],
+    ]
+  ),
+  "player-19": makeEntries(
+    "player-19",
+    "team-2",
+    ["P", "P", "P", "P", "P"],
+    [
+      [2, 0, 0, 0, 0, 0, 1, 1],
+      [2, 1, 0, 0, 0, 0, 0, 1],
+      [2, 0, 0, 0, 0, 0, 1, 1],
+      [2, 1, 0, 0, 0, 1, 0, 0],
+      [2, 0, 0, 0, 0, 0, 1, 1],
+    ]
+  ),
+  "player-20": makeEntries(
+    "player-20",
+    "team-2",
+    ["UTIL", "UTIL", "UTIL", "UTIL", "UTIL"],
+    [
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 0, 0, 1, 0],
+      [4, 2, 0, 0, 1, 2, 0, 1],
+      [4, 0, 0, 0, 0, 0, 1, 1],
+      [4, 1, 1, 0, 0, 1, 0, 0],
+    ]
+  ),
+
+  "player-21": makeEntries(
+    "player-21",
+    "team-3",
+    ["CF", "CF", "CF", "CF", "CF"],
+    [
+      [4, 1, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 2, 0, 1, 0, 1, 0, 0],
+      [5, 1, 0, 0, 0, 0, 1, 1],
+      [4, 3, 1, 0, 0, 2, 0, 0],
+    ]
+  ),
+  "player-22": makeEntries(
+    "player-22",
+    "team-3",
+    ["2B", "2B", "2B", "2B", "2B"],
+    [
+      [4, 1, 0, 0, 0, 0, 1, 0],
+      [4, 1, 1, 0, 0, 1, 0, 1],
+      [4, 2, 0, 0, 0, 1, 1, 0],
+      [4, 0, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+    ]
+  ),
+  "player-23": makeEntries(
+    "player-23",
+    "team-3",
+    ["SS", "SS", "SS", "SS", "SS"],
+    [
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 0, 0, 1, 0],
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 1, 0, 0, 0, 1, 1, 1],
+    ]
+  ),
+  "player-24": makeEntries(
+    "player-24",
+    "team-3",
+    ["1B", "1B", "1B", "1B", "1B"],
+    [
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 0, 0, 0, 0, 0, 1, 2],
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 2, 1, 0, 0, 1, 1, 0],
+    ]
+  ),
+  "player-25": makeEntries(
+    "player-25",
+    "team-3",
+    ["3B", "3B", "3B", "3B", "3B"],
+    [
+      [4, 1, 1, 0, 0, 1, 0, 1],
+      [4, 2, 0, 0, 0, 1, 1, 0],
+      [4, 0, 0, 0, 0, 0, 1, 2],
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+    ]
+  ),
+  "player-26": makeEntries(
+    "player-26",
+    "team-3",
+    ["LF", "LF", "LF", "LF", "LF"],
+    [
+      [4, 1, 0, 0, 0, 0, 0, 2],
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 0, 1, 1, 1],
+      [4, 2, 0, 0, 1, 2, 0, 0],
+      [4, 1, 1, 0, 0, 1, 0, 1],
+    ]
+  ),
+  "player-27": makeEntries(
+    "player-27",
+    "team-3",
+    ["RF", "RF", "RF", "RF", "RF"],
+    [
+      [4, 0, 0, 0, 0, 0, 1, 2],
+      [4, 1, 0, 0, 0, 0, 1, 1],
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 1, 0, 0, 0, 0, 1, 1],
+    ]
+  ),
+  "player-28": makeEntries(
+    "player-28",
+    "team-3",
+    ["C", "C", "C", "C", "C"],
+    [
+      [3, 1, 0, 0, 0, 1, 1, 1],
+      [3, 0, 0, 0, 0, 0, 1, 1],
+      [4, 1, 1, 0, 0, 1, 0, 0],
+      [3, 1, 0, 0, 0, 0, 1, 0],
+      [4, 0, 0, 0, 0, 0, 1, 1],
+    ]
+  ),
+  "player-29": makeEntries(
+    "player-29",
+    "team-3",
+    ["P", "P", "P", "P", "P"],
+    [
+      [2, 1, 0, 0, 0, 0, 0, 1],
+      [2, 0, 0, 0, 0, 0, 1, 1],
+      [2, 1, 0, 0, 0, 1, 0, 0],
+      [2, 0, 0, 0, 0, 0, 1, 1],
+      [2, 1, 0, 0, 0, 0, 0, 1],
+    ]
+  ),
+  "player-30": makeEntries(
+    "player-30",
+    "team-3",
+    ["DH", "DH", "DH", "DH", "DH"],
+    [
+      [4, 2, 1, 0, 0, 1, 0, 1],
+      [4, 1, 0, 0, 1, 2, 0, 1],
+      [4, 0, 0, 0, 0, 0, 1, 1],
+      [4, 2, 1, 0, 0, 1, 0, 0],
+      [4, 1, 0, 0, 0, 1, 1, 0],
     ]
   ),
 }

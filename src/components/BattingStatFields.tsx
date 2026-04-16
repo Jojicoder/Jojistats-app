@@ -5,6 +5,17 @@ type BattingStatFieldsProps = {
   onEntryChange: (nextEntry: BattingEntryData) => void
 }
 
+const fieldDescriptions: Record<string, string> = {
+  AB: "At Bats",
+  H: "Hits",
+  RBI: "Runs Batted In",
+  BB: "Walks",
+  SO: "Strikeouts",
+  doubles: "Doubles",
+  triples: "Triples",
+  HR: "Home Runs",
+}
+
 export default function BattingStatFields({
   entry,
   onEntryChange,
@@ -12,6 +23,7 @@ export default function BattingStatFields({
   const hitDetailTotal = entry.doubles + entry.triples + entry.HR
 
   const handleIncrement = (field: keyof BattingEntryData) => {
+    if (field === "note") return
     if (field === "H" && entry.H >= entry.AB) return
 
     if (
@@ -28,6 +40,8 @@ export default function BattingStatFields({
   }
 
   const handleDecrement = (field: keyof BattingEntryData) => {
+    if (field === "note") return
+
     const nextValue = Math.max(0, entry[field] - 1)
 
     const nextEntry: BattingEntryData = {
@@ -87,7 +101,12 @@ export default function BattingStatFields({
           {field.label === "H" ? (
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
               <div className="flex items-center justify-between rounded-lg bg-white px-4 py-3">
-                <span className="text-sm font-medium text-gray-600">H</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">H</p>
+                  <p className="text-xs text-gray-400">
+                    {fieldDescriptions.H}
+                  </p>
+                </div>
 
                 <div className="flex items-center gap-3">
                   <button
@@ -135,9 +154,14 @@ export default function BattingStatFields({
                       className="rounded-lg bg-gray-50 px-3 py-3"
                     >
                       <div className="flex flex-col items-center gap-3">
-                        <span className="text-sm font-medium text-gray-600">
-                          {detailField.display}
-                        </span>
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-gray-700">
+                            {detailField.display}
+                          </p>
+                          <p className="text-[11px] text-gray-400">
+                            {fieldDescriptions[detailField.label]}
+                          </p>
+                        </div>
 
                         <div className="flex items-center gap-2">
                           <button
@@ -169,9 +193,14 @@ export default function BattingStatFields({
             </div>
           ) : (
             <div className="flex items-center justify-between rounded-lg bg-gray-50 px-4 py-3">
-              <span className="text-sm font-medium text-gray-600">
-                {field.label}
-              </span>
+              <div>
+                <p className="text-sm font-semibold text-gray-700">
+                  {field.label}
+                </p>
+                <p className="text-xs text-gray-400">
+                  {fieldDescriptions[field.label]}
+                </p>
+              </div>
 
               <div className="flex items-center gap-3">
                 <button
@@ -198,6 +227,25 @@ export default function BattingStatFields({
           )}
         </div>
       ))}
+
+      <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+        <label className="text-sm font-medium text-gray-700">Note</label>
+        <p className="mt-1 text-xs text-gray-500">
+          Optional note for this game entry
+        </p>
+
+        <textarea
+          value={entry.note}
+          onChange={(e) =>
+            onEntryChange({
+              ...entry,
+              note: e.target.value,
+            })
+          }
+          placeholder="Example: Sac bunt, pinch hit, hard contact, defensive replacement"
+          className="mt-3 min-h-24 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 outline-none focus:border-green-700"
+        />
+      </div>
     </div>
   )
 }

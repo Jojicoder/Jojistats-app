@@ -7,6 +7,13 @@ type PerformanceTrendCardProps = {
   seasonYear: number
 }
 
+const statDescriptions: Record<string, string> = {
+  AVG: "Batting Average",
+  OBP: "On-base Percentage",
+  SLG: "Slugging Percentage",
+  OPS: "On-base Plus Slugging",
+}
+
 type TrendTab = "season" | "last5"
 type ChartMetric = "avg" | "obp" | "ops"
 
@@ -226,27 +233,29 @@ function getStatCardClass(
   _teamValue: number,
   type: "avg" | "obp" | "neutral"
 ) {
+  const strongGood = "rounded-xl border border-emerald-300 bg-emerald-100 p-4"
+  const good = "rounded-xl border border-green-200 bg-green-50 p-4"
+  const neutral = "rounded-xl border border-gray-200 bg-white p-4"
+  const weak = "rounded-xl border border-rose-200 bg-rose-50 p-4"
+  const bad = "rounded-xl border border-red-200 bg-red-50 p-4"
+
   if (type === "avg") {
-    if (playerValue >= 0.3) {
-      return "rounded-xl bg-green-50 border border-green-200 p-4"
-    }
-    if (playerValue >= 0.25) {
-      return "rounded-xl bg-yellow-50 border border-yellow-200 p-4"
-    }
-    return "rounded-xl bg-red-50 border border-red-200 p-4"
+    if (playerValue >= 0.33) return strongGood
+    if (playerValue >= 0.3) return good
+    if (playerValue >= 0.25) return neutral
+    if (playerValue >= 0.22) return weak
+    return bad
   }
 
   if (type === "obp") {
-    if (playerValue >= 0.37) {
-      return "rounded-xl bg-green-50 border border-green-200 p-4"
-    }
-    if (playerValue >= 0.31) {
-      return "rounded-xl bg-yellow-50 border border-yellow-200 p-4"
-    }
-    return "rounded-xl bg-red-50 border border-red-200 p-4"
+    if (playerValue >= 0.4) return strongGood
+    if (playerValue >= 0.37) return good
+    if (playerValue >= 0.31) return neutral
+    if (playerValue >= 0.28) return weak
+    return bad
   }
 
-  return "rounded-xl bg-gray-50 border border-gray-200 p-4"
+  return neutral
 }
 
 function getChartValues(point: ChartPoint, metric: ChartMetric) {
@@ -458,70 +467,82 @@ export default function PerformanceTrendCard({
       ) : (
         <>
           <div className="mt-6 grid gap-4 sm:grid-cols-4">
-            <div
-              className={getStatCardClass(
-                playerSummary.numericAvg,
-                teamSummary.numericAvg,
-                "avg"
-              )}
-            >
-              <p className="text-xs font-medium text-gray-500">AVG</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
-                {playerSummary.avg}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Team {teamSummary.avg}
-              </p>
-            </div>
+  <div
+    className={getStatCardClass(
+      playerSummary.numericAvg,
+      teamSummary.numericAvg,
+      "avg"
+    )}
+  >
+    <div>
+      <p className="text-xs font-semibold text-gray-700">AVG</p>
+      <p className="text-[11px] text-gray-400">{statDescriptions.AVG}</p>
+    </div>
+    <p className="mt-2 text-2xl font-bold text-gray-900">
+      {playerSummary.avg}
+    </p>
+    <p className="mt-1 text-xs text-gray-500">
+      Team {teamSummary.avg}
+    </p>
+  </div>
 
-            <div
-              className={getStatCardClass(
-                playerSummary.numericObp,
-                teamSummary.numericObp,
-                "obp"
-              )}
-            >
-              <p className="text-xs font-medium text-gray-500">OBP</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
-                {playerSummary.obp}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Team {teamSummary.obp}
-              </p>
+  <div
+    className={getStatCardClass(
+      playerSummary.numericObp,
+      teamSummary.numericObp,
+      "obp"
+    )}
+  >
+            <div>
+              <p className="text-xs font-semibold text-gray-700">OBP</p>
+              <p className="text-[11px] text-gray-400">{statDescriptions.OBP}</p>
             </div>
-
-            <div
-              className={getStatCardClass(
-                playerSummary.numericSlg,
-                teamSummary.numericSlg,
-                "neutral"
-              )}
-            >
-              <p className="text-xs font-medium text-gray-500">SLG</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
-                {playerSummary.slg}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Team {teamSummary.slg}
-              </p>
-            </div>
-
-            <div
-              className={getStatCardClass(
-                playerSummary.numericOps,
-                teamSummary.numericOps,
-                "neutral"
-              )}
-            >
-              <p className="text-xs font-medium text-gray-500">OPS</p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
-                {playerSummary.ops}
-              </p>
-              <p className="mt-1 text-xs text-gray-500">
-                Team {teamSummary.ops}
-              </p>
-            </div>
+            <p className="mt-2 text-2xl font-bold text-gray-900">
+              {playerSummary.obp}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Team {teamSummary.obp}
+            </p>
           </div>
+
+          <div
+            className={getStatCardClass(
+              playerSummary.numericSlg,
+              teamSummary.numericSlg,
+              "neutral"
+            )}
+          >
+            <div>
+              <p className="text-xs font-semibold text-gray-700">SLG</p>
+              <p className="text-[11px] text-gray-400">{statDescriptions.SLG}</p>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-gray-900">
+              {playerSummary.slg}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Team {teamSummary.slg}
+            </p>
+          </div>
+
+          <div
+            className={getStatCardClass(
+              playerSummary.numericOps,
+              teamSummary.numericOps,
+              "neutral"
+            )}
+          >
+            <div>
+              <p className="text-xs font-semibold text-gray-700">OPS</p>
+              <p className="text-[11px] text-gray-400">{statDescriptions.OPS}</p>
+            </div>
+            <p className="mt-2 text-2xl font-bold text-gray-900">
+              {playerSummary.ops}
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Team {teamSummary.ops}
+            </p>
+          </div>
+        </div>
 
           <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -576,7 +597,7 @@ export default function PerformanceTrendCard({
 
             <div className="mt-6 overflow-x-auto">
               <svg
-                className="h-72 min-w-[520px] w-full"
+                className="h-72 min-w-130 w-full"
                 viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                 role="img"
                 aria-label="Player and team performance trend"

@@ -42,6 +42,7 @@ export function useGameStats(
       RBI: 0,
       BB: 0,
       SO: 0,
+      note: "",
     }
   )
 

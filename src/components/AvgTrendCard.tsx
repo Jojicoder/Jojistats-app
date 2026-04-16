@@ -1,133 +1,534 @@
+import { useMemo, useState } from "react"
 import type { SavedBattingGameEntry } from "../types"
 
-export const demoSavedEntriesByPlayer: Record<string, SavedBattingGameEntry[]> = {
-  "player-1": [
-    { id: "entry-1", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-2", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-3", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-    { id: "entry-4", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-5", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "DH", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-6", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-7", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-8", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-9", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "2B", statLine: { AB: 5, H: 3, doubles: 1, triples: 0, HR: 1, RBI: 3, BB: 0, SO: 0 } },
-    { id: "entry-10", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "DH", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-  ],
+type PerformanceTrendCardProps = {
+  playerEntries: SavedBattingGameEntry[]
+  teamEntries: SavedBattingGameEntry[]
+  seasonYear: number
+}
 
-  "player-2": [
-    { id: "entry-11", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-    { id: "entry-12", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-13", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-14", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-15", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "CF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
-    { id: "entry-16", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-17", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "CF", statLine: { AB: 5, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-18", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
-    { id: "entry-19", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "CF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-20", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "CF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-  ],
+type TrendTab = "season" | "last5" | "total"
 
-  "player-3": [
-    { id: "entry-21", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-22", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-23", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
-    { id: "entry-24", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-25", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 2 } },
-    { id: "entry-26", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-27", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "SS", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-28", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "SS", statLine: { AB: 5, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-    { id: "entry-29", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "SS", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 1, SO: 1 } },
-    { id: "entry-30", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "SS", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-  ],
+type ChartPoint = {
+  label: string
+  playerAvg: number
+  teamAvg: number
+}
 
-  "player-4": [
-    { id: "entry-31", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "1B", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-32", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-33", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "1B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
-    { id: "entry-34", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-35", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-36", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "1B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-37", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
-    { id: "entry-38", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "1B", statLine: { AB: 5, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-    { id: "entry-39", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "1B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 1, RBI: 3, BB: 0, SO: 0 } },
-    { id: "entry-40", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "1B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-  ],
+type SummaryStats = {
+  avg: string
+  obp: string
+  slg: string
+  ops: string
+  numericAvg: number
+  numericObp: number
+  numericSlg: number
+  numericOps: number
+  totalAB: number
+}
 
-  "player-5": [
-    { id: "entry-41", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-42", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "3B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-43", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-44", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "3B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
-    { id: "entry-45", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-46", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
-    { id: "entry-47", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "3B", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-48", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "3B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-49", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "3B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-    { id: "entry-50", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "3B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
-  ],
+const chartWidth = 640
+const chartHeight = 260
+const chartPadding = {
+  top: 20,
+  right: 24,
+  bottom: 36,
+  left: 48,
+}
+const chartMaxAvg = 0.6
 
-  "player-6": [
-    { id: "entry-51", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
-    { id: "entry-52", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-53", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
-    { id: "entry-54", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "LF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
-    { id: "entry-55", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 0 } },
-    { id: "entry-56", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-57", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-    { id: "entry-58", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "LF", statLine: { AB: 5, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-    { id: "entry-59", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "LF", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-60", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "LF", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-  ],
+function formatRate(value: number): string {
+  return value.toFixed(3).replace("0.", ".")
+}
 
-  "player-7": [
-    { id: "entry-61", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "RF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
-    { id: "entry-62", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-63", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-64", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
-    { id: "entry-65", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "RF", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 2 } },
-    { id: "entry-66", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "RF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-67", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-68", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "RF", statLine: { AB: 4, H: 2, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-69", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "RF", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-70", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "RF", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-  ],
+function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
+  const totals = entries.reduce(
+    (acc, entry) => {
+      acc.ab += entry.statLine.AB
+      acc.h += entry.statLine.H
+      acc.doubles += entry.statLine.doubles
+      acc.triples += entry.statLine.triples
+      acc.hr += entry.statLine.HR
+      acc.bb += entry.statLine.BB
+      return acc
+    },
+    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0 }
+  )
 
-  "player-8": [
-    { id: "entry-71", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
-    { id: "entry-72", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "C", statLine: { AB: 3, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-73", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-74", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "C", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-    { id: "entry-75", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "C", statLine: { AB: 3, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-76", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
-    { id: "entry-77", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "C", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-78", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "C", statLine: { AB: 3, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-79", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "C", statLine: { AB: 4, H: 1, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-80", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "C", statLine: { AB: 3, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-  ],
+  const singles = Math.max(
+    totals.h - totals.doubles - totals.triples - totals.hr,
+    0
+  )
 
-  "player-9": [
-    { id: "entry-81", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-    { id: "entry-82", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-83", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-    { id: "entry-84", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-85", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-    { id: "entry-86", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-87", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 0 } },
-    { id: "entry-88", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-    { id: "entry-89", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "P", statLine: { AB: 2, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-    { id: "entry-90", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "P", statLine: { AB: 2, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 1 } },
-  ],
+  const totalBases =
+    singles +
+    totals.doubles * 2 +
+    totals.triples * 3 +
+    totals.hr * 4
 
-  "player-10": [
-    { id: "entry-91", teamId: "team-1", gameMeta: { date: "2026-04-01", opponent: "Tigers", seasonYear: 2026, matchNumber: 1 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-92", teamId: "team-1", gameMeta: { date: "2026-04-03", opponent: "Lions", seasonYear: 2026, matchNumber: 2 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 0 } },
-    { id: "entry-93", teamId: "team-1", gameMeta: { date: "2026-04-05", opponent: "Bears", seasonYear: 2026, matchNumber: 3 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 0, triples: 1, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-    { id: "entry-94", teamId: "team-1", gameMeta: { date: "2026-04-08", opponent: "Hawks", seasonYear: 2026, matchNumber: 4 }, gamePosition: "2B", statLine: { AB: 4, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 1, SO: 2 } },
-    { id: "entry-95", teamId: "team-1", gameMeta: { date: "2026-04-10", opponent: "Sharks", seasonYear: 2026, matchNumber: 5 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 1, RBI: 2, BB: 0, SO: 1 } },
-    { id: "entry-96", teamId: "team-1", gameMeta: { date: "2026-04-12", opponent: "Falcons", seasonYear: 2026, matchNumber: 6 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 0 } },
-    { id: "entry-97", teamId: "team-1", gameMeta: { date: "2026-04-15", opponent: "Eagles", seasonYear: 2026, matchNumber: 7 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, SO: 1 } },
-    { id: "entry-98", teamId: "team-1", gameMeta: { date: "2026-04-18", opponent: "Panthers", seasonYear: 2026, matchNumber: 8 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 0 } },
-    { id: "entry-99", teamId: "team-1", gameMeta: { date: "2026-04-20", opponent: "Wolves", seasonYear: 2026, matchNumber: 9 }, gamePosition: "2B", statLine: { AB: 4, H: 1, doubles: 0, triples: 0, HR: 0, RBI: 1, BB: 1, SO: 1 } },
-    { id: "entry-100", teamId: "team-1", gameMeta: { date: "2026-04-22", opponent: "Dragons", seasonYear: 2026, matchNumber: 10 }, gamePosition: "2B", statLine: { AB: 4, H: 2, doubles: 1, triples: 0, HR: 0, RBI: 1, BB: 0, SO: 1 } },
-  ],
+  const numericAvg = totals.ab > 0 ? totals.h / totals.ab : 0
+
+  const obpDenominator = totals.ab + totals.bb
+  const numericObp =
+    obpDenominator > 0 ? (totals.h + totals.bb) / obpDenominator : 0
+
+  const numericSlg = totals.ab > 0 ? totalBases / totals.ab : 0
+  const numericOps = numericObp + numericSlg
+
+  return {
+    avg: formatRate(numericAvg),
+    obp: formatRate(numericObp),
+    slg: formatRate(numericSlg),
+    ops: formatRate(numericOps),
+    numericAvg,
+    numericObp,
+    numericSlg,
+    numericOps,
+    totalAB: totals.ab,
+  }
+}
+
+function filterEntriesByTab(
+  entries: SavedBattingGameEntry[],
+  activeTab: TrendTab,
+  seasonYear: number
+) {
+  if (activeTab === "last5") {
+    return entries.slice(-5)
+  }
+
+  if (activeTab === "season") {
+    return entries.filter((entry) => entry.gameMeta.seasonYear === seasonYear)
+  }
+
+  return entries
+}
+
+function buildChartData(
+  playerEntries: SavedBattingGameEntry[],
+  teamEntries: SavedBattingGameEntry[]
+): ChartPoint[] {
+  return playerEntries.map((playerEntry, index) => {
+    const sameGameTeamEntries = teamEntries.filter(
+      (teamEntry) =>
+        teamEntry.gameMeta.date === playerEntry.gameMeta.date &&
+        teamEntry.gameMeta.matchNumber === playerEntry.gameMeta.matchNumber
+    )
+
+    const teamTotals = sameGameTeamEntries.reduce(
+      (acc, entry) => {
+        acc.ab += entry.statLine.AB
+        acc.h += entry.statLine.H
+        return acc
+      },
+      { ab: 0, h: 0 }
+    )
+
+    const playerAvg =
+      playerEntry.statLine.AB > 0
+        ? playerEntry.statLine.H / playerEntry.statLine.AB
+        : 0
+
+    const teamAvg = teamTotals.ab > 0 ? teamTotals.h / teamTotals.ab : 0
+
+    return {
+      label: `G${index + 1}`,
+      playerAvg: Number(playerAvg.toFixed(3)),
+      teamAvg: Number(teamAvg.toFixed(3)),
+    }
+  })
+}
+
+function getStatCardClass(
+  playerValue: number,
+  _teamValue: number,
+  type: "avg" | "obp" | "neutral",
+  hasData: boolean = true
+) {
+  if (!hasData) {
+    return "rounded-xl bg-gray-50 border border-gray-200 p-4"
+  }
+
+  if (type === "avg") {
+    if (playerValue >= 0.3) {
+      return "rounded-xl bg-green-50 border border-green-200 p-4"
+    }
+    if (playerValue >= 0.25) {
+      return "rounded-xl bg-yellow-50 border border-yellow-200 p-4"
+    }
+    return "rounded-xl bg-red-50 border border-red-200 p-4"
+  }
+
+  if (type === "obp") {
+    if (playerValue >= 0.37) {
+      return "rounded-xl bg-green-50 border border-green-200 p-4"
+    }
+    if (playerValue >= 0.31) {
+      return "rounded-xl bg-yellow-50 border border-yellow-200 p-4"
+    }
+    return "rounded-xl bg-red-50 border border-red-200 p-4"
+  }
+
+  return "rounded-xl bg-gray-50 border border-gray-200 p-4"
+}
+
+function getPointPosition(point: ChartPoint, index: number, total: number) {
+  const plotWidth = chartWidth - chartPadding.left - chartPadding.right
+  const plotHeight = chartHeight - chartPadding.top - chartPadding.bottom
+  const x =
+    total === 1
+      ? chartPadding.left + plotWidth / 2
+      : chartPadding.left + (plotWidth / (total - 1)) * index
+
+  const getY = (value: number) =>
+    chartPadding.top +
+    plotHeight -
+    (Math.min(value, chartMaxAvg) / chartMaxAvg) * plotHeight
+
+  return {
+    x,
+    playerY: getY(point.playerAvg),
+    teamY: getY(point.teamAvg),
+  }
+}
+
+function buildPolyline(data: ChartPoint[], valueKey: "playerY" | "teamY") {
+  return data
+    .map((point, index) => {
+      const position = getPointPosition(point, index, data.length)
+      return `${position.x},${position[valueKey]}`
+    })
+    .join(" ")
+}
+
+function formatTick(value: number) {
+  return value.toFixed(3).replace("0.", ".")
+}
+
+export default function PerformanceTrendCard({
+  playerEntries,
+  teamEntries,
+  seasonYear,
+}: PerformanceTrendCardProps) {
+  const [activeTab, setActiveTab] = useState<TrendTab>("season")
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+
+  const filteredPlayerEntries = useMemo(
+    () => filterEntriesByTab(playerEntries, activeTab, seasonYear),
+    [playerEntries, activeTab, seasonYear]
+  )
+
+  const filteredTeamEntries = useMemo(
+    () => filterEntriesByTab(teamEntries, activeTab, seasonYear),
+    [teamEntries, activeTab, seasonYear]
+  )
+
+  const playerSummary = useMemo(
+    () => getSummary(filteredPlayerEntries),
+    [filteredPlayerEntries]
+  )
+
+  const teamSummary = useMemo(
+    () => getSummary(filteredTeamEntries),
+    [filteredTeamEntries]
+  )
+
+  const chartData = useMemo(
+    () => buildChartData(filteredPlayerEntries, filteredTeamEntries),
+    [filteredPlayerEntries, filteredTeamEntries]
+  )
+
+  const yTicks = [0.6, 0.45, 0.3, 0.15, 0]
+  const playerLinePoints = buildPolyline(chartData, "playerY")
+  const teamLinePoints = buildPolyline(chartData, "teamY")
+
+  return (
+    <section className="rounded-2xl bg-white p-6 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Recent performance
+          </h2>
+          <p className="mt-2 text-sm font-medium text-green-900">
+            Player vs Team Average
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("season")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              activeTab === "season"
+                ? "bg-white text-green-900 shadow-sm"
+                : "text-gray-600"
+            }`}
+          >
+            Seasons
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("last5")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              activeTab === "last5"
+                ? "bg-white text-green-900 shadow-sm"
+                : "text-gray-600"
+            }`}
+          >
+            Last 5
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("total")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              activeTab === "total"
+                ? "bg-white text-green-900 shadow-sm"
+                : "text-gray-600"
+            }`}
+          >
+            Total
+          </button>
+        </div>
+      </div>
+
+      {filteredPlayerEntries.length === 0 ? (
+        <div className="mt-6 rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">
+          No games available for this tab yet.
+        </div>
+      ) : (
+        <>
+          <div className="mt-6 grid gap-4 sm:grid-cols-4">
+            <div
+              className={getStatCardClass(
+                playerSummary.numericAvg,
+                teamSummary.numericAvg,
+                "avg",
+                playerSummary.totalAB > 0
+              )}
+            >
+              <p className="text-xs font-medium text-gray-500">AVG</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">
+                {playerSummary.avg}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Team {teamSummary.avg}
+              </p>
+            </div>
+
+            <div
+              className={getStatCardClass(
+                playerSummary.numericObp,
+                teamSummary.numericObp,
+                "obp",
+                playerSummary.totalAB > 0
+              )}
+            >
+              <p className="text-xs font-medium text-gray-500">OBP</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">
+                {playerSummary.obp}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Team {teamSummary.obp}
+              </p>
+            </div>
+
+            <div
+              className={getStatCardClass(
+                playerSummary.numericSlg,
+                teamSummary.numericSlg,
+                "neutral"
+              )}
+            >
+              <p className="text-xs font-medium text-gray-500">SLG</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">
+                {playerSummary.slg}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Team {teamSummary.slg}
+              </p>
+            </div>
+
+            <div
+              className={getStatCardClass(
+                playerSummary.numericOps,
+                teamSummary.numericOps,
+                "neutral"
+              )}
+            >
+              <p className="text-xs font-medium text-gray-500">OPS</p>
+              <p className="mt-2 text-2xl font-bold text-gray-900">
+                {playerSummary.ops}
+              </p>
+              <p className="mt-1 text-xs text-gray-500">
+                Team {teamSummary.ops}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-gray-700">AVG Trend</p>
+              <p className="text-xs text-gray-500">
+                {filteredPlayerEntries.length} game
+                {filteredPlayerEntries.length === 1 ? "" : "s"}
+              </p>
+            </div>
+
+            <div className="mt-6 overflow-x-auto">
+              <svg
+                className="h-72 min-w-130 w-full"
+                viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                role="img"
+                aria-label="Player and team batting average trend"
+              >
+                {yTicks.map((tick) => {
+                  const y =
+                    chartPadding.top +
+                    (chartHeight - chartPadding.top - chartPadding.bottom) *
+                      (1 - tick / chartMaxAvg)
+
+                  return (
+                    <g key={tick}>
+                      <line
+                        x1={chartPadding.left}
+                        x2={chartWidth - chartPadding.right}
+                        y1={y}
+                        y2={y}
+                        stroke="#e5e7eb"
+                        strokeDasharray="4 4"
+                      />
+                      <text
+                        x={chartPadding.left - 10}
+                        y={y + 4}
+                        textAnchor="end"
+                        className="fill-gray-500 text-[11px]"
+                      >
+                        {formatTick(tick)}
+                      </text>
+                    </g>
+                  )
+                })}
+
+                <line
+                  x1={chartPadding.left}
+                  x2={chartPadding.left}
+                  y1={chartPadding.top}
+                  y2={chartHeight - chartPadding.bottom}
+                  stroke="#d1d5db"
+                />
+                <line
+                  x1={chartPadding.left}
+                  x2={chartWidth - chartPadding.right}
+                  y1={chartHeight - chartPadding.bottom}
+                  y2={chartHeight - chartPadding.bottom}
+                  stroke="#d1d5db"
+                />
+
+                <polyline
+                  points={teamLinePoints}
+                  fill="none"
+                  stroke="#2563eb"
+                  strokeWidth="2"
+                  strokeDasharray="6 4"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                <polyline
+                  points={playerLinePoints}
+                  fill="none"
+                  stroke="#166534"
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+
+                {chartData.map((point, index) => {
+                  const position = getPointPosition(
+                    point,
+                    index,
+                    chartData.length
+                  )
+
+                  const isHovered = hoveredIndex === index
+
+                  return (
+                    <g
+                      key={`${point.label}-${index}`}
+                      onMouseEnter={() => setHoveredIndex(index)}
+                      onMouseLeave={() => setHoveredIndex(null)}
+                    >
+                      <circle
+                        cx={position.x}
+                        cy={position.teamY}
+                        r={isHovered ? "5" : "3.5"}
+                        fill="#2563eb"
+                      />
+                      <circle
+                        cx={position.x}
+                        cy={position.playerY}
+                        r={isHovered ? "6" : "4.5"}
+                        fill="#166534"
+                      />
+
+                      {isHovered && (
+                        <>
+                          <rect
+                            x={position.x - 52}
+                            y={Math.min(position.playerY, position.teamY) - 42}
+                            width="104"
+                            height="34"
+                            rx="6"
+                            fill="#111827"
+                            opacity="0.92"
+                          />
+                          <text
+                            x={position.x}
+                            y={Math.min(position.playerY, position.teamY) - 28}
+                            textAnchor="middle"
+                            className="fill-white text-[11px]"
+                          >
+                            {`Player ${formatTick(point.playerAvg)}`}
+                          </text>
+                          <text
+                            x={position.x}
+                            y={Math.min(position.playerY, position.teamY) - 15}
+                            textAnchor="middle"
+                            className="fill-white text-[11px]"
+                          >
+                            {`Team ${formatTick(point.teamAvg)}`}
+                          </text>
+                        </>
+                      )}
+
+                      <text
+                        x={position.x}
+                        y={chartHeight - 14}
+                        textAnchor="middle"
+                        className="fill-gray-500 text-[11px]"
+                      >
+                        {point.label}
+                      </text>
+                    </g>
+                  )
+                })}
+              </svg>
+
+              <div className="mt-3 flex items-center gap-5 text-xs text-gray-600">
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-6 rounded-full bg-green-800" />
+                  Player
+                </span>
+                <span className="flex items-center gap-2">
+                  <span className="h-2 w-6 rounded-full border-2 border-blue-600 border-dashed" />
+                  Team Avg
+                </span>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+    </section>
+  )
 }

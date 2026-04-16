@@ -59,9 +59,9 @@ export default function Layout({
     Record<string, BattingEntryData>
   >({})
 
-const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
-  Record<string, SavedBattingGameEntry[]>
->(demoSavedEntriesByPlayer)
+  const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
+    Record<string, SavedBattingGameEntry[]>
+  >(demoSavedEntriesByPlayer)
 
   const visibleTeams = useMemo(
     () => teams.filter((team) => !team.isArchived),
@@ -150,11 +150,14 @@ const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
 
   return (
     <div className="flex h-screen flex-col bg-gray-50">
-      <Header teamName={activeTeam?.name ?? "No Team"} />
+      <Header
+        teamName={activeTeam?.name ?? "No Team"}
+        onOpenTeamSetup={() => setActiveView("team")}
+      />
 
       <TopTabs activeView={activeView} onChangeView={setActiveView} />
 
-      <div className="flex flex-1 items-start gap-6 px-5 py-5">
+      <div className="flex min-h-0 flex-1 items-start gap-6 overflow-auto px-5 py-5">
         {activeView === "team" ? (
           <TeamSetupPage
             teams={visibleTeams}
@@ -168,6 +171,7 @@ const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
             players={teamPlayers}
             activePlayerId={activePlayer?.id ?? null}
             setActivePlayerId={setActivePlayerId}
+            savedEntriesByPlayer={savedEntriesByPlayer}
             onAddPlayer={handleAddPlayer}
             onUpdatePlayer={handleUpdatePlayer}
             onDeletePlayer={handleDeletePlayer}
@@ -175,17 +179,16 @@ const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
         ) : activePlayer ? (
           <>
             <Sidebar
-              players={teamPlayers}
-              activePlayerId={activePlayer.id}
-              setActivePlayerId={setActivePlayerId}
-            />
-
+                players={teamPlayers}
+                activePlayerId={activePlayer.id}
+                setActivePlayerId={setActivePlayerId}
+                savedEntriesByPlayer={savedEntriesByPlayer}
+              />
             <div className="min-w-0 flex-1">
               <MainDashboard
                 activePlayer={activePlayer}
                 activeView={activeView}
                 teamName={activeTeam?.name ?? "No Team"}
-         
                 gameMeta={gameMeta}
                 setGameMeta={setGameMeta}
                 entriesByPlayer={entriesByPlayer}

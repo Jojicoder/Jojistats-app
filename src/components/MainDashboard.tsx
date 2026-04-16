@@ -35,6 +35,7 @@ const createInitialEntry = (): BattingEntryData => ({
   RBI: 0,
   BB: 0,
   SO: 0,
+  note: "",
 })
 
 const getTodayDate = (): string => {
@@ -73,14 +74,14 @@ export default function MainDashboard({
 
   const { kpi } = useGameStats(savedStatLines)
 
-const calculatedStats: DisplayStat[] = [
-  { label: "AVG", value: kpi.avg },
-  { label: "OBP", value: kpi.obp },
-  { label: "OPS", value: kpi.ops },
-  { label: "BB/K", value: kpi.bbPerK },
-  { label: "HR", value: String(kpi.hr) },
-  { label: "RBI", value: String(kpi.rbi) },
-]
+  const calculatedStats: DisplayStat[] = [
+    { label: "AVG", value: kpi.avg },
+    { label: "OBP", value: kpi.obp },
+    { label: "OPS", value: kpi.ops },
+    { label: "BB/K", value: kpi.bbPerK },
+    { label: "HR", value: String(kpi.hr) },
+    { label: "RBI", value: String(kpi.rbi) },
+  ]
 
   const handleEntryChange = (nextEntry: BattingEntryData) => {
     setEntriesByPlayer((prev) => ({
@@ -101,7 +102,7 @@ const calculatedStats: DisplayStat[] = [
           id: crypto.randomUUID(),
           teamId: activePlayer.teamId,
           gameMeta: nextGameMeta,
-          gamePosition: entry.gamePosition,
+          gamePositions: entry.gamePositions,
           statLine: {
             AB: entry.AB,
             H: entry.H,
@@ -111,6 +112,7 @@ const calculatedStats: DisplayStat[] = [
             RBI: entry.RBI,
             BB: entry.BB,
             SO: entry.SO,
+            note: entry.note,
           },
         }
 
@@ -148,6 +150,7 @@ const calculatedStats: DisplayStat[] = [
         RBI: savedEntry.statLine.RBI,
         BB: savedEntry.statLine.BB,
         SO: savedEntry.statLine.SO,
+        note: savedEntry.statLine.note ?? "",
       },
     }))
 
@@ -220,6 +223,10 @@ const calculatedStats: DisplayStat[] = [
     }
   }
 
+  const editingSavedEntry = savedEntries.find(
+    (entry) => entry.id === editingSavedEntryId
+  )
+
   return activeView === "record" ? (
     <RecordGamePage
       activePlayer={activePlayer}
@@ -233,6 +240,7 @@ const calculatedStats: DisplayStat[] = [
       seasonYear={gameMeta.seasonYear}
       isEditingSavedEntry={editingSavedEntryId !== null}
       editingSavedEntryId={editingSavedEntryId}
+      editingGamePositions={editingSavedEntry?.gamePositions}
       onStartEditSavedEntry={handleStartEditSavedEntry}
       onUpdateSavedEntry={handleUpdateSavedEntry}
       onCancelEditSavedEntry={handleCancelEditSavedEntry}

@@ -30,6 +30,7 @@ type RecordGamePageProps = {
   ) => void
   onCancelEditSavedEntry: () => void
   onDeleteSavedEntry: (savedEntry: SavedBattingGameEntry) => void
+  editingGamePositions?: Position[]
 }
 
 const gamePositionOptions: Position[] = [
@@ -62,14 +63,15 @@ export default function RecordGamePage({
   onUpdateSavedEntry,
   onCancelEditSavedEntry,
   onDeleteSavedEntry,
+  editingGamePositions,
 }: RecordGamePageProps) {
   const [statusMessage, setStatusMessage] = useState("")
   const [pendingEntries, setPendingEntries] = useState<PendingBattingEntry[]>(
     []
   )
-  const [gamePosition, setGamePosition] = useState<Position>(
-    activePlayer.position
-  )
+  const [gamePositions, setGamePositions] = useState<Position[]>([
+    activePlayer.position,
+  ])
 
   useEffect(() => {
     setStatusMessage("")
@@ -82,8 +84,34 @@ export default function RecordGamePage({
   ])
 
   useEffect(() => {
-    setGamePosition(activePlayer.position)
-  }, [activePlayer.id, activePlayer.position])
+    if (isEditingSavedEntry) return
+    setGamePositions([activePlayer.position])
+  }, [activePlayer.id, activePlayer.position, isEditingSavedEntry])
+
+  useEffect(() => {
+    if (!isEditingSavedEntry || !editingGamePositions?.length) return
+    setGamePositions(editingGamePositions)
+  }, [isEditingSavedEntry, editingGamePositions])
+
+  const addGamePosition = () => {
+    setGamePositions((prev) => [...prev, activePlayer.position])
+  }
+
+  const updateGamePosition = (index: number, nextPosition: Position) => {
+    setGamePositions((prev) =>
+      prev.map((position, currentIndex) =>
+        currentIndex === index ? nextPosition : position
+      )
+    )
+  }
+
+  const removeGamePosition = (index: number) => {
+    setGamePositions((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, currentIndex) => currentIndex !== index)
+    )
+  }
+
+  const formattedGamePositions = gamePositions.join(" / ")
 
   const isMetaComplete =
     gameMeta.date.trim() !== "" && gameMeta.opponent.trim() !== ""
@@ -115,8 +143,9 @@ export default function RecordGamePage({
       RBI: 0,
       BB: 0,
       SO: 0,
+      note: "",
     })
-    setGamePosition(activePlayer.position)
+    setGamePositions([activePlayer.position])
   }
 
   const handleAddPlayerEntry = () => {
@@ -126,7 +155,7 @@ export default function RecordGamePage({
       ...currentEntry,
       playerId: activePlayer.id,
       playerName: activePlayer.name,
-      gamePosition,
+      gamePositions,
     }
 
     setPendingEntries((prev) => [...prev, nextEntry])
@@ -194,24 +223,49 @@ export default function RecordGamePage({
               </h1>
 
               <p className="mt-3 text-gray-600">
-                {teamName} · Season {seasonYear} · {gamePosition}
+                {teamName} · Season {seasonYear} · {formattedGamePositions}
               </p>
 
-              <div className="mt-4 max-w-xs">
-                <label className="text-xs font-medium text-gray-500">
-                  Game Position
-                </label>
-                <select
-                  value={gamePosition}
-                  onChange={(e) => setGamePosition(e.target.value as Position)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-                >
-                  {gamePositionOptions.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
+              <div className="mt-4 max-w-md">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-medium text-gray-500">
+                    Game Positions
+                  </label>
+                  <button
+                    type="button"
+                    onClick={addGamePosition}
+                    className="text-xs font-medium text-green-900 hover:underline"
+                  >
+                    + Add Position
+                  </button>
+                </div>
+
+                <div className="mt-2 space-y-2">
+                  {gamePositions.map((position, index) => (
+                    <div key={`${position}-${index}`} className="flex items-center gap-2">
+                      <select
+                        value={position}
+                        onChange={(e) => updateGamePosition(index, e.target.value as Position)}
+                        className="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                      >
+                        {gamePositionOptions.map((option) => (
+                          <option key={`${option}-${index}`} value={option}>
+                            {option}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button
+                        type="button"
+                        onClick={() => removeGamePosition(index)}
+                        disabled={gamePositions.length === 1}
+                        className="rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        Remove
+                      </button>
+                    </div>
                   ))}
-                </select>
+                </div>
               </div>
             </div>
 
@@ -280,7 +334,7 @@ export default function RecordGamePage({
                     >
                       <div className="text-sm text-gray-700">
                         <p className="font-medium">
-                          {entry.playerName} · {entry.gamePosition}
+                          {entry.playerName} · {entry.gamePositions.join(" / ")}
                         </p>
                         <div className="mt-1 space-y-1 text-sm text-gray-500">
                           <p>
