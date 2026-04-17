@@ -10,6 +10,7 @@ type PlayerFormProps = {
   onCancel?: () => void
 }
 
+
 const createPlayerId = () => {
   return `player-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 }
@@ -58,7 +59,6 @@ export default function PlayerForm({
             name: "",
             position: "UTIL",
             jerseyNumber: null,
-            isActive: true,
             seasonYear,
             isArchived: false,
           }
@@ -66,12 +66,11 @@ export default function PlayerForm({
     onSave({
       ...basePlayer,
       teamId,
+      seasonYear: initialPlayer?.seasonYear ?? seasonYear,
       name: name.trim(),
       position,
       jerseyNumber: jerseyNumber.trim() === "" ? null : Number(jerseyNumber),
-      isActive: true,
-      seasonYear,
-      isArchived: basePlayer.isArchived ?? false,
+      isArchived: initialPlayer?.isArchived ?? false,
     })
 
     if (mode === "add") {

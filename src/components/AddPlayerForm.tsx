@@ -6,6 +6,7 @@ type AddPlayerFormProps = {
   seasonYear: number
   onAddPlayer: (player: Player) => void
 }
+
 const createPlayerId = () => {
   return `player-${Date.now()}-${Math.floor(Math.random() * 1000)}`
 }

@@ -17,6 +17,7 @@ type RosterPageProps = {
   onDeletePlayer: (playerId: string) => void
 }
 
+
 export default function RosterPage({
   teamName,
   seasonYear,
@@ -96,7 +97,7 @@ export default function RosterPage({
 
         <div className="mt-6 max-w-3xl">
           <PlayerForm
-            key={`add-${activeTeamId}`}
+            key={`add-${activeTeamId}-${seasonYear}`}
             teamId={activeTeamId}
             seasonYear={seasonYear}
             mode="add"
@@ -183,8 +184,7 @@ export default function RosterPage({
                               {player.name}
                             </p>
                             <p className="mt-1 text-xs text-gray-400">
-                              {player.position} · Games {gamesPlayed} ·{" "}
-                              {player.isActive === false ? "Inactive" : "Available"}
+                              {player.position} · G {gamesPlayed}
                             </p>
                           </div>
                         </button>

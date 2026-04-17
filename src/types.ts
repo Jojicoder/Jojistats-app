@@ -24,7 +24,6 @@ export type Player = {
   name: string
   position: Position
   jerseyNumber?: number | null
-  isActive?: boolean
   seasonYear: number
   isArchived?: boolean
 }
