@@ -1,235 +1,105 @@
-import type { SavedBattingGameEntry } from "../types"
-
-const BASE_URL = "http://localhost:3001"
-
-/* =========================
-   GAMES
-========================= */
-
-export const fetchGames = async (teamId: number, seasonYear?: number) => {
-  const params = new URLSearchParams()
-  params.append("team_id", String(teamId))
-
-  if (seasonYear != null) {
-    params.append("season_year", String(seasonYear))
-  }
-
-  const res = await fetch(`${BASE_URL}/games?${params.toString()}`)
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch games")
-  }
-
-  return res.json()
-}
-
-/* =========================
-   BATTING GAME STATS
-========================= */
-
-export const fetchBattingGameStats = async (
-  gameId?: number,
-  playerId?: number
-) => {
-  const params = new URLSearchParams()
-
-  if (gameId != null) {
-    params.append("game_id", String(gameId))
-  }
-
-  if (playerId != null) {
-    params.append("player_id", String(playerId))
-  }
-
-  const query = params.toString()
-  const url = query
-    ? `${BASE_URL}/batting-game-stats?${query}`
-    : `${BASE_URL}/batting-game-stats`
-
-  const res = await fetch(url)
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch batting game stats")
-  }
-
-  return res.json()
-}
-
-/* =========================
-   SAVED ENTRIES
-========================= */
-
-export const fetchSavedEntriesByPlayer = async (
-  teamId: number,
-  seasonYear?: number
-): Promise<Record<string, SavedBattingGameEntry[]>> => {
-  const games = await fetchGames(teamId, seasonYear)
-
-  if (!Array.isArray(games) || games.length === 0) {
-    return {}
-  }
-
-  const allStatsArrays = await Promise.all(
-    games.map((game: any) => fetchBattingGameStats(game.id))
-  )
-
-  const gameMap = new Map<number, any>()
-  games.forEach((game: any) => {
-    gameMap.set(game.id, game)
-  })
-
-  const result: Record<string, SavedBattingGameEntry[]> = {}
-
-  allStatsArrays.forEach((stats) => {
-    if (!Array.isArray(stats)) return
-
-    stats.forEach((stat: any) => {
-      const game = gameMap.get(stat.game_id)
-      if (!game) return
-
-      const playerId = String(stat.player_id)
-
-      const entry: SavedBattingGameEntry = {
-            id: `db-${game.id}`,
-            gameId: game.id, // ← 追加（本物のID）
-            teamId: String(game.team_id),
-            gameMeta: {
-              date: game.game_date,
-              opponent: game.opponent_name,
-              seasonYear: game.season_year,
-              matchNumber: game.match_number,
-            },
-            gamePositions: [],
-            statLine: {
-              AB: stat.ab ?? 0,
-              H: stat.h ?? 0,
-              doubles: stat.double_hits ?? 0,
-              triples: stat.triple_hits ?? 0,
-              HR: stat.hr ?? 0,
-              RBI: stat.rbi ?? 0,
-              BB: stat.bb ?? 0,
-              SO: stat.so ?? 0,
-              note: "",
-            },
-          }
-
-      if (!result[playerId]) {
-        result[playerId] = []
-      }
-
-      result[playerId].push(entry)
-    })
-  })
-
-  Object.values(result).forEach((entries) => {
-    entries.sort((a, b) => {
-      if (a.gameMeta.date === b.gameMeta.date) {
-        return a.gameMeta.matchNumber - b.gameMeta.matchNumber
-      }
-      return a.gameMeta.date.localeCompare(b.gameMeta.date)
-    })
-  })
-
-  return result
-}
+import { supabase } from "../lib/supabase"
 
 /* =========================
    TEAMS
 ========================= */
-
-export const fetchTeams = async () => {
-  const res = await fetch(`${BASE_URL}/teams`)
-  if (!res.ok) {
-    throw new Error("Failed to fetch teams")
-  }
-  return res.json()
-}
 
 export const createTeam = async (payload: {
   name: string
   current_season_year?: number
   is_archived?: number
 }) => {
-  const res = await fetch(`${BASE_URL}/teams`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-
-  if (!res.ok) {
-    throw new Error("Failed to create team")
-  }
-
-  return res.json()
+  const { data, error } = await supabase
+    .from("teams")
+    .insert({
+      name: payload.name,
+      current_season_year: payload.current_season_year ?? new Date().getFullYear(),
+      is_archived: Boolean(payload.is_archived ?? 0),
+    })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data
 }
 
-export const updateTeam = async (teamId: number, payload: {
-  name: string
-  current_season_year: number
-  is_archived?: number
-}) => {
-  const res = await fetch(`${BASE_URL}/teams/${teamId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-
-  if (!res.ok) {
-    throw new Error("Failed to update team")
+export const updateTeam = async (
+  teamId: number,
+  payload: {
+    name: string
+    current_season_year: number
+    is_archived?: number
   }
-
-  return res.json()
+) => {
+  const { error } = await supabase
+    .from("teams")
+    .update({
+      name: payload.name,
+      current_season_year: payload.current_season_year,
+      is_archived: Boolean(payload.is_archived ?? 0),
+    })
+    .eq("id", teamId)
+  if (error) throw new Error(error.message)
 }
 
 export const archiveTeam = async (teamId: number) => {
-  const res = await fetch(`${BASE_URL}/teams/${teamId}/archive`, {
-    method: "PUT",
-  })
-
-  if (!res.ok) {
-    throw new Error("Failed to archive team")
-  }
-
-  return res.json()
+  const { error } = await supabase
+    .from("teams")
+    .update({ is_archived: true })
+    .eq("id", teamId)
+  if (error) throw new Error(error.message)
 }
 
 export const startNewSeason = async (
   teamId: number,
   copyRoster: boolean = true
 ) => {
-  const res = await fetch(`${BASE_URL}/teams/${teamId}/start-new-season`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      copy_roster: copyRoster,
-    }),
-  })
+  const { data: team, error: teamError } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("id", teamId)
+    .single()
+  if (teamError) throw new Error(teamError.message)
 
-  if (!res.ok) {
-    throw new Error("Failed to start new season")
+  const nextSeasonYear = team.current_season_year + 1
+
+  const { error: updateError } = await supabase
+    .from("teams")
+    .update({ current_season_year: nextSeasonYear })
+    .eq("id", teamId)
+  if (updateError) throw new Error(updateError.message)
+
+  if (copyRoster) {
+    const { data: players, error: playersError } = await supabase
+      .from("players")
+      .select("*")
+      .eq("team_id", teamId)
+      .eq("season_year", team.current_season_year)
+      .eq("is_archived", false)
+    if (playersError) throw new Error(playersError.message)
+
+    if (players && players.length > 0) {
+      const { error: insertError } = await supabase
+        .from("players")
+        .insert(
+          players.map((p) => ({
+            team_id: p.team_id,
+            name: p.name,
+            jersey_number: p.jersey_number,
+            position: p.position,
+            season_year: nextSeasonYear,
+            is_archived: false,
+          }))
+        )
+      if (insertError) throw new Error(insertError.message)
+    }
   }
 
-  return res.json()
+  return { current_season_year: nextSeasonYear }
 }
 
 /* =========================
    PLAYERS
 ========================= */
-
-export const fetchPlayers = async (
-  teamId: number,
-  seasonYear: number
-) => {
-  const res = await fetch(
-    `${BASE_URL}/players?team_id=${teamId}&season_year=${seasonYear}`
-  )
-
-  if (!res.ok) {
-    throw new Error("Failed to fetch players")
-  }
-
-  return res.json()
-}
 
 export const createPlayer = async (payload: {
   team_id: number
@@ -239,17 +109,20 @@ export const createPlayer = async (payload: {
   season_year: number
   is_archived?: number
 }) => {
-  const res = await fetch(`${BASE_URL}/players`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-
-  if (!res.ok) {
-    throw new Error("Failed to create player")
-  }
-
-  return res.json()
+  const { data, error } = await supabase
+    .from("players")
+    .insert({
+      team_id: payload.team_id,
+      name: payload.name,
+      jersey_number: payload.jersey_number ?? null,
+      position: payload.position ?? null,
+      season_year: payload.season_year,
+      is_archived: Boolean(payload.is_archived ?? 0),
+    })
+    .select()
+    .single()
+  if (error) throw new Error(error.message)
+  return data
 }
 
 export const updatePlayer = async (
@@ -263,29 +136,26 @@ export const updatePlayer = async (
     is_archived?: number
   }
 ) => {
-  const res = await fetch(`${BASE_URL}/players/${playerId}`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  })
-
-  if (!res.ok) {
-    throw new Error("Failed to update player")
-  }
-
-  return res.json()
+  const { error } = await supabase
+    .from("players")
+    .update({
+      team_id: payload.team_id,
+      name: payload.name,
+      jersey_number: payload.jersey_number ?? null,
+      position: payload.position ?? null,
+      season_year: payload.season_year,
+      is_archived: Boolean(payload.is_archived ?? 0),
+    })
+    .eq("id", playerId)
+  if (error) throw new Error(error.message)
 }
 
 export const archivePlayer = async (playerId: number) => {
-  const res = await fetch(`${BASE_URL}/players/${playerId}/archive`, {
-    method: "PUT",
-  })
-
-  if (!res.ok) {
-    throw new Error("Failed to archive player")
-  }
-
-  return res.json()
+  const { error } = await supabase
+    .from("players")
+    .update({ is_archived: true })
+    .eq("id", playerId)
+  if (error) throw new Error(error.message)
 }
 
 /* =========================
@@ -306,43 +176,93 @@ type FullGamePayload = {
 }
 
 export const createFullGame = async (data: FullGamePayload) => {
-  const res = await fetch(`${BASE_URL}/games/full`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
+  const { data: game, error: gameError } = await supabase
+    .from("games")
+    .insert({
+      team_id: data.game.team_id,
+      game_date: data.game.game_date,
+      opponent_name: data.game.opponent_name,
+      season_year: data.game.season_year,
+      match_number: data.game.match_number,
+      location: data.game.location ?? null,
+    })
+    .select()
+    .single()
+  if (gameError) throw new Error(gameError.message)
 
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.message || "Failed to create game")
+  if (data.battingStats.length > 0) {
+    const { error: battingError } = await supabase
+      .from("batting_game_stats")
+      .insert(
+        data.battingStats.map((s) => ({
+          game_id: game.id,
+          player_id: s.player_id,
+          batting_order: s.batting_order,
+          ab: s.ab ?? 0,
+          h: s.h ?? 0,
+          double_hits: s.double_hits ?? 0,
+          triple_hits: s.triple_hits ?? 0,
+          hr: s.hr ?? 0,
+          rbi: s.rbi ?? 0,
+          bb: s.bb ?? 0,
+          so: s.so ?? 0,
+          hbp: s.hbp ?? 0,
+          sf: s.sf ?? 0,
+        }))
+      )
+    if (battingError) throw new Error(battingError.message)
   }
 
-  return res.json()
+  return { game_id: game.id }
 }
 
 export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
-  const res = await fetch(`${BASE_URL}/games/${gameId}/full`, {
-    method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  })
+  const { error: gameError } = await supabase
+    .from("games")
+    .update({
+      game_date: data.game.game_date,
+      opponent_name: data.game.opponent_name,
+      season_year: data.game.season_year,
+      match_number: data.game.match_number,
+      location: data.game.location ?? null,
+    })
+    .eq("id", gameId)
+  if (gameError) throw new Error(gameError.message)
 
-  if (!res.ok) {
-    const err = await res.json()
-    throw new Error(err.message || "Failed to update game")
+  const { error: deleteError } = await supabase
+    .from("batting_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+  if (deleteError) throw new Error(deleteError.message)
+
+  if (data.battingStats.length > 0) {
+    const { error: battingError } = await supabase
+      .from("batting_game_stats")
+      .insert(
+        data.battingStats.map((s) => ({
+          game_id: gameId,
+          player_id: s.player_id,
+          batting_order: s.batting_order,
+          ab: s.ab ?? 0,
+          h: s.h ?? 0,
+          double_hits: s.double_hits ?? 0,
+          triple_hits: s.triple_hits ?? 0,
+          hr: s.hr ?? 0,
+          rbi: s.rbi ?? 0,
+          bb: s.bb ?? 0,
+          so: s.so ?? 0,
+          hbp: s.hbp ?? 0,
+          sf: s.sf ?? 0,
+        }))
+      )
+    if (battingError) throw new Error(battingError.message)
   }
-
-  return res.json()
 }
 
 export const deleteGame = async (gameId: number) => {
-  const res = await fetch(`${BASE_URL}/games/${gameId}`, {
-    method: "DELETE",
-  })
+  await supabase.from("batting_game_stats").delete().eq("game_id", gameId)
+  await supabase.from("pitching_game_stats").delete().eq("game_id", gameId)
 
-  if (!res.ok) {
-    throw new Error("Failed to delete game")
-  }
-
-  return res.json()
+  const { error } = await supabase.from("games").delete().eq("id", gameId)
+  if (error) throw new Error(error.message)
 }
