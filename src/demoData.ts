@@ -1,4 +1,4 @@
-import type { Team, Player, SavedBattingGameEntry, Position } from "./types"
+/*import type { Team, Player, SavedBattingGameEntry, Position } from "./types"
 
 export const demoTeams: Team[] = [
   {
@@ -762,4 +762,4 @@ export const demoSavedEntriesByPlayer: Record<string, SavedBattingGameEntry[]> =
       [4, 1, 0, 0, 0, 1, 1, 0],
     ]
   ),
-}
+}*/

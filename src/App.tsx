@@ -1,14 +1,12 @@
 import { useState } from "react"
 import Layout from "./components/Layout"
 import type { Player, Team } from "./types"
-import { demoTeams, demoPlayers } from "./demoData"
 
 export default function App() {
-  const [teams, setTeams] = useState<Team[]>(demoTeams)
-  const [players, setPlayers] = useState<Player[]>(demoPlayers)
-
-  const [activeTeamId, setActiveTeamId] = useState("team-1")
-  const [activePlayerId, setActivePlayerId] = useState("player-1")
+  const [teams, setTeams] = useState<Team[]>([])
+  const [players, setPlayers] = useState<Player[]>([])
+  const [activeTeamId, setActiveTeamId] = useState("")
+  const [activePlayerId, setActivePlayerId] = useState("")
 
   return (
     <Layout

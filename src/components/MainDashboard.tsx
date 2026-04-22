@@ -9,6 +9,12 @@ import type {
   DisplayStat,
 } from "../types"
 import { useGameStats } from "../hooks/useGameStats"
+import {
+  createFullGame,
+  updateFullGame,
+  deleteGame,
+} from "../api/api"
+import { fetchSavedEntriesByPlayer } from "../api/supabase-api"
 import RecordGamePage from "./RecordGamePage"
 import MyStatsPage from "./MyStatsPage"
 
@@ -38,9 +44,8 @@ const createInitialEntry = (): BattingEntryData => ({
   note: "",
 })
 
-const getTodayDate = (): string => {
-  return new Date().toISOString().split("T")[0]
-}
+const getTodayDate = (): string =>
+  new Date().toISOString().split("T")[0]
 
 export default function MainDashboard({
   activePlayer,
@@ -60,25 +65,25 @@ export default function MainDashboard({
   const currentEntry =
     entriesByPlayer[activePlayer.id] ?? createInitialEntry()
 
- const allPlayerEntries = savedEntriesByPlayer[activePlayer.id] ?? []
+  const currentSeasonYear = activePlayer.seasonYear
+  const allPlayerEntries = savedEntriesByPlayer[activePlayer.id] ?? []
 
-const savedEntries = allPlayerEntries.filter(
-  (entry) =>
-    entry.teamId === activePlayer.teamId &&
-    entry.gameMeta.seasonYear === gameMeta.seasonYear
-)
-
-const teamSavedEntries = Object.values(savedEntriesByPlayer)
-  .flat()
-  .filter(
+  const savedEntries = allPlayerEntries.filter(
     (entry) =>
       entry.teamId === activePlayer.teamId &&
-      entry.gameMeta.seasonYear === gameMeta.seasonYear
+      entry.gameMeta.seasonYear === currentSeasonYear
   )
 
-const savedStatLines = savedEntries.map((entry) => entry.statLine)
+  const teamSavedEntries = Object.values(savedEntriesByPlayer)
+    .flat()
+    .filter(
+      (entry) =>
+        entry.teamId === activePlayer.teamId &&
+        entry.gameMeta.seasonYear === currentSeasonYear
+    )
 
-const { kpi } = useGameStats(savedStatLines)
+  const savedStatLines = savedEntries.map((entry) => entry.statLine)
+  const { kpi } = useGameStats(savedStatLines)
 
   const calculatedStats: DisplayStat[] = [
     { label: "AVG", value: kpi.avg },
@@ -89,46 +94,52 @@ const { kpi } = useGameStats(savedStatLines)
     { label: "RBI", value: String(kpi.rbi) },
   ]
 
-  const handleEntryChange = (nextEntry: BattingEntryData) => {
+  const handleEntryChange = (next: BattingEntryData) => {
     setEntriesByPlayer((prev) => ({
       ...prev,
-      [activePlayer.id]: nextEntry,
+      [activePlayer.id]: next,
     }))
   }
 
-  const handleSaveGame = (
+  const buildPayload = (
     nextGameMeta: DraftGameMeta,
     entries: PendingBattingEntry[]
   ) => {
-    setSavedEntriesByPlayer((prev) => {
-      const nextSaved = { ...prev }
+    return {
+      game: {
+        team_id: Number(activePlayer.teamId),
+        game_date: nextGameMeta.date,
+        opponent_name: nextGameMeta.opponent,
+        season_year: nextGameMeta.seasonYear,
+        match_number: nextGameMeta.matchNumber,
+        location: null,
+      },
+      battingStats: entries.map((entry, index) => ({
+        player_id: Number(entry.playerId),
+        batting_order: index + 1,
+        ab: entry.AB,
+        h: entry.H,
+        double_hits: entry.doubles,
+        triple_hits: entry.triples,
+        hr: entry.HR,
+        rbi: entry.RBI,
+        bb: entry.BB,
+        so: entry.SO,
+        hbp: 0,
+        sf: 0,
+      })),
+      pitchingStats: [],
+    }
+  }
 
-      entries.forEach((entry) => {
-        const savedEntry: SavedBattingGameEntry = {
-          id: crypto.randomUUID(),
-          teamId: activePlayer.teamId,
-          gameMeta: nextGameMeta,
-          gamePositions: entry.gamePositions,
-          statLine: {
-            AB: entry.AB,
-            H: entry.H,
-            doubles: entry.doubles,
-            triples: entry.triples,
-            HR: entry.HR,
-            RBI: entry.RBI,
-            BB: entry.BB,
-            SO: entry.SO,
-            note: entry.note,
-          },
-        }
+  const refreshSavedEntries = async () => {
+    const updated = await fetchSavedEntriesByPlayer(
+      Number(activePlayer.teamId)
+    )
+    setSavedEntriesByPlayer(updated)
+  }
 
-        const currentSaved = nextSaved[entry.playerId] ?? []
-        nextSaved[entry.playerId] = [...currentSaved, savedEntry]
-      })
-
-      return nextSaved
-    })
-
+  const resetAfterSave = () => {
     setEntriesByPlayer((prev) => ({
       ...prev,
       [activePlayer.id]: createInitialEntry(),
@@ -140,58 +151,103 @@ const { kpi } = useGameStats(savedStatLines)
       matchNumber: prev.matchNumber + 1,
       date: getTodayDate(),
     }))
+
+    setEditingSavedEntryId(null)
   }
 
-  const handleStartEditSavedEntry = (savedEntry: SavedBattingGameEntry) => {
-    setGameMeta(savedEntry.gameMeta)
+  const handleSaveGame = async (
+    nextGameMeta: DraftGameMeta,
+    entries: PendingBattingEntry[]
+  ) => {
+    try {
+      const payload = buildPayload(nextGameMeta, entries)
+
+      if (editingSavedEntryId) {
+        const gameId = Number(editingSavedEntryId.replace("db-", ""))
+        await updateFullGame(gameId, payload)
+      } else {
+        await createFullGame(payload)
+      }
+
+      await refreshSavedEntries()
+      resetAfterSave()
+    } catch (error) {
+      console.error("Failed to save game", error)
+      window.alert("Failed to save game")
+    }
+  }
+
+  const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
+    setGameMeta(entry.gameMeta)
 
     setEntriesByPlayer((prev) => ({
       ...prev,
       [activePlayer.id]: {
-        AB: savedEntry.statLine.AB,
-        H: savedEntry.statLine.H,
-        doubles: savedEntry.statLine.doubles,
-        triples: savedEntry.statLine.triples,
-        HR: savedEntry.statLine.HR,
-        RBI: savedEntry.statLine.RBI,
-        BB: savedEntry.statLine.BB,
-        SO: savedEntry.statLine.SO,
-        note: savedEntry.statLine.note ?? "",
+        AB: entry.statLine.AB,
+        H: entry.statLine.H,
+        doubles: entry.statLine.doubles,
+        triples: entry.statLine.triples,
+        HR: entry.statLine.HR,
+        RBI: entry.statLine.RBI,
+        BB: entry.statLine.BB,
+        SO: entry.statLine.SO,
+        note: entry.statLine.note ?? "",
       },
     }))
 
-    setEditingSavedEntryId(savedEntry.id)
+    setEditingSavedEntryId(entry.id)
   }
 
-  const handleUpdateSavedEntry = (
+  const handleUpdateSavedEntry = async (
     nextGameMeta: DraftGameMeta,
     nextStatLine: BattingEntryData
   ) => {
     if (!editingSavedEntryId) return
 
-    setSavedEntriesByPlayer((prev) => {
-      const nextSaved = { ...prev }
-      const currentSaved = nextSaved[activePlayer.id] ?? []
+    try {
+      const payload = {
+        game: {
+          team_id: Number(activePlayer.teamId),
+          game_date: nextGameMeta.date,
+          opponent_name: nextGameMeta.opponent,
+          season_year: nextGameMeta.seasonYear,
+          match_number: nextGameMeta.matchNumber,
+          location: null,
+        },
+        battingStats: [
+          {
+            player_id: Number(activePlayer.id),
+            batting_order: 1,
+            ab: nextStatLine.AB,
+            h: nextStatLine.H,
+            double_hits: nextStatLine.doubles,
+            triple_hits: nextStatLine.triples,
+            hr: nextStatLine.HR,
+            rbi: nextStatLine.RBI,
+            bb: nextStatLine.BB,
+            so: nextStatLine.SO,
+            hbp: 0,
+            sf: 0,
+          },
+        ],
+        pitchingStats: [],
+      }
 
-      nextSaved[activePlayer.id] = currentSaved.map((entry) =>
-        entry.id === editingSavedEntryId
-          ? {
-              ...entry,
-              gameMeta: nextGameMeta,
-              statLine: nextStatLine,
-            }
-          : entry
-      )
+      const gameId = Number(editingSavedEntryId.replace("db-", ""))
+      await updateFullGame(gameId, payload)
 
-      return nextSaved
-    })
+      await refreshSavedEntries()
 
-    setEntriesByPlayer((prev) => ({
-      ...prev,
-      [activePlayer.id]: createInitialEntry(),
-    }))
+      setEntriesByPlayer((prev) => ({
+        ...prev,
+        [activePlayer.id]: createInitialEntry(),
+      }))
 
-    setEditingSavedEntryId(null)
+      setEditingSavedEntryId(null)
+    } catch (error) {
+      console.error(error)
+      window.alert("Update failed")
+    }
   }
 
   const handleCancelEditSavedEntry = () => {
@@ -199,33 +255,30 @@ const { kpi } = useGameStats(savedStatLines)
       ...prev,
       [activePlayer.id]: createInitialEntry(),
     }))
-
     setEditingSavedEntryId(null)
   }
 
-  const handleDeleteSavedEntry = (savedEntry: SavedBattingGameEntry) => {
-    const confirmed = window.confirm(
-      `Remove this saved entry?\n\n${savedEntry.gameMeta.date} vs ${savedEntry.gameMeta.opponent}`
+  const handleDeleteSavedEntry = async (entry: SavedBattingGameEntry) => {
+    const ok = window.confirm(
+      `Delete?\n${entry.gameMeta.date} vs ${entry.gameMeta.opponent}`
     )
-    if (!confirmed) return
+    if (!ok) return
 
-    setSavedEntriesByPlayer((prev) => {
-      const nextSaved = { ...prev }
-      const currentSaved = nextSaved[activePlayer.id] ?? []
+    try {
+      const gameId = Number(entry.id.replace("db-", ""))
+      await deleteGame(gameId)
+      await refreshSavedEntries()
 
-      nextSaved[activePlayer.id] = currentSaved.filter(
-        (entry) => entry.id !== savedEntry.id
-      )
-
-      return nextSaved
-    })
-
-    if (editingSavedEntryId === savedEntry.id) {
-      setEntriesByPlayer((prev) => ({
-        ...prev,
-        [activePlayer.id]: createInitialEntry(),
-      }))
-      setEditingSavedEntryId(null)
+      if (editingSavedEntryId === entry.id) {
+        setEntriesByPlayer((prev) => ({
+          ...prev,
+          [activePlayer.id]: createInitialEntry(),
+        }))
+        setEditingSavedEntryId(null)
+      }
+    } catch (error) {
+      console.error(error)
+      window.alert("Delete failed")
     }
   }
 
