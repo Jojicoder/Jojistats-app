@@ -66,7 +66,13 @@ export default function Header({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {isLoggedIn ? (
             <>
-      
+              <button
+                type="button"
+                onClick={onOpenTeamSetup}
+                className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 hover:bg-green-50"
+              >
+                Team Setup
+              </button>
 
               <button
                 type="button"
@@ -81,7 +87,7 @@ export default function Header({
               to="/login"
               className="rounded-lg bg-green-900 px-3 py-2 text-center text-sm font-semibold text-white hover:bg-green-800"
             >
-            Login
+              Login
             </Link>
           )}
         </div>
