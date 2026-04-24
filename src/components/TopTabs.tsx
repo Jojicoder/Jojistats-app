@@ -7,43 +7,34 @@ export default function TopTabs({
   activeView,
   onChangeView,
 }: TopTabsProps) {
+  const tabs: { label: string; view: TopTabsProps["activeView"] }[] = [
+    { label: "My Stats", view: "stats" },
+    { label: "Record Game", view: "record" },
+    { label: "Team Setup", view: "team" },
+  ]
+
   return (
-    <nav className="flex gap-2 overflow-x-auto border-b border-gray-200 bg-white px-2 py-1 sm:gap-6 sm:px-4 sm:py-2">
-      <button
-        type="button"
-        onClick={() => onChangeView("stats")}
-        className={`shrink-0 rounded-lg px-2 py-0.5 text-xs sm:py-1 sm:text-sm ${
-          activeView === "stats"
-            ? "font-semibold text-green-900"
-            : "text-gray-600 hover:text-green-900"
-        }`}
-      >
-        My Stats
-      </button>
+    <nav className="shrink-0 border-b border-gray-200 bg-white px-3 py-2">
+      <div className="flex gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1">
+        {tabs.map((tab) => {
+          const isActive = activeView === tab.view
 
-      <button
-        type="button"
-        onClick={() => onChangeView("record")}
-        className={`shrink-0 rounded-lg px-2 py-0.5 text-xs sm:py-1 sm:text-sm ${
-          activeView === "record"
-            ? "font-semibold text-green-900"
-            : "text-gray-600 hover:text-green-900"
-        }`}
-      >
-        Record Game
-      </button>
-
-      <button
-        type="button"
-        onClick={() => onChangeView("team")}
-        className={`shrink-0 rounded-lg px-2 py-0.5 text-xs sm:py-1 sm:text-sm ${
-          activeView === "team"
-            ? "font-semibold text-green-900"
-            : "text-gray-600 hover:text-green-900"
-        }`}
-      >
-        Team Setup
-      </button>
+          return (
+            <button
+              key={tab.view}
+              type="button"
+              onClick={() => onChangeView(tab.view)}
+              className={`shrink-0 rounded-md px-3 py-2 text-sm font-semibold transition ${
+                isActive
+                  ? "bg-white text-green-900 shadow-sm"
+                  : "text-gray-600 hover:bg-white/70 hover:text-green-900"
+              }`}
+            >
+              {tab.label}
+            </button>
+          )
+        })}
+      </div>
     </nav>
   )
 }

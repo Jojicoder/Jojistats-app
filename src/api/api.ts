@@ -162,6 +162,21 @@ export const archivePlayer = async (playerId: number) => {
    FULL GAME SAVE / UPDATE / DELETE
 ========================= */
 
+type BattingGameStatPayload = {
+  player_id: number
+  batting_order: number
+  ab?: number
+  h?: number
+  double_hits?: number
+  triple_hits?: number
+  hr?: number
+  rbi?: number
+  bb?: number
+  so?: number
+  hbp?: number
+  sf?: number
+}
+
 type FullGamePayload = {
   game: {
     team_id: number
@@ -171,8 +186,8 @@ type FullGamePayload = {
     match_number: number
     location?: string | null
   }
-  battingStats: any[]
-  pitchingStats?: any[]
+  battingStats: BattingGameStatPayload[]
+  pitchingStats?: unknown[]
 }
 
 export const createFullGame = async (data: FullGamePayload) => {

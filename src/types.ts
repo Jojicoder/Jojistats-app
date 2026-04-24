@@ -85,14 +85,19 @@ export type BattingCalculatedKPI = {
 }
 
 export type PitchingEntryData = {
-  outs: number
+  inningsPitchedOuts: number
   hitsAllowed: number
+  runsAllowed: number
   earnedRuns: number
   walks: number
   strikeouts: number
+  homeRunsAllowed: number
 }
 
 export type SavedPitchingGameEntry = {
+  id: string
+  teamId: string
+  playerId: string
   gameMeta: DraftGameMeta
   statLine: PitchingEntryData
 }
@@ -104,3 +109,4 @@ export type PitchingCalculatedKPI = {
   inningsPitched: string
   gamesPitched: number
 }
+
