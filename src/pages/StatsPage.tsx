@@ -226,7 +226,6 @@ export default function StatsPage() {
           const team = teams.find((t) => t.name === teamName)
           if (team) handleChangeTeam(team.id)
         }}
-        onOpenTeamSetup={() => {}}
       />
 
      {/* Mode switch */}

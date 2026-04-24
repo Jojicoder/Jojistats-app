@@ -169,7 +169,6 @@ export default function Layout({
         const t = visibleTeams.find((x) => x.name === name)
         if (t) handleChangeTeam(t.id)
       }}
-      onOpenTeamSetup={() => setActiveView("team")}
       isLoggedIn={true}
     />
 

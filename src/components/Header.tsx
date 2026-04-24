@@ -6,7 +6,6 @@ type HeaderProps = {
   teamName: string
   teams: string[]
   onChangeTeam: (teamName: string) => void
-  onOpenTeamSetup: () => void
   isLoggedIn?: boolean
 }
 
@@ -14,7 +13,6 @@ export default function Header({
   teamName,
   teams,
   onChangeTeam,
-  onOpenTeamSetup,
   isLoggedIn: isLoggedInProp,
 }: HeaderProps) {
   const navigate = useNavigate()
@@ -93,7 +91,6 @@ export default function Header({
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {isLoggedIn ? (
             <>
-             
               <button
                 type="button"
                 onClick={handleLogout}
