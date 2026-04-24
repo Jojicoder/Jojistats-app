@@ -10,6 +10,7 @@ import {
   fetchSavedEntriesByPlayer,
   fetchPitchingEntriesByPlayer,
 } from "../api/supabase-api"
+import { archiveTeam as archiveTeamApi } from "../api/api"
 import type { PlayerRow, TeamRow } from "../api/supabase-api"
 import type {
   Player,
@@ -156,6 +157,35 @@ export default function Layout({
     setPitchingEntriesByPlayer(pitching)
   }
 
+  const handleArchiveTeam = async (teamId: string) => {
+    try {
+      await archiveTeamApi(Number(teamId))
+
+      const nextTeams = teams.map((team) =>
+        team.id === teamId ? { ...team, isArchived: true } : team
+      )
+      setTeams(nextTeams)
+
+      if (activeTeamId !== teamId) return
+
+      const nextActiveTeam = nextTeams.find((team) => !team.isArchived) ?? null
+      setActiveTeamId(nextActiveTeam?.id ?? "")
+
+      if (!nextActiveTeam) {
+        setPlayers([])
+        setActivePlayerId("")
+        setSavedEntriesByPlayer({})
+        setPitchingEntriesByPlayer({})
+        return
+      }
+
+      await handleChangeTeam(nextActiveTeam.id)
+    } catch (error) {
+      console.error("Failed to archive team", error)
+      window.alert("Failed to archive team")
+    }
+  }
+
   /* -------------------- UI -------------------- */
 
   return (
@@ -222,7 +252,7 @@ export default function Layout({
           savedEntriesByPlayer={savedEntriesByPlayer}
           onAddTeam={() => {}}
           onUpdateTeamName={() => {}}
-          onArchiveTeam={() => {}}
+          onArchiveTeam={handleArchiveTeam}
           onStartNewSeason={() => {}}
           onAddPlayer={() => {}}
           onUpdatePlayer={() => {}}
