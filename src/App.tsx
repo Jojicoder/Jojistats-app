@@ -1,21 +1,47 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
 
 import AdminPage from "./pages/AdminPage"
 import StatsPage from "./pages/StatsPage"
 import LoginPage from "./pages/LoginPage"
+import { supabase } from "./api/supabase-client"
+
 import type { Player, Team } from "./types"
 
-function AdminGuard({ children }: { children: React.ReactNode }) {
-  // Check temporary local admin login status
-  const isLoggedIn = localStorage.getItem("jojiStatsAdminLoggedIn") === "true"
+/* -------------------- Admin Guard (Supabase版) -------------------- */
 
-  if (!isLoggedIn) {
+function AdminGuard({ children }: { children: React.ReactNode }) {
+  const [isLoading, setIsLoading] = useState(true)
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser()
+
+      if (data.user && data.user.email === "admin@jojistats.com") {
+        setIsAuthenticated(true)
+      } else {
+        setIsAuthenticated(false)
+      }
+
+      setIsLoading(false)
+    }
+
+    checkUser()
+  }, [])
+
+  if (isLoading) {
+    return <div className="p-6 text-gray-600">Checking auth...</div>
+  }
+
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />
   }
 
   return children
 }
+
+/* -------------------- App -------------------- */
 
 export default function App() {
   const [teams, setTeams] = useState<Team[]>([])
@@ -26,13 +52,13 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Redirect root URL to public stats page */}
+        {/* Root redirect */}
         <Route path="/" element={<Navigate to="/stats" replace />} />
 
-        {/* Public read-only page */}
+        {/* Public page */}
         <Route path="/stats" element={<StatsPage />} />
 
-        {/* Admin editable page protected by local login */}
+        {/* Admin (protected) */}
         <Route
           path="/admin"
           element={
@@ -51,7 +77,7 @@ export default function App() {
           }
         />
 
-        {/* Login page for admin users */}
+        {/* Login */}
         <Route path="/login" element={<LoginPage />} />
       </Routes>
     </BrowserRouter>

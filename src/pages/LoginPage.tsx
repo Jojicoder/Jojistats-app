@@ -1,24 +1,36 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
+import { supabase } from "../api/supabase-client"
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [email, setEmail] = useState("")
+  const [email, setEmail] = useState("admin@jojistats.com")
   const [password, setPassword] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
- const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
-  event.preventDefault()
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
 
-  if (email === "admin@example.com" && password === "password") {
+    try {
+      setIsLoading(true)
 
-    
-    localStorage.setItem("jojiStatsAdminLoggedIn", "true")
-    navigate("/admin")
-    return
+      // Sign in with Supabase Auth
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+
+      if (error) {
+        window.alert("Login failed")
+        return
+      }
+
+      // Redirect to admin page after successful login
+      navigate("/admin")
+    } finally {
+      setIsLoading(false)
+    }
   }
-
-  window.alert("Invalid email or password")
-}
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
@@ -27,9 +39,7 @@ export default function LoginPage() {
         className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm"
       >
         {/* Login page title */}
-        <h1 className="text-2xl font-bold text-green-900">
-        Login
-        </h1>
+        <h1 className="text-2xl font-bold text-green-900">Admin Login</h1>
 
         {/* Login page description */}
         <p className="mt-2 text-sm text-gray-600">
@@ -43,7 +53,6 @@ export default function LoginPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
-            placeholder="admin@example.com"
           />
         </label>
 
@@ -54,15 +63,16 @@ export default function LoginPage() {
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
-            placeholder="password"
+            placeholder="Enter password"
           />
         </label>
 
         <button
           type="submit"
-          className="mt-6 w-full rounded-lg bg-green-900 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+          disabled={isLoading}
+          className="mt-6 w-full rounded-lg bg-green-900 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
         >
-          Login
+          {isLoading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>

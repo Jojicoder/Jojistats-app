@@ -1,4 +1,6 @@
 import { Link, useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react"
+import { supabase } from "../api/supabase-client"
 
 type HeaderProps = {
   teamName: string
@@ -13,23 +15,50 @@ export default function Header({
   teams,
   onChangeTeam,
   onOpenTeamSetup,
-  isLoggedIn = false,
+  isLoggedIn: isLoggedInProp,
 }: HeaderProps) {
   const navigate = useNavigate()
 
-  const handleLogout = () => {
-    // Remove temporary local admin login
-    localStorage.removeItem("jojiStatsAdminLoggedIn")
+  const [authIsLoggedIn, setAuthIsLoggedIn] = useState(false)
+  const isLoggedIn = isLoggedInProp ?? authIsLoggedIn
 
-    // Redirect to public stats page
-    navigate("/stats")
+  /* -------------------- AUTH STATE -------------------- */
+
+  useEffect(() => {
+    const checkUser = async () => {
+      const { data } = await supabase.auth.getUser()
+      setAuthIsLoggedIn(!!data.user)
+    }
+
+    checkUser()
+
+    // 🔥 リアルタイムでログイン状態更新
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setAuthIsLoggedIn(!!session)
+      }
+    )
+
+    return () => {
+      listener.subscription.unsubscribe()
+    }
+  }, [])
+
+  /* -------------------- LOGOUT -------------------- */
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
+    navigate("/login")
   }
+
+  /* -------------------- UI -------------------- */
 
   return (
     <header className="shrink-0 border-b border-gray-200 bg-white px-3 py-3 shadow-sm sm:px-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        
+        {/* LEFT */}
         <div className="flex min-w-0 items-center gap-3">
-          {/* App logo */}
           <img
             src="/logo.png"
             alt="JojiStats logo"
@@ -37,12 +66,10 @@ export default function Header({
           />
 
           <div className="min-w-0">
-            {/* App name */}
             <p className="text-4xl font-extrabold uppercase tracking-tight text-green-900">
               Joji Stats
             </p>
 
-            {/* Team selector under the app name */}
             <select
               value={teams.includes(teamName) ? teamName : ""}
               onChange={(event) => onChangeTeam(event.target.value)}
@@ -62,18 +89,11 @@ export default function Header({
           </div>
         </div>
 
-        {/* Right-side admin actions */}
+        {/* RIGHT */}
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           {isLoggedIn ? (
             <>
-              <button
-                type="button"
-                onClick={onOpenTeamSetup}
-                className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 hover:bg-green-50"
-              >
-                Team Setup
-              </button>
-
+             
               <button
                 type="button"
                 onClick={handleLogout}
