@@ -109,4 +109,3 @@ export type PitchingCalculatedKPI = {
   inningsPitched: string
   gamesPitched: number
 }
-

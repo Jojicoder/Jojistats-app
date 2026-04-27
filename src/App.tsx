@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react"
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom"
 
 import AdminPage from "./pages/AdminPage"
 import StatsPage from "./pages/StatsPage"
 import LoginPage from "./pages/LoginPage"
 import { supabase } from "./api/supabase-client"
+import SignupPage from "./pages/SignupPage"
 
 import type { Player, Team } from "./types"
 
 /* -------------------- Admin Guard (Supabase版) -------------------- */
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
+  const location = useLocation()
   const [isLoading, setIsLoading] = useState(true)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
 
@@ -35,7 +37,7 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
   return children
@@ -79,6 +81,7 @@ export default function App() {
 
         {/* Login */}
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/signup" element={<SignupPage />} />
       </Routes>
     </BrowserRouter>
   )

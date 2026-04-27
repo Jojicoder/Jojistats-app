@@ -4,30 +4,45 @@ import Sidebar from "./Sidebar"
 import MainDashboard from "./MainDashboard"
 import TeamSetupPage from "./TeamSetupPage"
 import { useEffect, useState } from "react"
+import type { Dispatch, SetStateAction } from "react"
 import {
   fetchTeams,
   fetchPlayers,
   fetchSavedEntriesByPlayer,
   fetchPitchingEntriesByPlayer,
 } from "../api/supabase-api"
-import { archiveTeam as archiveTeamApi } from "../api/api"
+
+import {
+  createTeam,
+  updateTeam,
+  archiveTeam,
+  createPlayer,
+  updatePlayer,
+  archivePlayer,
+} from "../api/api"
+
 import type { PlayerRow, TeamRow } from "../api/supabase-api"
 import type {
   Player,
   Team,
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
+  BattingEntryData,
+  DraftGameMeta,
 } from "../types"
+
+type ActiveView = "stats" | "record" | "team"
+type StatMode = "batting" | "pitching"
 
 type LayoutProps = {
   teams: Team[]
-  setTeams: React.Dispatch<React.SetStateAction<Team[]>>
+  setTeams: Dispatch<SetStateAction<Team[]>>
   players: Player[]
-  setPlayers: React.Dispatch<React.SetStateAction<Player[]>>
+  setPlayers: Dispatch<SetStateAction<Player[]>>
   activeTeamId: string
-  setActiveTeamId: React.Dispatch<React.SetStateAction<string>>
+  setActiveTeamId: Dispatch<SetStateAction<string>>
   activePlayerId: string
-  setActivePlayerId: React.Dispatch<React.SetStateAction<string>>
+  setActivePlayerId: Dispatch<SetStateAction<string>>
 }
 
 function mapTeamRow(team: TeamRow): Team {
@@ -51,6 +66,15 @@ function mapPlayerRow(player: PlayerRow): Player {
   }
 }
 
+function createInitialGameMeta(seasonYear?: number): DraftGameMeta {
+  return {
+    date: new Date().toISOString().split("T")[0],
+    opponent: "",
+    seasonYear: seasonYear ?? new Date().getFullYear(),
+    matchNumber: 1,
+  }
+}
+
 export default function Layout({
   teams,
   setTeams,
@@ -61,241 +85,238 @@ export default function Layout({
   activePlayerId,
   setActivePlayerId,
 }: LayoutProps) {
-  const [activeView, setActiveView] = useState<"stats" | "record" | "team">("stats")
-  const [mode, setMode] = useState<"batting" | "pitching">("batting")
+  const [activeView, setActiveView] = useState<ActiveView>("stats")
+  const [mode, setMode] = useState<StatMode>("batting")
 
-  const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
-    Record<string, SavedBattingGameEntry[]>
-  >({})
+  const [entriesByPlayer, setEntriesByPlayer] = useState<Record<string, BattingEntryData>>({})
+  const [gameMeta, setGameMeta] = useState<DraftGameMeta>(() =>
+    createInitialGameMeta()
+  )
 
-  const [pitchingEntriesByPlayer, setPitchingEntriesByPlayer] = useState<
-    Record<string, SavedPitchingGameEntry[]>
-  >({})
+  const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<Record<string, SavedBattingGameEntry[]>>({})
+  const [pitchingEntriesByPlayer, setPitchingEntriesByPlayer] = useState<Record<string, SavedPitchingGameEntry[]>>({})
 
-  const visibleTeams = teams.filter((t) => !t.isArchived)
-  const activeTeam = visibleTeams.find((t) => t.id === activeTeamId) || null
+  const visibleTeams = teams.filter((t: Team) => !t.isArchived)
+  const activeTeam = visibleTeams.find((t: Team) => t.id === activeTeamId) || null
 
   const teamPlayers = players.filter(
-    (p) =>
+    (p: Player) =>
       p.teamId === activeTeam?.id &&
       !p.isArchived &&
       p.seasonYear === activeTeam?.currentSeasonYear
   )
 
   const activePlayer =
-    teamPlayers.find((p) => p.id === activePlayerId) || teamPlayers[0] || null
+    teamPlayers.find((p: Player) => p.id === activePlayerId) || teamPlayers[0] || null
 
-  /* -------------------- INITIAL LOAD -------------------- */
+  /* ---------------- LOAD ---------------- */
 
   useEffect(() => {
     const load = async () => {
-      const teamsData = (await fetchTeams())
-        .map(mapTeamRow)
-        .filter((t) => !t.isArchived)
-
+      const teamsData = (await fetchTeams()).map(mapTeamRow)
       setTeams(teamsData)
 
       const first = teamsData[0]
       if (!first) return
 
       setActiveTeamId(first.id)
+      setGameMeta(createInitialGameMeta(first.currentSeasonYear))
 
-      const playersData = (await fetchPlayers(
-        Number(first.id),
-        first.currentSeasonYear
-      ))
-        .map(mapPlayerRow)
-        .filter((p) => !p.isArchived)
-
+      const playersData = (await fetchPlayers(Number(first.id), first.currentSeasonYear)).map(mapPlayerRow)
       setPlayers(playersData)
       setActivePlayerId(playersData[0]?.id ?? "")
 
-      const batting = await fetchSavedEntriesByPlayer(
-        Number(first.id),
-        first.currentSeasonYear
+      setSavedEntriesByPlayer(
+        await fetchSavedEntriesByPlayer(Number(first.id), first.currentSeasonYear)
       )
-      setSavedEntriesByPlayer(batting)
 
-      const pitching = await fetchPitchingEntriesByPlayer(
-        Number(first.id),
-        first.currentSeasonYear
+      setPitchingEntriesByPlayer(
+        await fetchPitchingEntriesByPlayer(Number(first.id), first.currentSeasonYear)
       )
-      setPitchingEntriesByPlayer(pitching)
     }
 
     load()
   }, [])
 
-  /* -------------------- TEAM SWITCH -------------------- */
+  /* ---------------- TEAM ACTIONS ---------------- */
 
-  const handleChangeTeam = async (teamId: string) => {
-    const team = visibleTeams.find((t) => t.id === teamId)
+  const handleAddTeam = async (name: string) => {
+    await createTeam({ name })
+    const updated = await fetchTeams()
+    setTeams(updated.map(mapTeamRow))
+  }
+
+  const handleUpdateTeamName = async (teamId: string, name: string) => {
+    const team = teams.find((t) => t.id === teamId)
     if (!team) return
 
-    setActiveTeamId(teamId)
-
-    const playersData = (await fetchPlayers(
-      Number(teamId),
-      team.currentSeasonYear
-    ))
-      .map(mapPlayerRow)
-      .filter((p) => !p.isArchived)
-
-    setPlayers(playersData)
-    setActivePlayerId(playersData[0]?.id ?? "")
-
-    const batting = await fetchSavedEntriesByPlayer(
-      Number(teamId),
-      team.currentSeasonYear
-    )
-    setSavedEntriesByPlayer(batting)
-
-    const pitching = await fetchPitchingEntriesByPlayer(
-      Number(teamId),
-      team.currentSeasonYear
-    )
-    setPitchingEntriesByPlayer(pitching)
+    await updateTeam(Number(teamId), {
+      name,
+      current_season_year: team.currentSeasonYear,
+    })
+    const updated = await fetchTeams()
+    setTeams(updated.map(mapTeamRow))
   }
 
   const handleArchiveTeam = async (teamId: string) => {
-    try {
-      await archiveTeamApi(Number(teamId))
-
-      const nextTeams = teams.map((team) =>
-        team.id === teamId ? { ...team, isArchived: true } : team
-      )
-      setTeams(nextTeams)
-
-      if (activeTeamId !== teamId) return
-
-      const nextActiveTeam = nextTeams.find((team) => !team.isArchived) ?? null
-      setActiveTeamId(nextActiveTeam?.id ?? "")
-
-      if (!nextActiveTeam) {
-        setPlayers([])
-        setActivePlayerId("")
-        setSavedEntriesByPlayer({})
-        setPitchingEntriesByPlayer({})
-        return
-      }
-
-      await handleChangeTeam(nextActiveTeam.id)
-    } catch (error) {
-      console.error("Failed to archive team", error)
-      window.alert("Failed to archive team")
-    }
+    await archiveTeam(Number(teamId))
+    const updated = await fetchTeams()
+    setTeams(updated.map(mapTeamRow))
   }
 
-  /* -------------------- UI -------------------- */
+  /* ---------------- PLAYER ACTIONS ---------------- */
+
+  const handleAddPlayer = async (player: Player) => {
+    await createPlayer({
+      team_id: Number(player.teamId),
+      name: player.name,
+      jersey_number: player.jerseyNumber ?? null,
+      position: player.position,
+      season_year: player.seasonYear,
+      is_archived: player.isArchived ? 1 : 0,
+    })
+    const updated = await fetchPlayers(Number(player.teamId), player.seasonYear)
+    setPlayers(updated.map(mapPlayerRow))
+  }
+
+  const handleUpdatePlayer = async (player: Player) => {
+    await updatePlayer(Number(player.id), {
+      team_id: Number(player.teamId),
+      name: player.name,
+      jersey_number: player.jerseyNumber ?? null,
+      position: player.position,
+      season_year: player.seasonYear,
+      is_archived: player.isArchived ? 1 : 0,
+    })
+    const updated = await fetchPlayers(Number(player.teamId), player.seasonYear)
+    setPlayers(updated.map(mapPlayerRow))
+  }
+
+  const handleDeletePlayer = async (playerId: string) => {
+    if (!activeTeam) return
+
+    await archivePlayer(Number(playerId))
+    const updated = await fetchPlayers(Number(activeTeamId), activeTeam.currentSeasonYear)
+    setPlayers(updated.map(mapPlayerRow))
+  }
+
+  /* ---------------- UI ---------------- */
 
   return (
-  <div className="flex h-screen flex-col bg-gray-50">
+    <div className="flex h-screen flex-col bg-gray-50">
 
-    {/* Header */}
-    <Header
-      teamName={activeTeam?.name ?? "No Team"}
-      teams={visibleTeams.map((t) => t.name)}
-      onChangeTeam={(name) => {
-        const t = visibleTeams.find((x) => x.name === name)
-        if (t) handleChangeTeam(t.id)
-      }}
-      isLoggedIn={true}
-    />
+      <Header
+        teamName={activeTeam?.name ?? "No Team"}
+        teams={visibleTeams.map((t) => t.name)}
+        onChangeTeam={(name) => {
+          const t = visibleTeams.find((x: Team) => x.name === name)
+          if (t) {
+            setActiveTeamId(t.id)
+            setGameMeta((prev) => ({
+              ...prev,
+              seasonYear: t.currentSeasonYear,
+            }))
+          }
+        }}
+        isLoggedIn={true}
+      />
 
-    {/* ✅ TopTabs（ここに置く） */}
-    <TopTabs
-      activeView={activeView}
-      onChangeView={setActiveView}
-    />
+      <TopTabs activeView={activeView} onChangeView={setActiveView} />
 
-    {activeView === "stats" && (
-      <div className="flex shrink-0 gap-2 px-4 pt-3">
-        <button
-          type="button"
-          onClick={() => setMode("batting")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-            mode === "batting"
-              ? "bg-green-900 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-        >
-          Batting
-        </button>
+      {activeView === "stats" && (
+        <div className="flex gap-2 px-4 pt-3">
+          <button
+            type="button"
+            onClick={() => setMode("batting")}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              mode === "batting"
+                ? "bg-green-900 text-white shadow-sm"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            Batting
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("pitching")}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+              mode === "pitching"
+                ? "bg-green-900 text-white shadow-sm"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            Pitching
+          </button>
+        </div>
+      )}
 
-        <button
-          type="button"
-          onClick={() => setMode("pitching")}
-          className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-            mode === "pitching"
-              ? "bg-green-900 text-white"
-              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-          }`}
-        >
-          Pitching
-        </button>
-      </div>
-    )}
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:p-4">
 
-    {/* Main Content */}
-    <div className="flex min-h-0 flex-1 gap-4 overflow-auto p-4">
-
-      {activeView === "team" ? (
-        <TeamSetupPage
-          teams={visibleTeams}
-          activeTeamId={activeTeam?.id ?? null}
-          setActiveTeamId={setActiveTeamId}
-          teamName={activeTeam?.name ?? ""}
-          seasonYear={activeTeam?.currentSeasonYear ?? 0}
-          players={teamPlayers}
-          activePlayerId={activePlayer?.id ?? null}
-          setActivePlayerId={setActivePlayerId}
-          savedEntriesByPlayer={savedEntriesByPlayer}
-          onAddTeam={() => {}}
-          onUpdateTeamName={() => {}}
-          onArchiveTeam={handleArchiveTeam}
-          onStartNewSeason={() => {}}
-          onAddPlayer={() => {}}
-          onUpdatePlayer={() => {}}
-          onDeletePlayer={() => {}}
-        />
-      ) : (
-        <>
-          <Sidebar
+        {activeView === "team" ? (
+          <TeamSetupPage
+            teams={visibleTeams}
+            activeTeamId={activeTeam?.id ?? null}
+            setActiveTeamId={setActiveTeamId}
+            teamName={activeTeam?.name ?? ""}
+            seasonYear={activeTeam?.currentSeasonYear ?? 0}
             players={teamPlayers}
-            activePlayerId={activePlayer?.id ?? ""}
+            activePlayerId={activePlayer?.id ?? null}
             setActivePlayerId={setActivePlayerId}
             savedEntriesByPlayer={savedEntriesByPlayer}
-            pitchingEntriesByPlayer={pitchingEntriesByPlayer}
-            mode={mode}
-          />
 
-          <div className="flex-1">
+            onAddTeam={handleAddTeam}
+            onUpdateTeamName={handleUpdateTeamName}
+            onArchiveTeam={handleArchiveTeam}
+
+            onAddPlayer={handleAddPlayer}
+            onUpdatePlayer={handleUpdatePlayer}
+            onDeletePlayer={handleDeletePlayer}
+            onChangeSeason={(year) => {
+              if (!activeTeam) return
+
+              setTeams((prev) =>
+                prev.map((team) =>
+                  team.id === activeTeam.id
+                    ? { ...team, currentSeasonYear: year }
+                    : team
+                )
+              )
+            }}
+          />
+        ) : (
+          <>
+            <Sidebar
+              players={teamPlayers}
+              activePlayerId={activePlayer?.id ?? ""}
+              setActivePlayerId={setActivePlayerId}
+              savedEntriesByPlayer={savedEntriesByPlayer}
+              pitchingEntriesByPlayer={pitchingEntriesByPlayer}
+              mode={mode}
+            />
+
             {activePlayer ? (
               <MainDashboard
                 activePlayer={activePlayer}
-                activeView={activeView}
+                activeView={activeView === "record" ? "record" : "stats"}
                 teamName={activeTeam?.name ?? ""}
-                gameMeta={{
-                  date: new Date().toISOString().split("T")[0],
-                  opponent: "",
-                  seasonYear: activeTeam?.currentSeasonYear ?? 0,
-                  matchNumber: 1,
-                }}
-                setGameMeta={() => {}}
-                entriesByPlayer={{}}
-                setEntriesByPlayer={() => {}}
+                gameMeta={gameMeta}
+                setGameMeta={setGameMeta}
+                entriesByPlayer={entriesByPlayer}
+                setEntriesByPlayer={setEntriesByPlayer}
                 savedEntriesByPlayer={savedEntriesByPlayer}
+                pitchingEntriesByPlayer={pitchingEntriesByPlayer}
+                mode={mode}
                 setSavedEntriesByPlayer={setSavedEntriesByPlayer}
+                setPitchingEntriesByPlayer={setPitchingEntriesByPlayer}
               />
             ) : (
-              <div className="p-6 text-gray-500">
-                No player found
-              </div>
+              <main className="w-full rounded-2xl bg-white p-6 text-sm text-gray-600 shadow-sm">
+                Add a player to start recording stats.
+              </main>
             )}
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
-  </div>
-)
+  )
 }

@@ -29,10 +29,7 @@ export default function ScoreEntryPanel({
       <p className="text-sm font-medium text-green-900">Batting Entry</p>
 
       <div className="mt-4">
-        <BattingStatFields
-          entry={entry}
-          onEntryChange={onEntryChange}
-        />
+        <BattingStatFields entry={entry} onEntryChange={onEntryChange} />
       </div>
 
       <div className="mt-6 flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">

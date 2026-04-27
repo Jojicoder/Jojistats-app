@@ -177,6 +177,21 @@ type BattingGameStatPayload = {
   sf?: number
 }
 
+type PitchingGameStatPayload = {
+  player_id: number
+  innings_pitched_outs?: number
+  hits_allowed?: number
+  runs_allowed?: number
+  earned_runs?: number
+  walks?: number
+  strikeouts?: number
+  home_runs_allowed?: number
+  win_flag?: boolean
+  loss_flag?: boolean
+  save_flag?: boolean
+  hold_flag?: boolean
+}
+
 type FullGamePayload = {
   game: {
     team_id: number
@@ -187,7 +202,7 @@ type FullGamePayload = {
     location?: string | null
   }
   battingStats: BattingGameStatPayload[]
-  pitchingStats?: unknown[]
+  pitchingStats?: PitchingGameStatPayload[]
 }
 
 export const createFullGame = async (data: FullGamePayload) => {
@@ -228,6 +243,29 @@ export const createFullGame = async (data: FullGamePayload) => {
     if (battingError) throw new Error(battingError.message)
   }
 
+  if (data.pitchingStats && data.pitchingStats.length > 0) {
+    const { error: pitchingError } = await supabase
+      .from("pitching_game_stats")
+      .insert(
+        data.pitchingStats.map((s) => ({
+          game_id: game.id,
+          player_id: s.player_id,
+          innings_pitched_outs: s.innings_pitched_outs ?? 0,
+          hits_allowed: s.hits_allowed ?? 0,
+          runs_allowed: s.runs_allowed ?? 0,
+          earned_runs: s.earned_runs ?? 0,
+          walks: s.walks ?? 0,
+          strikeouts: s.strikeouts ?? 0,
+          home_runs_allowed: s.home_runs_allowed ?? 0,
+          win_flag: s.win_flag ?? false,
+          loss_flag: s.loss_flag ?? false,
+          save_flag: s.save_flag ?? false,
+          hold_flag: s.hold_flag ?? false,
+        }))
+      )
+    if (pitchingError) throw new Error(pitchingError.message)
+  }
+
   return { game_id: game.id }
 }
 
@@ -250,6 +288,12 @@ export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
     .eq("game_id", gameId)
   if (deleteError) throw new Error(deleteError.message)
 
+  const { error: deletePitchingError } = await supabase
+    .from("pitching_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+  if (deletePitchingError) throw new Error(deletePitchingError.message)
+
   if (data.battingStats.length > 0) {
     const { error: battingError } = await supabase
       .from("batting_game_stats")
@@ -271,6 +315,29 @@ export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
         }))
       )
     if (battingError) throw new Error(battingError.message)
+  }
+
+  if (data.pitchingStats && data.pitchingStats.length > 0) {
+    const { error: pitchingError } = await supabase
+      .from("pitching_game_stats")
+      .insert(
+        data.pitchingStats.map((s) => ({
+          game_id: gameId,
+          player_id: s.player_id,
+          innings_pitched_outs: s.innings_pitched_outs ?? 0,
+          hits_allowed: s.hits_allowed ?? 0,
+          runs_allowed: s.runs_allowed ?? 0,
+          earned_runs: s.earned_runs ?? 0,
+          walks: s.walks ?? 0,
+          strikeouts: s.strikeouts ?? 0,
+          home_runs_allowed: s.home_runs_allowed ?? 0,
+          win_flag: s.win_flag ?? false,
+          loss_flag: s.loss_flag ?? false,
+          save_flag: s.save_flag ?? false,
+          hold_flag: s.hold_flag ?? false,
+        }))
+      )
+    if (pitchingError) throw new Error(pitchingError.message)
   }
 }
 

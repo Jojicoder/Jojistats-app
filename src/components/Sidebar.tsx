@@ -168,48 +168,49 @@ export default function Sidebar({
   ])
 
   return (
-    <aside className="w-full rounded-2xl bg-white p-4 shadow-sm lg:max-w-[240px]">
-      <div className="flex items-start justify-between gap-3 lg:block">
+    <aside className="w-full shrink-0 rounded-2xl bg-white p-3 shadow-sm lg:max-w-[240px] lg:p-4">
+      {/* モバイル: 1行 / デスクトップ: 縦積み */}
+      <div className="flex items-center justify-between gap-2 lg:block">
         <div>
-          <p className="text-lg font-semibold text-gray-800">Team Roster</p>
-          <p className="mt-1 text-sm text-gray-500">{players.length} players</p>
+          <p className="text-base font-semibold text-gray-800 lg:text-lg">Team Roster</p>
+          <p className="hidden text-sm text-gray-500 lg:mt-1 lg:block">{players.length} players</p>
+        </div>
+
+        <div className="flex items-center gap-2 lg:mt-4 lg:max-w-xs lg:flex-col lg:items-start lg:gap-0">
+          <span className="text-xs font-medium text-gray-500 lg:hidden">Sort:</span>
+          <label className="hidden text-xs font-medium text-gray-500 lg:block">Sort by</label>
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as SidebarSortKey)}
+            className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs lg:mt-1 lg:w-full lg:px-3 lg:py-2 lg:text-sm"
+          >
+            <option value="jersey">Jersey Number</option>
+            <option value="name">Name</option>
+            <option value="position">Position</option>
+            <option value="games">Games Played</option>
+
+            {mode === "batting" ? (
+              <>
+                <option value="pa">PA</option>
+                <option value="avg">AVG</option>
+                <option value="ops">OPS</option>
+                <option value="hr">HR</option>
+                <option value="rbi">RBI</option>
+              </>
+            ) : (
+              <>
+                <option value="era">ERA</option>
+                <option value="whip">WHIP</option>
+                <option value="ip">IP</option>
+                <option value="so">SO</option>
+                <option value="bb">BB</option>
+              </>
+            )}
+          </select>
         </div>
       </div>
 
-      <div className="mt-4 max-w-xs">
-        <label className="text-xs font-medium text-gray-500">Sort by</label>
-
-        <select
-          value={sortBy}
-          onChange={(e) => setSortBy(e.target.value as SidebarSortKey)}
-          className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-        >
-          <option value="jersey">Jersey Number</option>
-          <option value="name">Name</option>
-          <option value="position">Position</option>
-          <option value="games">Games Played</option>
-
-          {mode === "batting" ? (
-            <>
-              <option value="pa">PA</option>
-              <option value="avg">AVG</option>
-              <option value="ops">OPS</option>
-              <option value="hr">HR</option>
-              <option value="rbi">RBI</option>
-            </>
-          ) : (
-            <>
-              <option value="era">ERA</option>
-              <option value="whip">WHIP</option>
-              <option value="ip">IP</option>
-              <option value="so">SO</option>
-              <option value="bb">BB</option>
-            </>
-          )}
-        </select>
-      </div>
-
-      <div className="mt-4 flex gap-3 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+      <div className="mt-3 flex gap-3 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
         {sortedPlayers.map((player) => {
           const isActive = player.id === activePlayerId
           const battingMetrics = getPlayerMetrics(

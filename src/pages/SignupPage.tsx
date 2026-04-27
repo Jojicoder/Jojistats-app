@@ -1,52 +1,33 @@
-import { useEffect, useState } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
 
-type LoginLocationState = {
-  from?: string
-}
-
-export default function LoginPage() {
+export default function SignupPage() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const [email, setEmail] = useState("admin@jojistats.com")
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const redirectAfterLogin = (userEmail?: string | null) => {
-    const from = (location.state as LoginLocationState | null)?.from
+  const handleSignup = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
 
-    if (from && from !== "/login") {
-      navigate(from, { replace: true })
+    if (!name.trim()) {
+      window.alert("Please enter your name.")
       return
     }
-
-    navigate(userEmail === "admin@jojistats.com" ? "/admin" : "/stats", {
-      replace: true,
-    })
-  }
-
-  useEffect(() => {
-    const redirectIfAlreadyLoggedIn = async () => {
-      const { data } = await supabase.auth.getUser()
-      if (data.user) {
-        redirectAfterLogin(data.user.email)
-      }
-    }
-
-    redirectIfAlreadyLoggedIn()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
 
     try {
       setIsLoading(true)
 
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          data: {
+            name: name.trim(),
+          },
+        },
       })
 
       if (error) {
@@ -54,7 +35,13 @@ export default function LoginPage() {
         return
       }
 
-      redirectAfterLogin(data.user?.email)
+      if (!data.user) {
+        window.alert("Signup failed.")
+        return
+      }
+
+      window.alert("Account created. Please log in.")
+      navigate("/login")
     } finally {
       setIsLoading(false)
     }
@@ -62,8 +49,11 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+
+      {/* HEADER */}
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
-        <div className="flex w-full items-center justify-between gap-4">
+        <div className="flex w-full items-center justify-between">
+
           <Link to="/stats" className="flex items-center gap-3">
             <img
               src="/logo.png"
@@ -91,27 +81,41 @@ export default function LoginPage() {
               Sign Up
             </Link>
           </div>
+
         </div>
       </header>
 
+      {/* FORM */}
       <main className="flex min-h-[calc(100vh-73px)] items-center justify-center px-4">
         <form
-          onSubmit={handleLogin}
+          onSubmit={handleSignup}
           className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm"
         >
-          <h1 className="text-2xl font-bold text-green-900">Admin Login</h1>
+          <h1 className="text-2xl font-bold text-green-900">Create Account</h1>
 
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to manage teams, players, and game records.
+            Create a JojiStats account.
           </p>
 
           <label className="mt-6 block text-sm font-medium text-gray-700">
+            Name
+            <input
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
+              placeholder="Your name"
+            />
+          </label>
+
+          <label className="mt-4 block text-sm font-medium text-gray-700">
             Email
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
+              placeholder="you@example.com"
             />
           </label>
 
@@ -122,7 +126,7 @@ export default function LoginPage() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
-              placeholder="Enter password"
+              placeholder="Create password"
             />
           </label>
 
@@ -131,13 +135,13 @@ export default function LoginPage() {
             disabled={isLoading}
             className="mt-6 w-full rounded-lg bg-green-900 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
           >
-            {isLoading ? "Logging in..." : "Login"}
+            {isLoading ? "Creating..." : "Sign Up"}
           </button>
 
           <p className="mt-4 text-center text-sm text-gray-600">
-            Need an account?{" "}
-            <Link to="/signup" className="font-semibold text-green-900">
-              Sign Up
+            Already have an account?{" "}
+            <Link to="/login" className="font-semibold text-green-900">
+              Login
             </Link>
           </p>
         </form>

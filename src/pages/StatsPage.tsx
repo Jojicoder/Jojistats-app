@@ -253,7 +253,7 @@ export default function StatsPage() {
   </button>
 </div>
 
-      <div className="flex flex-1 gap-4 p-4">
+      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:p-4">
         {isLoading ? (
           <div>Loading...</div>
         ) : errorMessage ? (

@@ -20,7 +20,7 @@ type TeamSetupPageProps = {
   onAddTeam: (name: string) => void
   onUpdateTeamName: (teamId: string, name: string) => void
   onArchiveTeam: (teamId: string) => void
-  onStartNewSeason: () => void
+  onChangeSeason: (year: number) => void
   teamName: string
   seasonYear: number
   players: Player[]
@@ -31,6 +31,14 @@ type TeamSetupPageProps = {
   onDeletePlayer: (playerId: string) => void
   savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
 }
+
+const currentYear = new Date().getFullYear()
+const startYear = 2020
+
+const seasonOptions = Array.from(
+  { length: currentYear - startYear + 1 },
+  (_, index) => currentYear - index
+)
 
 function getPlayerTotals(entries: SavedBattingGameEntry[]) {
   return entries.reduce(
@@ -61,10 +69,7 @@ function getPlayerMetrics(entries: SavedBattingGameEntry[]) {
 
   const pa = totals.ab + totals.bb
   const avg = totals.ab > 0 ? totals.h / totals.ab : 0
-
-  const obpDenominator = totals.ab + totals.bb
-  const obp =
-    obpDenominator > 0 ? (totals.h + totals.bb) / obpDenominator : 0
+  const obp = pa > 0 ? (totals.h + totals.bb) / pa : 0
 
   const singles = Math.max(
     totals.h - totals.doubles - totals.triples - totals.hr,
@@ -101,7 +106,7 @@ export default function TeamSetupPage({
   onAddTeam,
   onUpdateTeamName,
   onArchiveTeam,
-  onStartNewSeason,
+  onChangeSeason,
   teamName,
   seasonYear,
   players,
@@ -128,9 +133,7 @@ export default function TeamSetupPage({
     const nextPlayers = [...players]
 
     nextPlayers.sort((a, b) => {
-      if (sortBy === "name") {
-        return a.name.localeCompare(b.name)
-      }
+      if (sortBy === "name") return a.name.localeCompare(b.name)
 
       if (sortBy === "position") {
         const positionCompare = a.position.localeCompare(b.position)
@@ -138,64 +141,15 @@ export default function TeamSetupPage({
         return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
       }
 
-      const aEntries = savedEntriesByPlayer[a.id] ?? []
-      const bEntries = savedEntriesByPlayer[b.id] ?? []
-      const aMetrics = getPlayerMetrics(aEntries)
-      const bMetrics = getPlayerMetrics(bEntries)
+      const aMetrics = getPlayerMetrics(savedEntriesByPlayer[a.id] ?? [])
+      const bMetrics = getPlayerMetrics(savedEntriesByPlayer[b.id] ?? [])
 
-      if (sortBy === "games") {
-        if (bMetrics.games !== aMetrics.games) {
-          return bMetrics.games - aMetrics.games
-        }
-        return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-      }
-
-      if (sortBy === "pa") {
-        if (bMetrics.pa !== aMetrics.pa) {
-          return bMetrics.pa - aMetrics.pa
-        }
-        return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-      }
-
-      if (sortBy === "avg") {
-        if (bMetrics.avg !== aMetrics.avg) {
-          return bMetrics.avg - aMetrics.avg
-        }
-        if (bMetrics.pa !== aMetrics.pa) {
-          return bMetrics.pa - aMetrics.pa
-        }
-        return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-      }
-
-      if (sortBy === "ops") {
-        if (bMetrics.ops !== aMetrics.ops) {
-          return bMetrics.ops - aMetrics.ops
-        }
-        if (bMetrics.pa !== aMetrics.pa) {
-          return bMetrics.pa - aMetrics.pa
-        }
-        return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-      }
-
-      if (sortBy === "hr") {
-        if (bMetrics.hr !== aMetrics.hr) {
-          return bMetrics.hr - aMetrics.hr
-        }
-        if (bMetrics.pa !== aMetrics.pa) {
-          return bMetrics.pa - aMetrics.pa
-        }
-        return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-      }
-
-      if (sortBy === "rbi") {
-        if (bMetrics.rbi !== aMetrics.rbi) {
-          return bMetrics.rbi - aMetrics.rbi
-        }
-        if (bMetrics.pa !== aMetrics.pa) {
-          return bMetrics.pa - aMetrics.pa
-        }
-        return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-      }
+      if (sortBy === "games") return bMetrics.games - aMetrics.games
+      if (sortBy === "pa") return bMetrics.pa - aMetrics.pa
+      if (sortBy === "avg") return bMetrics.avg - aMetrics.avg
+      if (sortBy === "ops") return bMetrics.ops - aMetrics.ops
+      if (sortBy === "hr") return bMetrics.hr - aMetrics.hr
+      if (sortBy === "rbi") return bMetrics.rbi - aMetrics.rbi
 
       return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
     })
@@ -211,17 +165,21 @@ export default function TeamSetupPage({
           <h1 className="mt-2 text-2xl font-bold">Manage team and roster</h1>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-              Current Season: {seasonYear}
-            </div>
+            <div className="flex items-center gap-3 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+              <span>Season</span>
 
-            <button
-              type="button"
-              onClick={onStartNewSeason}
-              className="rounded-lg bg-green-900 px-4 py-2 text-sm font-medium text-white"
-            >
-              Start {seasonYear + 1} Season
-            </button>
+              <select
+                value={seasonYear}
+                onChange={(event) => onChangeSeason(Number(event.target.value))}
+                className="rounded-lg bg-green-900 px-4 py-2 text-sm font-medium text-white"
+              >
+                {seasonOptions.map((year) => (
+                  <option key={year} value={year}>
+                    {year}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
@@ -238,6 +196,7 @@ export default function TeamSetupPage({
                   placeholder="e.g. Brooklyn Waves"
                   className="min-w-0 flex-1 rounded-lg border border-gray-200 px-3 py-2"
                 />
+
                 <button
                   type="button"
                   onClick={() => {
@@ -297,68 +256,60 @@ export default function TeamSetupPage({
                             </div>
                           </button>
 
-                          <div className="flex shrink-0 items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (!isEditingTeam) {
-                                  setEditingTeamName(team.name)
-                                }
-                                setIsEditingTeam((prev) => !prev)
-                              }}
-                              className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
-                            >
-                              {isEditingTeam ? "Close" : "Edit"}
-                            </button>
-                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!isEditingTeam) {
+                                setEditingTeamName(team.name)
+                              }
+                              setIsEditingTeam((prev) => !prev)
+                            }}
+                            className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
+                          >
+                            {isEditingTeam ? "Close" : "Edit"}
+                          </button>
                         </div>
 
                         {isActive && isEditingTeam && (
                           <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                            <div>
-                              <label className="text-xs font-medium text-gray-500">
-                                Edit Team Name
-                              </label>
-                              <input
-                                type="text"
-                                value={editingTeamName}
-                                onChange={(e) =>
-                                  setEditingTeamName(e.target.value)
-                                }
-                                className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
-                              />
+                            <label className="text-xs font-medium text-gray-500">
+                              Edit Team Name
+                            </label>
 
-                              <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (editingTeamName.trim() === "") return
-                                    onUpdateTeamName(
-                                      team.id,
-                                      editingTeamName.trim()
-                                    )
-                                    setIsEditingTeam(false)
-                                  }}
-                                  className="rounded-lg bg-green-900 px-4 py-2 text-sm text-white"
-                                >
-                                  Update
-                                </button>
+                            <input
+                              type="text"
+                              value={editingTeamName}
+                              onChange={(e) => setEditingTeamName(e.target.value)}
+                              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                            />
 
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const confirmed = window.confirm(
-                                      `Archive team "${team.name}"?\n\nThis team will be hidden from the active list.`
-                                    )
-                                    if (!confirmed) return
-                                    onArchiveTeam(team.id)
-                                    setIsEditingTeam(false)
-                                  }}
-                                  className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white"
-                                >
-                                  Archive
-                                </button>
-                              </div>
+                            <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (editingTeamName.trim() === "") return
+                                  onUpdateTeamName(team.id, editingTeamName.trim())
+                                  setIsEditingTeam(false)
+                                }}
+                                className="rounded-lg bg-green-900 px-4 py-2 text-sm text-white"
+                              >
+                                Update
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const confirmed = window.confirm(
+                                    `Archive team "${team.name}"?`
+                                  )
+                                  if (!confirmed) return
+                                  onArchiveTeam(team.id)
+                                  setIsEditingTeam(false)
+                                }}
+                                className="rounded-lg bg-red-600 px-4 py-2 text-sm text-white"
+                              >
+                                Archive
+                              </button>
                             </div>
                           </div>
                         )}
@@ -373,7 +324,9 @@ export default function TeamSetupPage({
           <section className="space-y-6">
             <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
               <p className="text-sm font-medium text-green-900">Roster</p>
-              <h2 className="mt-2 text-2xl font-bold break-words">{teamName}</h2>
+              <h2 className="mt-2 break-words text-2xl font-bold">
+                {teamName}
+              </h2>
               <p className="mt-2 text-gray-600">
                 Season {seasonYear} · Manage your players here.
               </p>
@@ -382,6 +335,7 @@ export default function TeamSetupPage({
                 <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
                   Total Players: {players.length}
                 </div>
+
                 <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
                   Active Player:{" "}
                   {activePlayer
@@ -422,11 +376,10 @@ export default function TeamSetupPage({
                   <label className="text-xs font-medium text-gray-500">
                     Sort by
                   </label>
+
                   <select
                     value={sortBy}
-                    onChange={(e) =>
-                      setSortBy(e.target.value as RosterSortKey)
-                    }
+                    onChange={(e) => setSortBy(e.target.value as RosterSortKey)}
                     className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
                   >
                     <option value="jersey">Jersey Number</option>
@@ -497,9 +450,7 @@ export default function TeamSetupPage({
                             <button
                               type="button"
                               onClick={() =>
-                                setEditingPlayerId(
-                                  isEditing ? null : player.id
-                                )
+                                setEditingPlayerId(isEditing ? null : player.id)
                               }
                               className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm text-gray-700"
                             >
@@ -525,8 +476,8 @@ export default function TeamSetupPage({
                           </div>
                         </div>
 
-                        <div className="mt-1">
-                          {isEditing && editingPlayer && activeTeamId && (
+                        {isEditing && editingPlayer && activeTeamId && (
+                          <div className="mt-3">
                             <PlayerForm
                               teamId={activeTeamId}
                               seasonYear={editingPlayer.seasonYear}
@@ -538,8 +489,8 @@ export default function TeamSetupPage({
                               }}
                               onCancel={() => setEditingPlayerId(null)}
                             />
-                          )}
-                        </div>
+                          </div>
+                        )}
                       </div>
                     )
                   })}
