@@ -100,6 +100,11 @@ export default function StatsPage() {
     return savedEntriesByPlayer[activePlayer.id] ?? []
   }, [activePlayer, savedEntriesByPlayer])
 
+  const allTeamEntries = useMemo(
+    () => Object.values(savedEntriesByPlayer).flat(),
+    [savedEntriesByPlayer]
+  )
+
   const savedStatLines = useMemo(
     () => savedEntries.map((entry) => entry.statLine),
     [savedEntries]
@@ -276,7 +281,7 @@ export default function StatsPage() {
                   activePlayer={activePlayer}
                   calculatedStats={calculatedStats}
                   savedEntries={savedEntries}
-                  teamSavedEntries={savedEntries}
+                  teamSavedEntries={allTeamEntries}
                   gamesPlayed={kpi.gamesPlayed}
                   seasonYear={activeTeam?.currentSeasonYear ?? 0}
                 />
