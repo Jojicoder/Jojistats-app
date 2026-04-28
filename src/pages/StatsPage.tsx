@@ -218,7 +218,7 @@ export default function StatsPage() {
   /* -------------------- UI -------------------- */
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
+    <div className="flex min-h-dvh flex-col bg-gray-50">
       <Header
         teamName={activeTeam?.name ?? "No Team"}
         teams={teams.map((t) => t.name)}
@@ -226,13 +226,14 @@ export default function StatsPage() {
           const team = teams.find((t) => t.name === teamName)
           if (team) handleChangeTeam(team.id)
         }}
+        isLoggedIn={false}
       />
 
      {/* Mode switch */}
-<div className="px-4 pt-3 flex gap-2">
+<div className="flex w-full gap-2 px-3 pt-3 sm:w-auto sm:px-4">
   <button
     onClick={() => setMode("batting")}
-    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+    className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
       mode === "batting"
         ? "bg-green-900 text-white shadow-sm"
         : "bg-gray-200 text-gray-700 hover:bg-gray-300"
@@ -243,7 +244,7 @@ export default function StatsPage() {
 
   <button
     onClick={() => setMode("pitching")}
-    className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
+    className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
       mode === "pitching"
         ? "bg-green-900 text-white shadow-sm"
         : "bg-gray-200 text-gray-700 hover:bg-gray-300"

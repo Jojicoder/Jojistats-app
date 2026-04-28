@@ -59,6 +59,7 @@ export default function App() {
 
         {/* Public page */}
         <Route path="/stats" element={<StatsPage />} />
+        <Route path="/states" element={<Navigate to="/stats" replace />} />
 
         {/* Admin (protected) */}
         <Route
@@ -82,6 +83,7 @@ export default function App() {
         {/* Login */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
+        <Route path="*" element={<Navigate to="/stats" replace />} />
       </Routes>
     </BrowserRouter>
   )

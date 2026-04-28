@@ -233,11 +233,11 @@ function getStatCardClass(
   _teamValue: number,
   type: "avg" | "obp" | "neutral"
 ) {
-  const strongGood = "rounded-xl border border-emerald-300 bg-emerald-100 p-4"
-  const good = "rounded-xl border border-green-200 bg-green-50 p-4"
-  const neutral = "rounded-xl border border-gray-200 bg-white p-4"
-  const weak = "rounded-xl border border-rose-200 bg-rose-50 p-4"
-  const bad = "rounded-xl border border-red-200 bg-red-50 p-4"
+  const strongGood = "rounded-xl border border-emerald-300 bg-emerald-100 p-3 sm:p-4"
+  const good = "rounded-xl border border-green-200 bg-green-50 p-3 sm:p-4"
+  const neutral = "rounded-xl border border-gray-200 bg-white p-3 sm:p-4"
+  const weak = "rounded-xl border border-rose-200 bg-rose-50 p-3 sm:p-4"
+  const bad = "rounded-xl border border-red-200 bg-red-50 p-3 sm:p-4"
 
   if (type === "avg") {
     if (playerValue >= 0.33) return strongGood
@@ -421,7 +421,7 @@ export default function PerformanceTrendCard({
   )
 
   return (
-    <section className="rounded-2xl bg-white p-6 shadow-sm">
+    <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">
@@ -432,7 +432,7 @@ export default function PerformanceTrendCard({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 rounded-xl bg-gray-100 p-1">
+        <div className="grid grid-cols-2 rounded-xl bg-gray-100 p-1 sm:flex sm:items-center sm:gap-2">
           <button
             type="button"
             onClick={() => setActiveTab("season")}
@@ -466,7 +466,7 @@ export default function PerformanceTrendCard({
         </div>
       ) : (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-4">
   <div
     className={getStatCardClass(
       playerSummary.numericAvg,
@@ -478,7 +478,7 @@ export default function PerformanceTrendCard({
       <p className="text-xs font-semibold text-gray-700">AVG</p>
       <p className="text-[11px] text-gray-400">{statDescriptions.AVG}</p>
     </div>
-    <p className="mt-2 text-2xl font-bold text-gray-900">
+    <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
       {playerSummary.avg}
     </p>
     <p className="mt-1 text-xs text-gray-500">
@@ -497,7 +497,7 @@ export default function PerformanceTrendCard({
               <p className="text-xs font-semibold text-gray-700">OBP</p>
               <p className="text-[11px] text-gray-400">{statDescriptions.OBP}</p>
             </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">
+            <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
               {playerSummary.obp}
             </p>
             <p className="mt-1 text-xs text-gray-500">
@@ -516,7 +516,7 @@ export default function PerformanceTrendCard({
               <p className="text-xs font-semibold text-gray-700">SLG</p>
               <p className="text-[11px] text-gray-400">{statDescriptions.SLG}</p>
             </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">
+            <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
               {playerSummary.slg}
             </p>
             <p className="mt-1 text-xs text-gray-500">
@@ -535,7 +535,7 @@ export default function PerformanceTrendCard({
               <p className="text-xs font-semibold text-gray-700">OPS</p>
               <p className="text-[11px] text-gray-400">{statDescriptions.OPS}</p>
             </div>
-            <p className="mt-2 text-2xl font-bold text-gray-900">
+            <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
               {playerSummary.ops}
             </p>
             <p className="mt-1 text-xs text-gray-500">
@@ -544,7 +544,7 @@ export default function PerformanceTrendCard({
           </div>
         </div>
 
-          <div className="mt-6 rounded-2xl border border-gray-200 bg-gray-50 p-4">
+          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:mt-6 sm:rounded-2xl sm:p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700">
@@ -556,7 +556,7 @@ export default function PerformanceTrendCard({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 rounded-xl bg-white p-1">
+              <div className="grid grid-cols-3 rounded-xl bg-white p-1 sm:flex sm:items-center sm:gap-2">
                 <button
                   type="button"
                   onClick={() => setActiveMetric("avg")}
@@ -595,9 +595,9 @@ export default function PerformanceTrendCard({
               </div>
             </div>
 
-            <div className="mt-6 overflow-x-auto">
+            <div className="mt-4 overflow-x-auto sm:mt-6">
               <svg
-                className="h-72 min-w-130 w-full"
+                className="h-64 min-w-[420px] w-full sm:h-72 sm:min-w-130"
                 viewBox={`0 0 ${chartWidth} ${chartHeight}`}
                 role="img"
                 aria-label="Player and team performance trend"

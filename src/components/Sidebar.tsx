@@ -168,7 +168,7 @@ export default function Sidebar({
   ])
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl bg-white p-3 shadow-sm lg:max-w-[240px] lg:p-4">
+    <aside className="w-full shrink-0 rounded-xl bg-white p-2 shadow-sm lg:max-w-[240px] lg:rounded-2xl lg:p-4">
       {/* モバイル: 1行 / デスクトップ: 縦積み */}
       <div className="flex items-center justify-between gap-2 lg:block">
         <div>
@@ -182,7 +182,7 @@ export default function Sidebar({
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SidebarSortKey)}
-            className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs lg:mt-1 lg:w-full lg:px-3 lg:py-2 lg:text-sm"
+            className="max-w-36 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs lg:mt-1 lg:w-full lg:max-w-none lg:px-3 lg:py-2 lg:text-sm"
           >
             <option value="jersey">Jersey Number</option>
             <option value="name">Name</option>
@@ -210,7 +210,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="mt-3 flex gap-3 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-3 lg:overflow-visible lg:pb-0">
         {sortedPlayers.map((player) => {
           const isActive = player.id === activePlayerId
           const battingMetrics = getPlayerMetrics(
@@ -225,27 +225,27 @@ export default function Sidebar({
               key={player.id}
               type="button"
               onClick={() => setActivePlayerId(player.id)}
-              className={`flex min-w-[190px] items-center gap-3 rounded-2xl px-4 py-4 text-left transition lg:min-w-0 ${
+              className={`flex min-w-[150px] items-center gap-2 rounded-xl px-3 py-3 text-left transition lg:min-w-0 lg:gap-3 lg:rounded-2xl lg:px-4 lg:py-4 ${
                 isActive
                   ? "bg-green-900 text-white"
                   : "bg-gray-50 text-gray-800 hover:bg-gray-100"
               }`}
             >
               <div
-                className={`h-10 w-10 shrink-0 rounded-full ${
+                className={`h-8 w-8 shrink-0 rounded-full lg:h-10 lg:w-10 ${
                   isActive ? "bg-white/20" : "bg-gray-300"
                 }`}
               />
 
               <div className="min-w-0 flex-1">
-                <p className="truncate text-base font-semibold">
+                <p className="truncate text-sm font-semibold lg:text-base">
                   {player.jerseyNumber != null
                     ? `#${player.jerseyNumber} ${player.name}`
                     : player.name}
                 </p>
 
                 <p
-                  className={`mt-1 text-sm ${
+                  className={`mt-1 text-xs lg:text-sm ${
                     isActive ? "text-green-100" : "text-gray-500"
                   }`}
                 >

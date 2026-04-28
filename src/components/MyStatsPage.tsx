@@ -25,7 +25,7 @@ const statDescriptions: Record<string, string> = {
 }
 
 function getStatCardClass(label: string, value: string, gamesPlayed: number) {
-  const baseClass = "rounded-xl border p-4 shadow-sm"
+  const baseClass = "rounded-xl border p-3 shadow-sm sm:p-4"
 
   const strongGood = `${baseClass} border-emerald-300 bg-emerald-100`
   const good = `${baseClass} border-green-200 bg-green-50`
@@ -106,33 +106,33 @@ export default function MyStatsPage({
 
   return (
     <main className="w-full">
-      <div className="max-w-6xl space-y-6">
-        <div className="rounded-2xl bg-white p-6 shadow-sm">
+      <div className="max-w-6xl space-y-4 sm:space-y-6">
+        <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
           <p className="text-sm font-medium text-green-900">My Stats</p>
 
-          <h1 className="mt-3 text-2xl font-bold text-gray-900">
+          <h1 className="mt-2 text-xl font-bold text-gray-900 sm:mt-3 sm:text-2xl">
             {activePlayer.jerseyNumber != null
               ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
               : activePlayer.name}
           </h1>
 
-          <p className="mt-3 text-gray-600">{activePlayer.position}</p>
+          <p className="mt-2 text-sm text-gray-600 sm:mt-3 sm:text-base">{activePlayer.position}</p>
 
-          <div className="mt-5 grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4 sm:py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
                 Games Played
               </p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
+              <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
                 {gamesPlayed}
               </p>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4 sm:py-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Plate Appearances
+                Plate Apps
               </p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
+              <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
                 {totalPlateAppearances}
               </p>
               <p className="mt-1 text-xs text-gray-400">
@@ -142,7 +142,7 @@ export default function MyStatsPage({
           </div>
         </div>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
           {calculatedStats.map((stat) => (
             <div
               key={stat.label}
@@ -157,7 +157,7 @@ export default function MyStatsPage({
                 </p>
               </div>
 
-              <p className="mt-2 text-2xl font-bold text-gray-900">
+              <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
                 {stat.value}
               </p>
             </div>

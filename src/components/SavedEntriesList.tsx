@@ -33,8 +33,8 @@ export default function SavedEntriesList({
   }, [savedEntries, isExpanded])
 
   return (
-    <section className="rounded-2xl bg-white p-6 shadow-sm">
-      <div className="flex items-start justify-between gap-4">
+    <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
+      <div className="flex items-start justify-between gap-3 sm:gap-4">
         <div>
           <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
           <p className="mt-1 text-sm text-gray-500">
@@ -46,7 +46,7 @@ export default function SavedEntriesList({
           <button
             type="button"
             onClick={() => setIsExpanded((prev) => !prev)}
-            className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:py-2"
           >
             {isExpanded ? "Show Less" : "Expand"}
           </button>
@@ -54,18 +54,18 @@ export default function SavedEntriesList({
       </div>
 
       {savedEntries.length === 0 ? (
-        <div className="mt-6 rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">
+        <div className="mt-4 rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500 sm:mt-6">
           {emptyMessage}
         </div>
       ) : (
-        <div className="mt-6 space-y-3">
+        <div className="mt-4 space-y-3 sm:mt-6">
           {visibleEntries.map((entry) => {
             const isEditing = editingSavedEntryId === entry.id
 
             return (
               <div
                 key={entry.id}
-                className={`rounded-xl border px-4 py-4 transition ${
+                className={`rounded-xl border px-3 py-3 transition sm:px-4 sm:py-4 ${
                   isEditing
                     ? "border-green-900 bg-green-50"
                     : "border-gray-200 bg-white"
@@ -86,7 +86,7 @@ export default function SavedEntriesList({
                       Position: {formatGamePositions(entry.gamePositions)}
                     </p>
 
-                    <div className="mt-3 space-y-1 text-sm text-gray-600">
+                    <div className="mt-3 space-y-1 text-xs text-gray-600 sm:text-sm">
                       <p>
                         AB {entry.statLine.AB} · H {entry.statLine.H} · 2B{" "}
                         {entry.statLine.doubles} · 3B {entry.statLine.triples} ·
