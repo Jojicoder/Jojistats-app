@@ -200,6 +200,10 @@ type FullGamePayload = {
     season_year: number
     match_number: number
     location?: string | null
+    memo?: string | null
+    team_score?: number | null
+    opponent_score?: number | null
+    result?: "W" | "L" | "T" | "" | null
   }
   battingStats: BattingGameStatPayload[]
   pitchingStats?: PitchingGameStatPayload[]
@@ -215,6 +219,10 @@ export const createFullGame = async (data: FullGamePayload) => {
       season_year: data.game.season_year,
       match_number: data.game.match_number,
       location: data.game.location ?? null,
+      ...(data.game.memo !== undefined ? { memo: data.game.memo ?? null } : {}),
+      team_score: data.game.team_score ?? null,
+      opponent_score: data.game.opponent_score ?? null,
+      result: data.game.result || null,
     })
     .select()
     .single()
@@ -278,6 +286,10 @@ export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
       season_year: data.game.season_year,
       match_number: data.game.match_number,
       location: data.game.location ?? null,
+      ...(data.game.memo !== undefined ? { memo: data.game.memo ?? null } : {}),
+      team_score: data.game.team_score ?? null,
+      opponent_score: data.game.opponent_score ?? null,
+      result: data.game.result || null,
     })
     .eq("id", gameId)
   if (gameError) throw new Error(gameError.message)
@@ -342,9 +354,177 @@ export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
 }
 
 export const deleteGame = async (gameId: number) => {
-  await supabase.from("batting_game_stats").delete().eq("game_id", gameId)
-  await supabase.from("pitching_game_stats").delete().eq("game_id", gameId)
+  const { error: battingError } = await supabase
+    .from("batting_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+  if (battingError) throw new Error(battingError.message)
+
+  const { error: pitchingError } = await supabase
+    .from("pitching_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+  if (pitchingError) throw new Error(pitchingError.message)
 
   const { error } = await supabase.from("games").delete().eq("id", gameId)
   if (error) throw new Error(error.message)
+}
+
+export const deleteBattingGameEntry = async (gameId: number, playerId: number) => {
+  const { data: deletedBattingRows, error: battingError } = await supabase
+    .from("batting_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+    .eq("player_id", playerId)
+    .select("game_id")
+
+  if (battingError) throw new Error(battingError.message)
+  if (!deletedBattingRows || deletedBattingRows.length === 0) {
+    throw new Error(
+      `No batting entry was deleted for game ${gameId}, player ${playerId}. Check delete permission for this team.`
+    )
+  }
+
+  const { count: remainingBattingCount, error: battingCountError } = await supabase
+    .from("batting_game_stats")
+    .select("game_id", { count: "exact", head: true })
+    .eq("game_id", gameId)
+  if (battingCountError) throw new Error(battingCountError.message)
+
+  const { count: remainingPitchingCount, error: pitchingCountError } = await supabase
+    .from("pitching_game_stats")
+    .select("game_id", { count: "exact", head: true })
+    .eq("game_id", gameId)
+  if (pitchingCountError) throw new Error(pitchingCountError.message)
+
+  if ((remainingBattingCount ?? 0) > 0 || (remainingPitchingCount ?? 0) > 0) {
+    return
+  }
+
+  const { error: gameError } = await supabase
+    .from("games")
+    .delete()
+    .eq("id", gameId)
+  if (gameError) throw new Error(gameError.message)
+}
+
+export const deleteBattingStatEntry = async (statId: number, gameId: number) => {
+  const { data: deletedBattingRows, error: battingError } = await supabase
+    .from("batting_game_stats")
+    .delete()
+    .eq("id", statId)
+    .select("id")
+
+  if (battingError) throw new Error(battingError.message)
+  if (!deletedBattingRows || deletedBattingRows.length === 0) {
+    throw new Error(
+      `No batting entry was deleted for stat ${statId}. The database delete policy is not allowing this user to delete that row.`
+    )
+  }
+
+  const { count: remainingBattingCount, error: battingCountError } = await supabase
+    .from("batting_game_stats")
+    .select("game_id", { count: "exact", head: true })
+    .eq("game_id", gameId)
+  if (battingCountError) throw new Error(battingCountError.message)
+
+  const { count: remainingPitchingCount, error: pitchingCountError } = await supabase
+    .from("pitching_game_stats")
+    .select("game_id", { count: "exact", head: true })
+    .eq("game_id", gameId)
+  if (pitchingCountError) throw new Error(pitchingCountError.message)
+
+  if ((remainingBattingCount ?? 0) > 0 || (remainingPitchingCount ?? 0) > 0) {
+    return
+  }
+
+  const { error: gameError } = await supabase
+    .from("games")
+    .delete()
+    .eq("id", gameId)
+  if (gameError) throw new Error(gameError.message)
+}
+
+export const updateGameInfo = async (
+  gameId: number,
+  game: FullGamePayload["game"]
+) => {
+  const { data: updatedRows, error } = await supabase
+    .from("games")
+    .update({
+      game_date: game.game_date,
+      opponent_name: game.opponent_name,
+      season_year: game.season_year,
+      match_number: game.match_number,
+      location: game.location ?? null,
+      ...(game.memo !== undefined ? { memo: game.memo ?? null } : {}),
+      team_score: game.team_score ?? null,
+      opponent_score: game.opponent_score ?? null,
+      result: game.result || null,
+    })
+    .eq("id", gameId)
+    .select("id")
+
+  if (error) throw new Error(error.message)
+  if (!updatedRows || updatedRows.length === 0) {
+    throw new Error(
+      `No game was updated for game ${gameId}. The database update policy is not allowing this user to update that row.`
+    )
+  }
+}
+
+export const updateBattingStatEntry = async (
+  statId: number,
+  gameId: number,
+  data: {
+    game: FullGamePayload["game"]
+    battingStat: FullGamePayload["battingStats"][number]
+  }
+) => {
+  const { data: updatedGameRows, error: gameError } = await supabase
+    .from("games")
+    .update({
+      game_date: data.game.game_date,
+      opponent_name: data.game.opponent_name,
+      season_year: data.game.season_year,
+      match_number: data.game.match_number,
+      location: data.game.location ?? null,
+      ...(data.game.memo !== undefined ? { memo: data.game.memo ?? null } : {}),
+      team_score: data.game.team_score ?? null,
+      opponent_score: data.game.opponent_score ?? null,
+      result: data.game.result || null,
+    })
+    .eq("id", gameId)
+    .select("id")
+  if (gameError) throw new Error(gameError.message)
+  if (!updatedGameRows || updatedGameRows.length === 0) {
+    throw new Error(
+      `No game was updated for game ${gameId}. The database update policy is not allowing this user to update that row.`
+    )
+  }
+
+  const { data: updatedBattingRows, error: battingError } = await supabase
+    .from("batting_game_stats")
+    .update({
+      player_id: data.battingStat.player_id,
+      batting_order: data.battingStat.batting_order,
+      ab: data.battingStat.ab ?? 0,
+      h: data.battingStat.h ?? 0,
+      double_hits: data.battingStat.double_hits ?? 0,
+      triple_hits: data.battingStat.triple_hits ?? 0,
+      hr: data.battingStat.hr ?? 0,
+      rbi: data.battingStat.rbi ?? 0,
+      bb: data.battingStat.bb ?? 0,
+      so: data.battingStat.so ?? 0,
+      hbp: data.battingStat.hbp ?? 0,
+      sf: data.battingStat.sf ?? 0,
+    })
+    .eq("id", statId)
+    .select("id")
+  if (battingError) throw new Error(battingError.message)
+  if (!updatedBattingRows || updatedBattingRows.length === 0) {
+    throw new Error(
+      `No batting entry was updated for stat ${statId}. The database update policy is not allowing this user to update that row.`
+    )
+  }
 }

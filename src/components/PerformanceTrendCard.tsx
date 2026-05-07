@@ -149,9 +149,10 @@ function filterPlayerEntriesByTab(
     return sortedEntries.slice(-5)
   }
 
-  return sortedEntries.filter(
+  const seasonEntries = sortedEntries.filter(
     (entry) => entry.gameMeta.seasonYear === seasonYear
   )
+  return seasonEntries.length > 0 ? seasonEntries : sortedEntries
 }
 
 function filterTeamEntriesForPlayerWindow(

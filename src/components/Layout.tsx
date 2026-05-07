@@ -3,6 +3,8 @@ import TopTabs from "./TopTabs"
 import Sidebar from "./Sidebar"
 import MainDashboard from "./MainDashboard"
 import TeamSetupPage from "./TeamSetupPage"
+import TeamManagerDashboard from "./TeamManagerDashboard"
+import UserAccessPanel from "./UserAccessPanel"
 import { useEffect, useState } from "react"
 import type { Dispatch, SetStateAction } from "react"
 import {
@@ -10,6 +12,10 @@ import {
   fetchPlayers,
   fetchSavedEntriesByPlayer,
   fetchPitchingEntriesByPlayer,
+  fetchUserAccessRows,
+  mapUserAccessRow,
+  updateUserAccessStatus,
+  upsertUserAccess,
 } from "../api/supabase-api"
 
 import {
@@ -29,9 +35,10 @@ import type {
   SavedPitchingGameEntry,
   BattingEntryData,
   DraftGameMeta,
+  UserAccess,
 } from "../types"
 
-type ActiveView = "stats" | "record" | "team"
+type ActiveView = "stats" | "record" | "manager" | "team" | "access"
 type StatMode = "batting" | "pitching"
 
 type LayoutProps = {
@@ -70,9 +77,36 @@ function createInitialGameMeta(seasonYear?: number): DraftGameMeta {
   return {
     date: new Date().toISOString().split("T")[0],
     opponent: "",
+    location: "",
     seasonYear: seasonYear ?? new Date().getFullYear(),
     matchNumber: 1,
+    teamScore: null,
+    opponentScore: null,
+    result: "",
   }
+}
+
+async function fetchPlayersForTeams(teams: Team[]) {
+  const playerGroups = await Promise.all(
+    teams.map((team) => fetchPlayers(Number(team.id), team.currentSeasonYear))
+  )
+
+  return playerGroups.flat().map(mapPlayerRow)
+}
+
+function replaceTeamSeasonPlayers(
+  currentPlayers: Player[],
+  teamId: string,
+  seasonYear: number,
+  nextPlayers: Player[]
+) {
+  return [
+    ...currentPlayers.filter(
+      (player) =>
+        player.teamId !== teamId || player.seasonYear !== seasonYear
+    ),
+    ...nextPlayers,
+  ]
 }
 
 export default function Layout({
@@ -95,6 +129,7 @@ export default function Layout({
 
   const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<Record<string, SavedBattingGameEntry[]>>({})
   const [pitchingEntriesByPlayer, setPitchingEntriesByPlayer] = useState<Record<string, SavedPitchingGameEntry[]>>({})
+  const [userAccesses, setUserAccesses] = useState<UserAccess[]>([])
 
   const visibleTeams = teams.filter((t: Team) => !t.isArchived)
   const activeTeam = visibleTeams.find((t: Team) => t.id === activeTeamId) || null
@@ -122,9 +157,11 @@ export default function Layout({
       setActiveTeamId(first.id)
       setGameMeta(createInitialGameMeta(first.currentSeasonYear))
 
-      const playersData = (await fetchPlayers(Number(first.id), first.currentSeasonYear)).map(mapPlayerRow)
+      const playersData = await fetchPlayersForTeams(teamsData)
       setPlayers(playersData)
-      setActivePlayerId(playersData[0]?.id ?? "")
+      setActivePlayerId(
+        playersData.find((player) => player.teamId === first.id)?.id ?? ""
+      )
 
       setSavedEntriesByPlayer(
         await fetchSavedEntriesByPlayer(Number(first.id), first.currentSeasonYear)
@@ -133,6 +170,8 @@ export default function Layout({
       setPitchingEntriesByPlayer(
         await fetchPitchingEntriesByPlayer(Number(first.id), first.currentSeasonYear)
       )
+
+      setUserAccesses((await fetchUserAccessRows()).map(mapUserAccessRow))
     }
 
     load()
@@ -176,7 +215,14 @@ export default function Layout({
       is_archived: player.isArchived ? 1 : 0,
     })
     const updated = await fetchPlayers(Number(player.teamId), player.seasonYear)
-    setPlayers(updated.map(mapPlayerRow))
+    setPlayers((prev) =>
+      replaceTeamSeasonPlayers(
+        prev,
+        player.teamId,
+        player.seasonYear,
+        updated.map(mapPlayerRow)
+      )
+    )
   }
 
   const handleUpdatePlayer = async (player: Player) => {
@@ -189,7 +235,14 @@ export default function Layout({
       is_archived: player.isArchived ? 1 : 0,
     })
     const updated = await fetchPlayers(Number(player.teamId), player.seasonYear)
-    setPlayers(updated.map(mapPlayerRow))
+    setPlayers((prev) =>
+      replaceTeamSeasonPlayers(
+        prev,
+        player.teamId,
+        player.seasonYear,
+        updated.map(mapPlayerRow)
+      )
+    )
   }
 
   const handleDeletePlayer = async (playerId: string) => {
@@ -197,7 +250,33 @@ export default function Layout({
 
     await archivePlayer(Number(playerId))
     const updated = await fetchPlayers(Number(activeTeamId), activeTeam.currentSeasonYear)
-    setPlayers(updated.map(mapPlayerRow))
+    setPlayers((prev) =>
+      replaceTeamSeasonPlayers(
+        prev,
+        activeTeamId,
+        activeTeam.currentSeasonYear,
+        updated.map(mapPlayerRow)
+      )
+    )
+  }
+
+  /* ---------------- USER ACCESS ACTIONS ---------------- */
+
+  const refreshUserAccesses = async () => {
+    setUserAccesses((await fetchUserAccessRows()).map(mapUserAccessRow))
+  }
+
+  const handleSaveAccess = async (access: Omit<UserAccess, "id">) => {
+    await upsertUserAccess(access)
+    await refreshUserAccesses()
+  }
+
+  const handleSetAccessActive = async (
+    accessId: string,
+    isActive: boolean
+  ) => {
+    await updateUserAccessStatus(accessId, isActive)
+    await refreshUserAccesses()
   }
 
   /* ---------------- UI ---------------- */
@@ -283,6 +362,23 @@ export default function Layout({
               )
             }}
           />
+        ) : activeView === "manager" ? (
+          <TeamManagerDashboard
+            team={activeTeam}
+            players={teamPlayers}
+            savedEntriesByPlayer={savedEntriesByPlayer}
+            pitchingEntriesByPlayer={pitchingEntriesByPlayer}
+          />
+        ) : activeView === "access" ? (
+          <main className="w-full">
+            <UserAccessPanel
+              teams={visibleTeams}
+              players={players}
+              userAccesses={userAccesses}
+              onSaveAccess={handleSaveAccess}
+              onSetAccessActive={handleSetAccessActive}
+            />
+          </main>
         ) : (
           <>
             <Sidebar
@@ -297,6 +393,8 @@ export default function Layout({
             {activePlayer ? (
               <MainDashboard
                 activePlayer={activePlayer}
+                allPlayers={teamPlayers}
+                onSelectPlayer={(player) => setActivePlayerId(player.id)}
                 activeView={activeView === "record" ? "record" : "stats"}
                 teamName={activeTeam?.name ?? ""}
                 gameMeta={gameMeta}

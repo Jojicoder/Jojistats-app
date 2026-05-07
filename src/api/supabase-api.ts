@@ -2,6 +2,7 @@ import { supabase } from "./supabase-client"
 import type {
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
+  UserAccess,
 } from "../types"
 
 export type TeamRow = {
@@ -21,6 +22,15 @@ export type PlayerRow = {
   is_archived: boolean | number | null
 }
 
+export type UserAccessRow = {
+  id: number
+  email: string
+  team_id: number
+  player_id: number
+  role: string | null
+  is_active: boolean | number | null
+}
+
 type GameRow = {
   id: number
   team_id: number
@@ -28,9 +38,15 @@ type GameRow = {
   opponent_name: string
   season_year: number
   match_number: number
+  location?: string | null
+  memo?: string | null
+  team_score?: number | null
+  opponent_score?: number | null
+  result?: "W" | "L" | "T" | string | null
 }
 
 type BattingStatRow = {
+  id: number
   game_id: number
   player_id: number
   ab: number | null
@@ -79,6 +95,97 @@ export const fetchPlayers = async (teamId: number, seasonYear: number) => {
   return (data ?? []) as PlayerRow[]
 }
 
+export const fetchPlayersByTeam = async (teamId: number) => {
+  const { data, error } = await supabase
+    .from("players")
+    .select("*")
+    .eq("team_id", teamId)
+    .order("season_year", { ascending: false })
+    .order("jersey_number", { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as PlayerRow[]
+}
+
+export const fetchTeamById = async (teamId: number) => {
+  const { data, error } = await supabase
+    .from("teams")
+    .select("*")
+    .eq("id", teamId)
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as TeamRow
+}
+
+export const fetchUserAccessRows = async () => {
+  const { data, error } = await supabase
+    .from("user_access")
+    .select("*")
+    .order("email", { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as UserAccessRow[]
+}
+
+export const fetchUserAccessByEmail = async (email: string) => {
+  const { data, error } = await supabase
+    .from("user_access")
+    .select("*")
+    .eq("email", email.trim().toLowerCase())
+    .eq("is_active", true)
+    .maybeSingle()
+
+  if (error) throw new Error(error.message)
+  return data ? (data as UserAccessRow) : null
+}
+
+export const upsertUserAccess = async (access: Omit<UserAccess, "id">) => {
+  const { error } = await supabase.from("user_access").upsert(
+    {
+      email: access.email.trim().toLowerCase(),
+      team_id: Number(access.teamId),
+      player_id: Number(access.playerId),
+      role: access.role,
+      is_active: access.isActive,
+    },
+    { onConflict: "email" }
+  )
+
+  if (error) throw new Error(error.message)
+}
+
+export const updateUserAccessStatus = async (
+  accessId: string,
+  isActive: boolean
+) => {
+  const { error } = await supabase
+    .from("user_access")
+    .update({ is_active: isActive })
+    .eq("id", Number(accessId))
+
+  if (error) throw new Error(error.message)
+}
+
+export function mapUserAccessRow(row: UserAccessRow): UserAccess {
+  const role =
+    row.role === "admin" ||
+    row.role === "manager" ||
+    row.role === "recorder" ||
+    row.role === "player"
+      ? row.role
+      : "player"
+
+  return {
+    id: String(row.id),
+    email: row.email,
+    teamId: String(row.team_id),
+    playerId: String(row.player_id),
+    role,
+    isActive: Boolean(row.is_active),
+  }
+}
+
 // Fetch pitching stats grouped by player
 export async function fetchPitchingEntriesByPlayer(
   teamId: number,
@@ -94,7 +201,12 @@ export async function fetchPitchingEntriesByPlayer(
         game_date,
         opponent_name,
         season_year,
-        match_number
+        match_number,
+        location,
+        memo,
+        team_score,
+        opponent_score,
+        result
       )
     `)
     .eq("games.team_id", teamId)
@@ -115,8 +227,16 @@ export async function fetchPitchingEntriesByPlayer(
       gameMeta: {
         date: row.games.game_date,
         opponent: row.games.opponent_name,
+        location: row.games.location ?? "",
         seasonYear: row.games.season_year,
         matchNumber: row.games.match_number,
+        memo: row.games.memo ?? "",
+        teamScore: row.games.team_score ?? null,
+        opponentScore: row.games.opponent_score ?? null,
+        result:
+          row.games.result === "W" || row.games.result === "L" || row.games.result === "T"
+            ? row.games.result
+            : "",
       },
       statLine: {
         inningsPitchedOuts: row.innings_pitched_outs ?? 0,
@@ -173,14 +293,24 @@ export const fetchSavedEntriesByPlayer = async (
 
     const playerId = String(stat.player_id)
     const entry: SavedBattingGameEntry = {
-      id: `db-${game.id}`,
+      id: `db-stat-${stat.id}`,
+      statId: stat.id,
       gameId: game.id,
       teamId: String(game.team_id),
+      playerId,
       gameMeta: {
         date: game.game_date,
         opponent: game.opponent_name,
+        location: game.location ?? "",
         seasonYear: game.season_year,
         matchNumber: game.match_number,
+        memo: game.memo ?? "",
+        teamScore: game.team_score ?? null,
+        opponentScore: game.opponent_score ?? null,
+        result:
+          game.result === "W" || game.result === "L" || game.result === "T"
+            ? game.result
+            : "",
       },
       gamePositions: [],
       statLine: {

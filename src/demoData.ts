@@ -322,7 +322,10 @@ function makeEntries(
     const [AB, H, doubles, triples, HR, RBI, BB, SO] = line
     return {
       id: `entry-${playerId}-${index + 1}`,
+      statId: index + 1,
+      gameId: index + 1,
       teamId,
+      playerId,
       gameMeta: gameMetas[index],
       gamePositions: [positions[index]],
       statLine: {

@@ -36,8 +36,13 @@ export type TrendPoint = {
 export type DraftGameMeta = {
   date: string
   opponent: string
+  location?: string
   seasonYear: number
   matchNumber: number
+  memo?: string
+  teamScore?: number | null
+  opponentScore?: number | null
+  result?: "W" | "L" | "T" | ""
 }
 
 export type DisplayStat = {
@@ -65,8 +70,10 @@ export type PendingBattingEntry = BattingEntryData & {
 
 export type SavedBattingGameEntry = {
   id: string
+  statId: number
   gameId: number
   teamId: string
+  playerId: string
   gameMeta: DraftGameMeta
   gamePositions: Position[]
   statLine: BattingEntryData
@@ -100,6 +107,15 @@ export type SavedPitchingGameEntry = {
   playerId: string
   gameMeta: DraftGameMeta
   statLine: PitchingEntryData
+}
+
+export type UserAccess = {
+  id: string
+  email: string
+  teamId: string
+  playerId: string
+  role: "player" | "recorder" | "manager" | "admin"
+  isActive: boolean
 }
 
 export type PitchingCalculatedKPI = {

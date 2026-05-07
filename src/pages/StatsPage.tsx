@@ -1,13 +1,18 @@
 import { useEffect, useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import Header from "../components/Header"
 import Sidebar from "../components/Sidebar"
 
 import {
   fetchPlayers,
+  fetchPlayersByTeam,
   fetchSavedEntriesByPlayer,
   fetchTeams,
   fetchPitchingEntriesByPlayer,
+  fetchTeamById,
+  fetchUserAccessByEmail,
 } from "../api/supabase-api"
+import { supabase } from "../api/supabase-client"
 
 import MyStatsPage from "../components/MyStatsPage"
 import MyPitchingStatsPage from "../components/MyPitchingStatsPage"
@@ -52,9 +57,19 @@ function sortPlayersByJersey(players: Player[]) {
   )
 }
 
+async function loadTeamEntries(teamId: string, seasonYear: number) {
+  const [batting, pitching] = await Promise.all([
+    fetchSavedEntriesByPlayer(Number(teamId), seasonYear),
+    fetchPitchingEntriesByPlayer(Number(teamId), seasonYear),
+  ])
+
+  return { batting, pitching }
+}
+
 /* -------------------- main -------------------- */
 
 export default function StatsPage() {
+  const navigate = useNavigate()
   const [teams, setTeams] = useState<Team[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [activeTeamId, setActiveTeamId] = useState("")
@@ -69,6 +84,7 @@ export default function StatsPage() {
   >({})
 
   const [mode, setMode] = useState<"batting" | "pitching">("batting")
+  const [isRestrictedUser, setIsRestrictedUser] = useState(false)
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
@@ -129,6 +145,85 @@ export default function StatsPage() {
         setIsLoading(true)
         setErrorMessage("")
 
+        const { data: authData } = await supabase.auth.getUser()
+        const userEmail = authData.user?.email?.trim().toLowerCase() ?? ""
+        const isAdmin = userEmail === "admin@jojistats.com"
+
+        if (isAdmin) {
+          navigate("/admin", { replace: true })
+          return
+        }
+
+        if (authData.user && !isAdmin) {
+          const access = await fetchUserAccessByEmail(userEmail)
+
+          if (!access) {
+            setTeams([])
+            setPlayers([])
+            setActiveTeamId("")
+            setActivePlayerId("")
+            setSavedEntriesByPlayer({})
+            setPitchingEntriesByPlayer({})
+            setIsRestrictedUser(true)
+            setErrorMessage("No User Access has been assigned.")
+            return
+          }
+
+          const teamRow = await fetchTeamById(access.team_id)
+          const team = mapTeamRow(teamRow)
+          let playerRows = await fetchPlayers(
+            access.team_id,
+            team.currentSeasonYear
+          )
+          if (playerRows.length === 0) {
+            playerRows = await fetchPlayersByTeam(access.team_id)
+          }
+          const visiblePlayers = sortPlayersByJersey(
+            playerRows
+              .map(mapPlayerRow)
+              .filter((player) => !player.isArchived)
+          )
+
+          const assignedPlayer =
+            visiblePlayers.find(
+              (player) => player.id === String(access.player_id)
+            ) ?? visiblePlayers[0]
+
+          if (!assignedPlayer) {
+            setTeams([team])
+            setPlayers(visiblePlayers)
+            setActiveTeamId(team.id)
+            setActivePlayerId("")
+            setSavedEntriesByPlayer({})
+            setPitchingEntriesByPlayer({})
+            setIsRestrictedUser(true)
+            setErrorMessage("No players were found for this team.")
+            return
+          }
+
+          setIsRestrictedUser(true)
+          setTeams([team])
+          setActiveTeamId(team.id)
+          setPlayers(visiblePlayers)
+          setActivePlayerId(assignedPlayer.id)
+
+          try {
+            const { batting, pitching } = await loadTeamEntries(
+              team.id,
+              team.currentSeasonYear
+            )
+            setSavedEntriesByPlayer(batting)
+            setPitchingEntriesByPlayer(pitching)
+          } catch (statsError) {
+            console.error(statsError)
+            setSavedEntriesByPlayer({})
+            setPitchingEntriesByPlayer({})
+          }
+
+          return
+        }
+
+        setIsRestrictedUser(false)
         const teamRows = await fetchTeams()
 
         const visibleTeams = teamRows
@@ -156,31 +251,38 @@ export default function StatsPage() {
         setPlayers(visiblePlayers)
         setActivePlayerId(visiblePlayers[0]?.id ?? "")
 
-        const batting = await fetchSavedEntriesByPlayer(
-          Number(firstTeam.id),
-          firstTeam.currentSeasonYear
-        )
-        setSavedEntriesByPlayer(batting)
-
-        const pitching = await fetchPitchingEntriesByPlayer(
-          Number(firstTeam.id),
-          firstTeam.currentSeasonYear
-        )
-        setPitchingEntriesByPlayer(pitching)
+        try {
+          const { batting, pitching } = await loadTeamEntries(
+            firstTeam.id,
+            firstTeam.currentSeasonYear
+          )
+          setSavedEntriesByPlayer(batting)
+          setPitchingEntriesByPlayer(pitching)
+        } catch (statsError) {
+          console.error(statsError)
+          setSavedEntriesByPlayer({})
+          setPitchingEntriesByPlayer({})
+        }
       } catch (error) {
         console.error(error)
-        setErrorMessage("Failed to load stats.")
+        setErrorMessage(
+          error instanceof Error
+            ? `Failed to load stats: ${error.message}`
+            : "Failed to load stats."
+        )
       } finally {
         setIsLoading(false)
       }
     }
 
     load()
-  }, [])
+  }, [navigate])
 
   /* -------------------- チーム切替 -------------------- */
 
   const handleChangeTeam = async (teamId: string) => {
+    if (isRestrictedUser) return
+
     const nextTeam = teams.find((t) => t.id === teamId)
     if (!nextTeam) return
 
@@ -202,19 +304,43 @@ export default function StatsPage() {
       setPlayers(visiblePlayers)
       setActivePlayerId(visiblePlayers[0]?.id ?? "")
 
-      const batting = await fetchSavedEntriesByPlayer(
-        Number(teamId),
-        nextTeam.currentSeasonYear
+      try {
+        const { batting, pitching } = await loadTeamEntries(
+          teamId,
+          nextTeam.currentSeasonYear
+        )
+        setSavedEntriesByPlayer(batting)
+        setPitchingEntriesByPlayer(pitching)
+      } catch (statsError) {
+        console.error(statsError)
+        setSavedEntriesByPlayer({})
+        setPitchingEntriesByPlayer({})
+      }
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? `Failed to switch team: ${error.message}`
+          : "Failed to switch team"
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  /* -------------------- リフレッシュ -------------------- */
+
+  const handleRefresh = async () => {
+    if (!activeTeam) return
+    try {
+      setIsLoading(true)
+      const { batting, pitching } = await loadTeamEntries(
+        activeTeam.id,
+        activeTeam.currentSeasonYear
       )
       setSavedEntriesByPlayer(batting)
-
-      const pitching = await fetchPitchingEntriesByPlayer(
-        Number(teamId),
-        nextTeam.currentSeasonYear
-      )
       setPitchingEntriesByPlayer(pitching)
-    } catch {
-      setErrorMessage("Failed to switch team")
+    } catch (error) {
+      console.error(error)
     } finally {
       setIsLoading(false)
     }
@@ -231,7 +357,6 @@ export default function StatsPage() {
           const team = teams.find((t) => t.name === teamName)
           if (team) handleChangeTeam(team.id)
         }}
-        isLoggedIn={false}
       />
 
      {/* Mode switch */}
@@ -256,6 +381,15 @@ export default function StatsPage() {
     }`}
   >
     Pitching
+  </button>
+
+  <button
+    onClick={handleRefresh}
+    disabled={isLoading}
+    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+    aria-label="Refresh stats"
+  >
+    ↻
   </button>
 </div>
 

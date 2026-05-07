@@ -13,8 +13,11 @@ import type {
 import { useGameStats } from "../hooks/useGameStats"
 import {
   createFullGame,
+  updateBattingStatEntry,
   updateFullGame,
   deleteGame,
+  deleteBattingStatEntry,
+  updateGameInfo,
 } from "../api/api"
 import {
   fetchPitchingEntriesByPlayer,
@@ -26,6 +29,8 @@ import MyPitchingStatsPage from "./MyPitchingStatsPage"
 
 type MainDashboardProps = {
   activePlayer: Player
+  allPlayers: Player[]
+  onSelectPlayer: (player: Player) => void
   activeView: "stats" | "record"
   teamName: string
   gameMeta: DraftGameMeta
@@ -57,6 +62,8 @@ const createInitialEntry = (): BattingEntryData => ({
 
 export default function MainDashboard({
   activePlayer,
+  allPlayers,
+  onSelectPlayer,
   activeView,
   teamName,
   gameMeta,
@@ -86,6 +93,7 @@ export default function MainDashboard({
 
   /* ---------------- EDIT ---------------- */
   const [editingSavedEntryId, setEditingSavedEntryId] = useState<string | null>(null)
+  const [editingSavedEntry, setEditingSavedEntry] = useState<SavedBattingGameEntry | null>(null)
 
   /* ---------------- DATA ---------------- */
   const currentEntry =
@@ -139,6 +147,11 @@ export default function MainDashboard({
       opponent_name: nextGameMeta.opponent,
       season_year: nextGameMeta.seasonYear,
       match_number: nextGameMeta.matchNumber,
+      location: nextGameMeta.location?.trim() || null,
+      ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
+      team_score: nextGameMeta.teamScore ?? null,
+      opponent_score: nextGameMeta.opponentScore ?? null,
+      result: nextGameMeta.result || null,
     },
     battingStats: entries.map((entry, index) => ({
       player_id: Number(entry.playerId),
@@ -179,7 +192,7 @@ export default function MainDashboard({
       const payload = buildPayload(nextGameMeta, entries)
 
       if (editingSavedEntryId) {
-        const gameId = Number(editingSavedEntryId.replace("db-", ""))
+        const gameId = editingSavedEntry?.gameId ?? Number(editingSavedEntryId.replace("db-", ""))
         await updateFullGame(gameId, payload)
       } else {
         await createFullGame(payload)
@@ -187,19 +200,23 @@ export default function MainDashboard({
 
       await refreshSavedEntries()
       setEditingSavedEntryId(null)
+      setEditingSavedEntry(null)
     } catch (error) {
       console.error(error)
       window.alert("Save failed")
     }
   }
 
-  const handleSavePitchingGame = async () => {
+  const handleSavePitchingGame = async (
+    nextPitchingEntry = pitchingEntry,
+    pitcherId = activePlayer.id
+  ) => {
     if (!gameMeta.date.trim() || !gameMeta.opponent.trim()) {
       window.alert("Please enter Game Date and Opponent first.")
       return
     }
 
-    if (pitchingEntry.earnedRuns > pitchingEntry.runsAllowed) {
+    if (nextPitchingEntry.earnedRuns > nextPitchingEntry.runsAllowed) {
       window.alert("Earned runs cannot exceed runs allowed.")
       return
     }
@@ -212,18 +229,23 @@ export default function MainDashboard({
           opponent_name: gameMeta.opponent,
           season_year: gameMeta.seasonYear,
           match_number: gameMeta.matchNumber,
+          location: gameMeta.location?.trim() || null,
+          ...(gameMeta.memo !== undefined ? { memo: gameMeta.memo.trim() || null } : {}),
+          team_score: gameMeta.teamScore ?? null,
+          opponent_score: gameMeta.opponentScore ?? null,
+          result: gameMeta.result || null,
         },
         battingStats: [],
         pitchingStats: [
           {
-            player_id: Number(activePlayer.id),
-            innings_pitched_outs: pitchingEntry.inningsPitchedOuts,
-            hits_allowed: pitchingEntry.hitsAllowed,
-            runs_allowed: pitchingEntry.runsAllowed,
-            earned_runs: pitchingEntry.earnedRuns,
-            walks: pitchingEntry.walks,
-            strikeouts: pitchingEntry.strikeouts,
-            home_runs_allowed: pitchingEntry.homeRunsAllowed,
+            player_id: Number(pitcherId),
+            innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
+            hits_allowed: nextPitchingEntry.hitsAllowed,
+            runs_allowed: nextPitchingEntry.runsAllowed,
+            earned_runs: nextPitchingEntry.earnedRuns,
+            walks: nextPitchingEntry.walks,
+            strikeouts: nextPitchingEntry.strikeouts,
+            home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
           },
         ],
       })
@@ -254,6 +276,7 @@ export default function MainDashboard({
 
   const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
     setGameMeta(entry.gameMeta)
+    setEditingSavedEntry(entry)
 
     setEntriesByPlayer((prev) => ({
       ...prev,
@@ -267,40 +290,124 @@ export default function MainDashboard({
     nextGameMeta: DraftGameMeta,
     nextStatLine: BattingEntryData
   ) => {
-    if (!editingSavedEntryId) return
+    if (!editingSavedEntry) return
 
     try {
-      const gameId = Number(editingSavedEntryId.replace("db-", ""))
-
-      await updateFullGame(
-        gameId,
-        buildPayload(nextGameMeta, [
-          {
-            ...nextStatLine,
-            playerId: activePlayer.id,
-            playerName: activePlayer.name,
-            gamePositions: [activePlayer.position],
-          },
-        ])
-      )
+      await updateBattingStatEntry(editingSavedEntry.statId, editingSavedEntry.gameId, {
+        game: {
+          team_id: Number(activePlayer.teamId),
+          game_date: nextGameMeta.date,
+          opponent_name: nextGameMeta.opponent,
+          season_year: nextGameMeta.seasonYear,
+          match_number: nextGameMeta.matchNumber,
+          location: nextGameMeta.location?.trim() || null,
+          ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
+          team_score: nextGameMeta.teamScore ?? null,
+          opponent_score: nextGameMeta.opponentScore ?? null,
+          result: nextGameMeta.result || null,
+        },
+        battingStat: {
+          player_id: Number(editingSavedEntry.playerId),
+          batting_order: 1,
+          ab: nextStatLine.AB,
+          h: nextStatLine.H,
+          double_hits: nextStatLine.doubles,
+          triple_hits: nextStatLine.triples,
+          hr: nextStatLine.HR,
+          rbi: nextStatLine.RBI,
+          bb: nextStatLine.BB,
+          so: nextStatLine.SO,
+        },
+      })
 
       await refreshSavedEntries()
       setEditingSavedEntryId(null)
+      setEditingSavedEntry(null)
     } catch {
+      window.alert("Update failed")
+    }
+  }
+
+  const handleUpdateSavedGameMeta = async (nextGameMeta: DraftGameMeta) => {
+    if (!editingSavedEntry) return
+
+    try {
+      await updateGameInfo(editingSavedEntry.gameId, {
+        team_id: Number(activePlayer.teamId),
+        game_date: nextGameMeta.date,
+        opponent_name: nextGameMeta.opponent,
+        season_year: nextGameMeta.seasonYear,
+        match_number: nextGameMeta.matchNumber,
+        location: nextGameMeta.location?.trim() || null,
+        ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
+        team_score: nextGameMeta.teamScore ?? null,
+        opponent_score: nextGameMeta.opponentScore ?? null,
+        result: nextGameMeta.result || null,
+      })
+
+      await refreshSavedEntries()
+      setEditingSavedEntryId(null)
+      setEditingSavedEntry(null)
+    } catch (error) {
+      console.error(error)
+      window.alert("Update failed")
+    }
+  }
+
+  const handleUpdateSavedGame = async (
+    nextGameMeta: DraftGameMeta,
+    entries: PendingBattingEntry[]
+  ) => {
+    if (!editingSavedEntry) return
+
+    try {
+      await updateFullGame(editingSavedEntry.gameId, buildPayload(nextGameMeta, entries))
+      await refreshSavedEntries()
+      setEditingSavedEntryId(null)
+      setEditingSavedEntry(null)
+    } catch (error) {
+      console.error(error)
       window.alert("Update failed")
     }
   }
 
   const handleCancelEditSavedEntry = () => {
     setEditingSavedEntryId(null)
+    setEditingSavedEntry(null)
   }
 
   const handleDeleteSavedEntry = async (entry: SavedBattingGameEntry) => {
     if (!window.confirm("Delete?")) return
 
-    const gameId = Number(entry.id.replace("db-", ""))
-    await deleteGame(gameId)
-    await refreshSavedEntries()
+    try {
+      await deleteBattingStatEntry(entry.statId, entry.gameId)
+      await refreshSavedEntries()
+      if (editingSavedEntryId === entry.id) {
+        setEditingSavedEntryId(null)
+        setEditingSavedEntry(null)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Delete failed"
+      window.alert(`Delete failed: ${message}`)
+    }
+  }
+
+  const handleDeleteSavedGame = async () => {
+    if (!editingSavedEntry) return
+    if (!window.confirm("Delete this whole game? All player stats for this game will be removed.")) {
+      return
+    }
+
+    try {
+      await deleteGame(editingSavedEntry.gameId)
+      await refreshSavedEntries()
+      await refreshPitchingEntries()
+      setEditingSavedEntryId(null)
+      setEditingSavedEntry(null)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Delete game failed"
+      window.alert(`Delete game failed: ${message}`)
+    }
   }
 
   /* ---------------- VIEW ---------------- */
@@ -317,9 +424,13 @@ export default function MainDashboard({
   return activeView === "record" ? (
     <RecordGamePage
       activePlayer={activePlayer}
+      allPlayers={allPlayers}
+      onSelectPlayer={onSelectPlayer}
+      showRosterPanel={false}
       currentEntry={currentEntry}
       gameMeta={gameMeta}
       savedEntries={savedEntries}
+      teamSavedEntries={teamSavedEntries}
       onGameMetaChange={setGameMeta}
       onEntryChange={handleEntryChange}
       onSaveGame={handleSaveGame}
@@ -329,8 +440,11 @@ export default function MainDashboard({
       editingSavedEntryId={editingSavedEntryId}
       onStartEditSavedEntry={handleStartEditSavedEntry}
       onUpdateSavedEntry={handleUpdateSavedEntry}
+      onUpdateSavedGame={handleUpdateSavedGame}
+      onUpdateSavedGameMeta={handleUpdateSavedGameMeta}
       onCancelEditSavedEntry={handleCancelEditSavedEntry}
       onDeleteSavedEntry={handleDeleteSavedEntry}
+      onDeleteSavedGame={handleDeleteSavedGame}
       recordMode={recordMode}
       setRecordMode={setRecordMode}
       pitchingEntry={pitchingEntry}

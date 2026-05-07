@@ -1,7 +1,6 @@
-// src/components/MyPitchingStatsPage.tsx
-
 import type { Player, SavedPitchingGameEntry } from "../types"
 import { usePitchingStats } from "../hooks/usePitchingStats"
+import PitchingTrendChart from "./PitchingTrendChart"
 
 type Props = {
   activePlayer: Player
@@ -79,7 +78,8 @@ export default function MyPitchingStatsPage({
           <Stat label="HR" value={String(stats.hr)} />
         </section>
 
-        {/* 🔥 最近の試合 */}
+        <PitchingTrendChart entries={entries} />
+
         <RecentPitchingGames entries={entries} />
 
       </div>

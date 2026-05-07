@@ -8,11 +8,29 @@ type SavedEntriesListProps = {
   onEdit?: (savedEntry: SavedBattingGameEntry) => void
   onDelete?: (savedEntry: SavedBattingGameEntry) => void
   editingSavedEntryId?: string | null
+  showHeader?: boolean
+  showDescription?: boolean
+  showStats?: boolean
 }
 
 function formatGamePositions(gamePositions: string[]) {
   if (gamePositions.length === 0) return "-"
   return gamePositions.join(" / ")
+}
+
+function formatScore(entry: SavedBattingGameEntry) {
+  const { teamScore, opponentScore } = entry.gameMeta
+  if (teamScore == null || opponentScore == null) return null
+  return `${teamScore}-${opponentScore}`
+}
+
+function formatResult(entry: SavedBattingGameEntry) {
+  const { result, teamScore, opponentScore } = entry.gameMeta
+  if (result === "W" || result === "L" || result === "T") return result
+  if (teamScore == null || opponentScore == null) return null
+  if (teamScore > opponentScore) return "W"
+  if (teamScore < opponentScore) return "L"
+  return "T"
 }
 
 export default function SavedEntriesList({
@@ -22,45 +40,63 @@ export default function SavedEntriesList({
   onEdit,
   onDelete,
   editingSavedEntryId = null,
+  showHeader = true,
+  showDescription = true,
+  showStats = true,
 }: SavedEntriesListProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
   const hasMoreThanPreview = savedEntries.length > 3
+  const sortedEntries = useMemo(
+    () =>
+      savedEntries.slice().sort((a, b) => {
+        const dateCompare = b.gameMeta.date.localeCompare(a.gameMeta.date)
+        if (dateCompare !== 0) return dateCompare
+        return b.gameMeta.matchNumber - a.gameMeta.matchNumber
+      }),
+    [savedEntries]
+  )
 
   const visibleEntries = useMemo(() => {
-    if (isExpanded) return savedEntries
-    return savedEntries.slice(0, 3)
-  }, [savedEntries, isExpanded])
+    if (isExpanded) return sortedEntries
+    return sortedEntries.slice(0, 3)
+  }, [sortedEntries, isExpanded])
 
   return (
     <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-      <div className="flex items-start justify-between gap-3 sm:gap-4">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Saved batting results for this player
-          </p>
-        </div>
+      {showHeader && (
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+            {showDescription && (
+              <p className="mt-1 text-sm text-gray-500">
+                Saved batting results for this player
+              </p>
+            )}
+          </div>
 
-        {hasMoreThanPreview && (
-          <button
-            type="button"
-            onClick={() => setIsExpanded((prev) => !prev)}
-            className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:py-2"
-          >
-            {isExpanded ? "Show Less" : "Expand"}
-          </button>
-        )}
-      </div>
+          {hasMoreThanPreview && (
+            <button
+              type="button"
+              onClick={() => setIsExpanded((prev) => !prev)}
+              className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:py-2"
+            >
+              {isExpanded ? "Show Less" : "Expand"}
+            </button>
+          )}
+        </div>
+      )}
 
       {savedEntries.length === 0 ? (
-        <div className="mt-4 rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500 sm:mt-6">
+        <div className={`${showHeader ? "mt-4 sm:mt-6" : ""} rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500`}>
           {emptyMessage}
         </div>
       ) : (
-        <div className="mt-4 space-y-3 sm:mt-6">
+        <div className={`${showHeader ? "mt-4 sm:mt-6" : ""} space-y-3`}>
           {visibleEntries.map((entry) => {
             const isEditing = editingSavedEntryId === entry.id
+            const score = formatScore(entry)
+            const result = formatResult(entry)
 
             return (
               <div
@@ -71,7 +107,7 @@ export default function SavedEntriesList({
                     : "border-gray-200 bg-white"
                 }`}
               >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-gray-900">
                       {entry.gameMeta.date} vs {entry.gameMeta.opponent}
@@ -80,32 +116,64 @@ export default function SavedEntriesList({
                     <p className="mt-1 text-xs text-gray-500">
                       Match #{entry.gameMeta.matchNumber} · Season{" "}
                       {entry.gameMeta.seasonYear}
+                      {entry.gameMeta.location?.trim()
+                        ? ` · ${entry.gameMeta.location}`
+                        : ""}
                     </p>
+
+                    {(score || result) && (
+                      <div className="mt-2 flex flex-wrap gap-1.5 text-xs font-semibold">
+                        {score && (
+                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
+                            Score {score}
+                          </span>
+                        )}
+                        {result && (
+                          <span
+                            className={`rounded-full px-2 py-0.5 ${
+                              result === "W"
+                                ? "bg-green-100 text-green-800"
+                                : result === "L"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {result}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <p className="mt-2 text-sm text-gray-600">
                       Position: {formatGamePositions(entry.gamePositions)}
                     </p>
 
-                    <div className="mt-3 space-y-1 text-xs text-gray-600 sm:text-sm">
-                      <p>
-                        AB {entry.statLine.AB} · H {entry.statLine.H} · 2B{" "}
-                        {entry.statLine.doubles} · 3B {entry.statLine.triples} ·
-                        HR {entry.statLine.HR}
-                      </p>
-                      <p>
-                        RBI {entry.statLine.RBI} · BB {entry.statLine.BB} · SO{" "}
-                        {entry.statLine.SO}
-                      </p>
+                    {showStats && (
+                    <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-gray-600 sm:text-sm">
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">AB {entry.statLine.AB}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">H {entry.statLine.H}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">2B {entry.statLine.doubles}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">3B {entry.statLine.triples}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">HR {entry.statLine.HR}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">RBI {entry.statLine.RBI}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">BB {entry.statLine.BB}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">SO {entry.statLine.SO}</span>
                       {entry.statLine.note?.trim() && (
-                        <p className="text-sm text-gray-500">
+                        <p className="basis-full text-sm text-gray-500">
                           Note: {entry.statLine.note}
                         </p>
                       )}
+                      {entry.gameMeta.memo?.trim() && (
+                        <p className="basis-full text-sm text-gray-500">
+                          Memo: {entry.gameMeta.memo}
+                        </p>
+                      )}
                     </div>
+                    )}
                   </div>
 
                   {(onEdit || onDelete) && (
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:items-center">
                       {onEdit && (
                         <button
                           type="button"

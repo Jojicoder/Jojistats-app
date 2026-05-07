@@ -1,42 +1,43 @@
-import { useEffect, useState } from "react"
-import { Link, useLocation, useNavigate } from "react-router-dom"
+import { useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
-
-type LoginLocationState = {
-  from?: string
-}
+import { fetchUserAccessByEmail } from "../api/supabase-api"
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const location = useLocation()
   const [email, setEmail] = useState("admin@jojistats.com")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
 
-  const redirectAfterLogin = (userEmail?: string | null) => {
-    const from = (location.state as LoginLocationState | null)?.from
+  const redirectAfterLogin = async (nextEmail: string | null | undefined) => {
+    const normalizedEmail = nextEmail?.trim().toLowerCase()
 
-    if (from && from !== "/login") {
-      navigate(from, { replace: true })
+    if (normalizedEmail === "admin@jojistats.com") {
+      navigate("/admin", { replace: true })
       return
     }
 
-    navigate(userEmail === "admin@jojistats.com" ? "/admin" : "/stats", {
-      replace: true,
-    })
-  }
+    if (normalizedEmail) {
+      const access = await fetchUserAccessByEmail(normalizedEmail)
 
-  useEffect(() => {
-    const redirectIfAlreadyLoggedIn = async () => {
-      const { data } = await supabase.auth.getUser()
-      if (data.user) {
-        redirectAfterLogin(data.user.email)
+      if (access?.role === "recorder") {
+        navigate("/record-game", { replace: true })
+        return
+      }
+
+      if (access?.role === "manager") {
+        navigate("/manager", { replace: true })
+        return
+      }
+
+      if (access?.role === "player") {
+        navigate("/player", { replace: true })
+        return
       }
     }
 
-    redirectIfAlreadyLoggedIn()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+    navigate("/stats", { replace: true })
+  }
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -54,7 +55,7 @@ export default function LoginPage() {
         return
       }
 
-      redirectAfterLogin(data.user?.email)
+      await redirectAfterLogin(data.user?.email ?? email)
     } finally {
       setIsLoading(false)
     }
@@ -99,10 +100,10 @@ export default function LoginPage() {
           onSubmit={handleLogin}
           className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm"
         >
-          <h1 className="text-2xl font-bold text-green-900">Admin Login</h1>
+          <h1 className="text-2xl font-bold text-green-900">Login</h1>
 
           <p className="mt-2 text-sm text-gray-600">
-            Sign in to manage teams, players, and game records.
+            Sign in to manage JojiStats.
           </p>
 
           <label className="mt-6 block text-sm font-medium text-gray-700">

@@ -6,6 +6,10 @@ import type { DraftGameMeta } from "../types"
 type GameMetaFieldsProps = {
   gameMeta: DraftGameMeta
   onGameMetaChange: (nextMeta: DraftGameMeta) => void
+  showLocation?: boolean
+  showMemo?: boolean
+  showScore?: boolean
+  teamName?: string
 }
 
 // Available season year options shown in the picker.
@@ -18,6 +22,10 @@ const seasonOptions = [2024, 2025, 2026, 2027, 2028]
 export default function GameMetaFields({
   gameMeta,
   onGameMetaChange,
+  showLocation = false,
+  showMemo = false,
+  showScore = false,
+  teamName = "Team",
 }: GameMetaFieldsProps) {
   const handleDateChange = (nextDate: string) => {
     const derivedYear =
@@ -30,10 +38,36 @@ export default function GameMetaFields({
     })
   }
 
+  const handleScoreChange = (
+    scoreKey: "teamScore" | "opponentScore",
+    value: string
+  ) => {
+    const nextValue = value === "" ? null : Math.max(0, Number(value))
+    const nextMeta = {
+      ...gameMeta,
+      [scoreKey]: Number.isFinite(nextValue) ? nextValue : null,
+    }
+    const teamScore = scoreKey === "teamScore" ? nextValue : nextMeta.teamScore
+    const opponentScore =
+      scoreKey === "opponentScore" ? nextValue : nextMeta.opponentScore
+
+    onGameMetaChange({
+      ...nextMeta,
+      result:
+        teamScore == null || opponentScore == null
+          ? gameMeta.result ?? ""
+          : teamScore > opponentScore
+            ? "W"
+            : teamScore < opponentScore
+              ? "L"
+              : "T",
+    })
+  }
+
   return (
     <>
       {/* Primary game metadata fields */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600">Game Date</label>
           <input
@@ -59,7 +93,7 @@ export default function GameMetaFields({
       </div>
 
       {/* Secondary metadata fields */}
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="mb-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-gray-600">Season Year</label>
           <select
@@ -99,6 +133,87 @@ export default function GameMetaFields({
           />
         </div>
       </div>
+
+      {(showLocation || showMemo) && (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+          {showLocation && (
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-600">Location</label>
+              <input
+                type="text"
+                value={gameMeta.location ?? ""}
+                onChange={(e) =>
+                  onGameMetaChange({ ...gameMeta, location: e.target.value })
+                }
+                placeholder="e.g. Home field"
+                className="rounded-lg border border-gray-200 px-3 py-2"
+              />
+            </div>
+          )}
+
+          {showMemo && (
+            <div className="flex flex-col gap-2">
+              <label className="text-sm font-medium text-gray-600">Memo</label>
+              <textarea
+                value={gameMeta.memo ?? ""}
+                onChange={(e) =>
+                  onGameMetaChange({ ...gameMeta, memo: e.target.value })
+                }
+                rows={3}
+                placeholder="Game memo..."
+                className="resize-none rounded-lg border border-gray-200 px-3 py-2"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {showScore && (
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-600">
+              {teamName} Score
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={gameMeta.teamScore ?? ""}
+              onChange={(e) => handleScoreChange("teamScore", e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-2"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-600">Opponent Score</label>
+            <input
+              type="number"
+              min={0}
+              value={gameMeta.opponentScore ?? ""}
+              onChange={(e) => handleScoreChange("opponentScore", e.target.value)}
+              className="rounded-lg border border-gray-200 px-3 py-2"
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-sm font-medium text-gray-600">Result</label>
+            <select
+              value={gameMeta.result ?? ""}
+              onChange={(e) =>
+                onGameMetaChange({
+                  ...gameMeta,
+                  result: e.target.value as DraftGameMeta["result"],
+                })
+              }
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2"
+            >
+              <option value="">Not set</option>
+              <option value="W">Win</option>
+              <option value="L">Loss</option>
+              <option value="T">Tie</option>
+            </select>
+          </div>
+        </div>
+      )}
     </>
   )
 }

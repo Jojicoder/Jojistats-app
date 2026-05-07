@@ -1,12 +1,27 @@
 import { Link, useNavigate } from "react-router-dom"
 import { useEffect, useState } from "react"
 import { supabase } from "../api/supabase-client"
+import { fetchUserAccessByEmail } from "../api/supabase-api"
+import type { UserAccess } from "../types"
 
 type HeaderProps = {
   teamName: string
   teams: string[]
   onChangeTeam: (teamName: string) => void
   isLoggedIn?: boolean
+}
+
+function normalizeAccessRole(role: string | null | undefined) {
+  if (
+    role === "player" ||
+    role === "recorder" ||
+    role === "manager" ||
+    role === "admin"
+  ) {
+    return role
+  }
+
+  return null
 }
 
 export default function Header({
@@ -19,6 +34,7 @@ export default function Header({
 
   const [authIsLoggedIn, setAuthIsLoggedIn] = useState(false)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [accessRole, setAccessRole] = useState<UserAccess["role"] | null>(null)
 
   const isLoggedIn = isLoggedInProp ?? authIsLoggedIn
 
@@ -26,7 +42,6 @@ export default function Header({
 
   useEffect(() => {
     if (isLoggedInProp !== undefined) {
-      setAvatarUrl(null)
       return
     }
 
@@ -35,18 +50,26 @@ export default function Header({
 
       if (data.user) {
         setAuthIsLoggedIn(true)
+        const email = data.user.email?.trim().toLowerCase()
 
-        // 🔥 avatar取得
+        
         const { data: profile } = await supabase
           .from("profiles")
           .select("avatar_url")
           .eq("id", data.user.id)
-          .single()
+          .maybeSingle()
 
         setAvatarUrl(profile?.avatar_url ?? null)
+        if (email === "admin@jojistats.com") {
+          setAccessRole("admin")
+        } else if (email) {
+          const access = await fetchUserAccessByEmail(email)
+          setAccessRole(normalizeAccessRole(access?.role))
+        }
       } else {
         setAuthIsLoggedIn(false)
         setAvatarUrl(null)
+        setAccessRole(null)
       }
     }
 
@@ -57,15 +80,23 @@ export default function Header({
         setAuthIsLoggedIn(!!session)
 
         if (session?.user) {
+          const email = session.user.email?.trim().toLowerCase()
           const { data: profile } = await supabase
             .from("profiles")
             .select("avatar_url")
             .eq("id", session.user.id)
-            .single()
+            .maybeSingle()
 
           setAvatarUrl(profile?.avatar_url ?? null)
+          if (email === "admin@jojistats.com") {
+            setAccessRole("admin")
+          } else if (email) {
+            const access = await fetchUserAccessByEmail(email)
+            setAccessRole(normalizeAccessRole(access?.role))
+          }
         } else {
           setAvatarUrl(null)
+          setAccessRole(null)
         }
       }
     )
@@ -130,6 +161,42 @@ export default function Header({
 
           {isLoggedIn ? (
             <>
+              {accessRole === "recorder" && (
+                <Link
+                  to="/record-game"
+                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                >
+                  Record Game
+                </Link>
+              )}
+
+              {accessRole === "player" && (
+                <Link
+                  to="/player"
+                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                >
+                  My Player
+                </Link>
+              )}
+
+              {accessRole === "manager" && (
+                <Link
+                  to="/manager"
+                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                >
+                  Manager
+                </Link>
+              )}
+
+              {accessRole === "admin" && (
+                <Link
+                  to="/admin"
+                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                >
+                  Admin
+                </Link>
+              )}
+
               <button
                 type="button"
                 onClick={handleLogout}
@@ -140,7 +207,7 @@ export default function Header({
 
               {/* 🔥 AVATAR */}
               <img
-                src={avatarUrl || "/default-avatar.png"}
+                src={avatarUrl || "/logo.png"}
                 alt="avatar"
                 className="h-9 w-9 cursor-pointer rounded-full border border-gray-200 object-cover sm:h-10 sm:w-10"
                 onClick={() => navigate("/profile")}
