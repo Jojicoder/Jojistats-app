@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import type {
   Player,
   SavedBattingGameEntry,
@@ -112,6 +112,10 @@ export default function Sidebar({
 }: SidebarProps) {
   const [sortBy, setSortBy] = useState<SidebarSortKey>("jersey")
 
+  useEffect(() => {
+    if (mode === "pitching") setSortBy("games")
+  }, [mode])
+
   const sortedPlayers = useMemo(() => {
     const nextPlayers = [...players]
 
@@ -127,17 +131,26 @@ export default function Sidebar({
       if (mode === "pitching") {
         const aIsPitcher = a.position === "P"
         const bIsPitcher = b.position === "P"
+        const aMetrics = getPitchingMetrics(pitchingEntriesByPlayer[a.id] ?? [])
+        const bMetrics = getPitchingMetrics(pitchingEntriesByPlayer[b.id] ?? [])
+        const aHasPitchingRecord = aMetrics.games > 0
+        const bHasPitchingRecord = bMetrics.games > 0
 
         if (sortBy === "jersey") {
+          if (aHasPitchingRecord && !bHasPitchingRecord) return -1
+          if (!aHasPitchingRecord && bHasPitchingRecord) return 1
           if (aIsPitcher && !bIsPitcher) return -1
           if (!aIsPitcher && bIsPitcher) return 1
           return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
         }
 
-        const aMetrics = getPitchingMetrics(pitchingEntriesByPlayer[a.id] ?? [])
-        const bMetrics = getPitchingMetrics(pitchingEntriesByPlayer[b.id] ?? [])
-
-        if (sortBy === "games") return bMetrics.games - aMetrics.games
+        if (sortBy === "games") {
+          const games = bMetrics.games - aMetrics.games
+          if (games !== 0) return games
+          if (aIsPitcher && !bIsPitcher) return -1
+          if (!aIsPitcher && bIsPitcher) return 1
+          return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
+        }
         if (sortBy === "era") return aMetrics.era - bMetrics.era
         if (sortBy === "whip") return aMetrics.whip - bMetrics.whip
         if (sortBy === "ip") return bMetrics.ip - aMetrics.ip

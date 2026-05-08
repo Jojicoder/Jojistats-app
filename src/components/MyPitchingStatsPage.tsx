@@ -1,10 +1,12 @@
-import type { Player, SavedPitchingGameEntry } from "../types"
+import { useMemo, useState } from "react"
+import type { Player, SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
 import { usePitchingStats } from "../hooks/usePitchingStats"
 import PitchingTrendChart from "./PitchingTrendChart"
 
 type Props = {
   activePlayer: Player
   entries: SavedPitchingGameEntry[]
+  battingEntries?: SavedBattingGameEntry[]
 }
 
 /* 説明 */
@@ -21,10 +23,29 @@ const statDescriptions: Record<string, string> = {
   HR: "Home Runs Allowed",
 }
 
+function formatInnings(outs: number) {
+  return `${Math.floor(outs / 3)}.${outs % 3}`
+}
+
 export default function MyPitchingStatsPage({
   activePlayer,
   entries,
+  battingEntries = [],
 }: Props) {
+  const [selectedEntry, setSelectedEntry] = useState<SavedPitchingGameEntry | null>(null)
+  const selectedBattingEntry = useMemo(() => {
+    if (!selectedEntry) return null
+    return (
+      battingEntries.find((entry) => entry.gameId === selectedEntry.gameId) ??
+      battingEntries.find(
+        (entry) =>
+          entry.gameMeta.date === selectedEntry.gameMeta.date &&
+          entry.gameMeta.matchNumber === selectedEntry.gameMeta.matchNumber &&
+          entry.gameMeta.opponent === selectedEntry.gameMeta.opponent
+      ) ??
+      null
+    )
+  }, [battingEntries, selectedEntry])
   const statLines = entries.map((e) => e.statLine)
   const stats = usePitchingStats(statLines)
 
@@ -82,7 +103,15 @@ export default function MyPitchingStatsPage({
 
         <PitchingTrendChart entries={entries} />
 
-        <RecentPitchingGames entries={entries} />
+        <RecentPitchingGames entries={entries} onSelect={setSelectedEntry} />
+
+        {selectedEntry && (
+          <PitchingGamePerformanceDetail
+            pitchingEntry={selectedEntry}
+            battingEntry={selectedBattingEntry}
+            onClose={() => setSelectedEntry(null)}
+          />
+        )}
 
       </div>
     </main>
@@ -114,8 +143,10 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 function RecentPitchingGames({
   entries,
+  onSelect,
 }: {
   entries: SavedPitchingGameEntry[]
+  onSelect?: (entry: SavedPitchingGameEntry) => void
 }) {
   if (!entries.length) {
     return (
@@ -135,9 +166,11 @@ function RecentPitchingGames({
 
       <div className="mt-4 space-y-3">
         {sorted.map((entry) => (
-          <div
+          <button
+            type="button"
             key={entry.id}
-            className="flex items-start justify-between gap-3 rounded-lg border border-gray-100 px-3 py-3 sm:px-4"
+            onClick={() => onSelect?.(entry)}
+            className="flex w-full items-start justify-between gap-3 rounded-lg border border-gray-100 px-3 py-3 text-left transition hover:border-green-200 hover:bg-green-50/40 sm:px-4"
           >
             <div>
               <p className="text-sm font-medium text-gray-900">
@@ -152,9 +185,75 @@ function RecentPitchingGames({
               {entry.statLine.inningsPitchedOuts / 3} IP /{" "}
               {entry.statLine.earnedRuns} ER
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
+  )
+}
+
+function PitchingGamePerformanceDetail({
+  pitchingEntry,
+  battingEntry,
+  onClose,
+}: {
+  pitchingEntry: SavedPitchingGameEntry
+  battingEntry: SavedBattingGameEntry | null
+  onClose: () => void
+}) {
+  return (
+    <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Game Performance</h2>
+          <p className="mt-1 text-sm text-gray-500">
+            {pitchingEntry.gameMeta.date} vs {pitchingEntry.gameMeta.opponent}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-600"
+        >
+          Close
+        </button>
+      </div>
+
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <div className="rounded-xl border border-gray-100 p-3">
+          <p className="text-sm font-semibold text-gray-900">Pitching</p>
+          <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-gray-600 sm:text-sm">
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">IP {formatInnings(pitchingEntry.statLine.inningsPitchedOuts)}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">H {pitchingEntry.statLine.hitsAllowed}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">R {pitchingEntry.statLine.runsAllowed}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">ER {pitchingEntry.statLine.earnedRuns}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">BB {pitchingEntry.statLine.walks}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">HBP {pitchingEntry.statLine.hitBatters}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">SO {pitchingEntry.statLine.strikeouts}</span>
+            <span className="rounded-full bg-gray-100 px-2 py-0.5">HR {pitchingEntry.statLine.homeRunsAllowed}</span>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-gray-100 p-3">
+          <p className="text-sm font-semibold text-gray-900">Batting</p>
+          {battingEntry ? (
+            <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-gray-600 sm:text-sm">
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">AB {battingEntry.statLine.AB}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">H {battingEntry.statLine.H}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">2B {battingEntry.statLine.doubles}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">3B {battingEntry.statLine.triples}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">HR {battingEntry.statLine.HR}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">RBI {battingEntry.statLine.RBI}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">BB {battingEntry.statLine.BB}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">HBP {battingEntry.statLine.HBP ?? 0}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">SF {battingEntry.statLine.SF ?? 0}</span>
+              <span className="rounded-full bg-gray-100 px-2 py-0.5">SO {battingEntry.statLine.SO}</span>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-gray-500">No batting record for this game.</p>
+          )}
+        </div>
+      </div>
+    </section>
   )
 }

@@ -538,6 +538,7 @@ export default function MainDashboard({
       <MyPitchingStatsPage
         activePlayer={activePlayer}
         entries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
+        battingEntries={savedEntries}
       />
     )
   }
@@ -584,11 +585,12 @@ export default function MainDashboard({
       }
     />
   ) : (
-    <MyStatsPage
-      activePlayer={activePlayer}
-      calculatedStats={calculatedStats}
-      savedEntries={savedEntries}
-      teamSavedEntries={teamSavedEntries}
+      <MyStatsPage
+        activePlayer={activePlayer}
+        calculatedStats={calculatedStats}
+        savedEntries={savedEntries}
+        pitchingEntries={savedPitchingEntries}
+        teamSavedEntries={teamSavedEntries}
       gamesPlayed={kpi.gamesPlayed}
       seasonYear={gameMeta.seasonYear}
     />

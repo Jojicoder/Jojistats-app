@@ -96,11 +96,11 @@ function getMetrics(entries: SavedBattingGameEntry[]) {
   const obp = pa > 0 ? (totals.h + totals.bb + totals.hbp) / pa : 0
   const slg = totals.ab > 0 ? totalBases / totals.ab : 0
   const bbPerK =
-    totals.so === 0 && totals.bb > 0
+    totals.so === 0
       ? "--"
       : totals.so > 0
         ? (totals.bb / totals.so).toFixed(2)
-        : "0.00"
+        : "--"
 
   return {
     ...totals,

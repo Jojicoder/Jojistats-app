@@ -77,10 +77,8 @@ export function useGameStats(
   const ops = formatRate(numericObp + numericSlg)
   const iso = formatRate(numericSlg - (totals.AB > 0 ? totals.H / totals.AB : 0))
 
-  let bbPerK = "0.00"
-  if (totals.SO === 0 && totals.BB > 0) {
-    bbPerK = "--"
-  } else if (totals.SO > 0) {
+  let bbPerK = "--"
+  if (totals.SO > 0) {
     bbPerK = formatRatio(totals.BB / totals.SO)
   }
 

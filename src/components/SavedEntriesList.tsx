@@ -7,6 +7,7 @@ type SavedEntriesListProps = {
   emptyMessage?: string
   onEdit?: (savedEntry: SavedBattingGameEntry) => void
   onDelete?: (savedEntry: SavedBattingGameEntry) => void
+  onSelect?: (savedEntry: SavedBattingGameEntry) => void
   editingSavedEntryId?: string | null
   showHeader?: boolean
   showDescription?: boolean
@@ -39,6 +40,7 @@ export default function SavedEntriesList({
   emptyMessage = "No saved entries yet.",
   onEdit,
   onDelete,
+  onSelect,
   editingSavedEntryId = null,
   showHeader = true,
   showDescription = true,
@@ -101,10 +103,20 @@ export default function SavedEntriesList({
             return (
               <div
                 key={entry.id}
+                role={onSelect ? "button" : undefined}
+                tabIndex={onSelect ? 0 : undefined}
+                onClick={() => onSelect?.(entry)}
+                onKeyDown={(event) => {
+                  if (!onSelect) return
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault()
+                    onSelect(entry)
+                  }
+                }}
                 className={`rounded-xl border px-3 py-3 transition sm:px-4 sm:py-4 ${
                   isEditing
                     ? "border-green-900 bg-green-50"
-                    : "border-gray-200 bg-white"
+                    : `border-gray-200 bg-white ${onSelect ? "cursor-pointer hover:border-green-200 hover:bg-green-50/40" : ""}`
                 }`}
               >
                 <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -179,7 +191,10 @@ export default function SavedEntriesList({
                       {onEdit && (
                         <button
                           type="button"
-                          onClick={() => onEdit(entry)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onEdit(entry)
+                          }}
                           className={`rounded-lg px-3 py-2 text-sm font-medium ${
                             isEditing
                               ? "bg-green-900 text-white"
@@ -193,7 +208,10 @@ export default function SavedEntriesList({
                       {onDelete && (
                         <button
                           type="button"
-                          onClick={() => onDelete(entry)}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            onDelete(entry)
+                          }}
                           className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
                         >
                           Delete

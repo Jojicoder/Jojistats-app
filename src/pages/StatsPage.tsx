@@ -416,6 +416,7 @@ export default function StatsPage() {
                   activePlayer={activePlayer}
                   calculatedStats={calculatedStats}
                   savedEntries={savedEntries}
+                  pitchingEntries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
                   teamSavedEntries={allTeamEntries}
                   gamesPlayed={kpi.gamesPlayed}
                   seasonYear={activeTeam?.currentSeasonYear ?? 0}
@@ -426,6 +427,7 @@ export default function StatsPage() {
                   entries={
                     pitchingEntriesByPlayer[activePlayer.id] ?? []
                   }
+                  battingEntries={savedEntries}
                 />
               )}
             </div>
