@@ -1,5 +1,6 @@
 import { supabase } from "./supabase-client"
 import type {
+  Position,
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
   UserAccess,
@@ -49,6 +50,7 @@ type BattingStatRow = {
   id: number
   game_id: number
   player_id: number
+  game_positions?: string[] | null
   ab: number | null
   h: number | null
   double_hits: number | null
@@ -57,7 +59,29 @@ type BattingStatRow = {
   rbi: number | null
   bb: number | null
   hbp: number | null
+  sf: number | null
   so: number | null
+}
+
+const validPositions = new Set<Position>([
+  "P",
+  "C",
+  "1B",
+  "2B",
+  "3B",
+  "SS",
+  "LF",
+  "CF",
+  "RF",
+  "DH",
+  "UTIL",
+])
+
+function parseGamePositions(value: string[] | null | undefined): Position[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((position): position is Position =>
+    validPositions.has(position as Position)
+  )
 }
 
 type PitchingStatRow = {
@@ -315,7 +339,7 @@ export const fetchSavedEntriesByPlayer = async (
             ? game.result
             : "",
       },
-      gamePositions: [],
+      gamePositions: parseGamePositions(stat.game_positions),
       statLine: {
         AB: stat.ab ?? 0,
         H: stat.h ?? 0,
@@ -325,6 +349,7 @@ export const fetchSavedEntriesByPlayer = async (
         RBI: stat.rbi ?? 0,
         BB: stat.bb ?? 0,
         HBP: stat.hbp ?? 0,
+        SF: stat.sf ?? 0,
         SO: stat.so ?? 0,
         note: "",
       },

@@ -8,6 +8,7 @@ import type {
   DraftGameMeta,
   SavedBattingGameEntry,
   PendingBattingEntry,
+  PendingPitchingEntry,
 } from "../types"
 import ScoreEntryPanel from "./ScoreEntryPanel"
 import PitchingEntryPanel from "./PitchingEntryPanel"
@@ -28,7 +29,8 @@ type RecordGamePageProps = {
   onEntryChange: (nextEntry: BattingEntryData) => void
   onSaveGame: (
     gameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[]
+    entries: PendingBattingEntry[],
+    pitchingEntries?: PendingPitchingEntry[]
   ) => Promise<void>
   teamName: string
   seasonYear: number
@@ -59,7 +61,7 @@ type RecordGamePageProps = {
 }
 
 type GameHalf = "Top" | "Bottom"
-type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "HBP" | "SO" | "OUT" | "E"
+type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "HBP" | "SF" | "SO" | "OUT" | "E"
 type LiveGameTab = "batting" | "pitching"
 type InputStyle = "standard" | "game" | "edit"
 type LivePitchResult = "OUT" | "SO" | "BB" | "HBP" | "H" | "2B" | "3B" | "R" | "ER" | "HR" | "E"
@@ -130,6 +132,7 @@ const liveResultLabels: { result: LivePlayResult; label: string }[] = [
   { result: "HR", label: "HR" },
   { result: "BB", label: "Walk" },
   { result: "HBP", label: "Hit By Pitch" },
+  { result: "SF", label: "Sac Fly" },
   { result: "SO", label: "Strikeout" },
   { result: "OUT", label: "Out" },
   { result: "E", label: "Error" },
@@ -153,6 +156,7 @@ function createEmptyBattingLine(): BattingEntryData {
     RBI: 0,
     BB: 0,
     HBP: 0,
+    SF: 0,
     SO: 0,
     note: "",
   }
@@ -169,6 +173,11 @@ function buildLiveStatLine(result: LivePlayResult, rbi: number): BattingEntryDat
 
   if (result === "HBP") {
     statLine.HBP = 1
+    return statLine
+  }
+
+  if (result === "SF") {
+    statLine.SF = 1
     return statLine
   }
 
@@ -197,7 +206,7 @@ function buildLiveStatLine(result: LivePlayResult, rbi: number): BattingEntryDat
 }
 
 function isOutResult(result: LivePlayResult) {
-  return result === "SO" || result === "OUT"
+  return result === "SO" || result === "OUT" || result === "SF"
 }
 
 function isPitchOutResult(result: LivePitchResult) {
@@ -300,6 +309,7 @@ function nextBasesForBatting(
 
 function estimateRunsForBatting(bases: BasesState, result: LivePlayResult, rbi: number) {
   if (result === "E") return bases.third ? 1 : 0
+  if (result === "SF") return bases.third ? 1 : 0
   if (result === "HR") return countBases(bases) + 1
   if (result === "BB" || result === "HBP") return isBasesLoaded(bases) ? 1 : 0
   return rbi
@@ -310,6 +320,7 @@ function estimateRbiForBatting(bases: BasesState, result: LivePlayResult) {
   if (result === "3B") return countBases(bases)
   if (result === "2B") return Number(bases.second) + Number(bases.third)
   if (result === "1B") return Number(bases.third)
+  if (result === "SF") return bases.third ? 1 : 0
   if (result === "BB" || result === "HBP") {
     return isBasesLoaded(bases) ? 1 : 0
   }
@@ -505,21 +516,28 @@ function getPlayerLabel(player: Player) {
 
 function aggregateLivePlays(
   plays: LivePlay[],
-  players: Player[]
+  players: Player[],
+  pitchingPlays: LivePitchPlay[] = []
 ): PendingBattingEntry[] {
   const byPlayer = new Map<string, PendingBattingEntry>()
+  const pitcherIds = new Set(pitchingPlays.map((play) => play.pitcherId))
 
   plays.forEach((play) => {
     const player = players.find((item) => item.id === play.playerId)
     const existing = byPlayer.get(play.playerId)
 
     if (!existing) {
+      const gamePositions = player ? [player.position] : ["UTIL" as Position]
+      if (pitcherIds.has(play.playerId) && !gamePositions.includes("P")) {
+        gamePositions.push("P")
+      }
+
       byPlayer.set(play.playerId, {
         ...createEmptyBattingLine(),
         ...play.statLine,
         playerId: play.playerId,
         playerName: play.playerName,
-        gamePositions: player ? [player.position] : ["UTIL"],
+        gamePositions,
       })
       return
     }
@@ -531,11 +549,54 @@ function aggregateLivePlays(
     existing.HR += play.statLine.HR
     existing.RBI += play.statLine.RBI
     existing.BB += play.statLine.BB
-    existing.HBP += play.statLine.HBP
+    existing.HBP += play.statLine.HBP ?? 0
+    existing.SF += play.statLine.SF ?? 0
     existing.SO += play.statLine.SO
   })
 
+  pitcherIds.forEach((pitcherId) => {
+    const existing = byPlayer.get(pitcherId)
+    const player = players.find((item) => item.id === pitcherId)
+
+    if (existing) {
+      if (!existing.gamePositions.includes("P")) existing.gamePositions.push("P")
+      return
+    }
+
+    const gamePositions = player ? [player.position] : ["UTIL" as Position]
+    if (!gamePositions.includes("P")) gamePositions.push("P")
+
+    byPlayer.set(pitcherId, {
+      ...createEmptyBattingLine(),
+      playerId: pitcherId,
+      playerName: player?.name ?? "Pitcher",
+      gamePositions,
+    })
+  })
+
   return Array.from(byPlayer.values())
+}
+
+function aggregateLivePitchingPlays(
+  plays: LivePitchPlay[],
+  players: Player[]
+): PendingPitchingEntry[] {
+  const byPitcher = new Map<string, LivePitchPlay[]>()
+
+  plays.forEach((play) => {
+    const pitcherPlays = byPitcher.get(play.pitcherId) ?? []
+    pitcherPlays.push(play)
+    byPitcher.set(play.pitcherId, pitcherPlays)
+  })
+
+  return Array.from(byPitcher.entries()).map(([pitcherId, pitcherPlays]) => {
+    const pitcher = players.find((player) => player.id === pitcherId)
+    return {
+      ...buildPitchingEntryFromPlays(pitcherPlays),
+      playerId: pitcherId,
+      playerName: pitcher?.name ?? pitcherPlays[0]?.pitcherName ?? "Pitcher",
+    }
+  })
 }
 
 function formatLiveInnings(outs: number) {
@@ -565,6 +626,7 @@ function battingResultClass(result: LivePlayResult): string {
     case "1B":  return "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
     case "BB":
     case "HBP": return "bg-sky-100 text-sky-900 hover:bg-sky-200"
+    case "SF":  return "bg-violet-100 text-violet-900 hover:bg-violet-200"
     case "SO":  return "bg-red-100 text-red-900 hover:bg-red-200"
     case "OUT": return "bg-gray-800 text-white hover:bg-gray-700"
     case "E":   return "bg-amber-100 text-amber-900 hover:bg-amber-200"
@@ -595,6 +657,7 @@ function battingResultBadge(result: LivePlayResult): string {
     case "1B":  return "bg-emerald-100 text-emerald-900"
     case "BB":
     case "HBP": return "bg-sky-100 text-sky-900"
+    case "SF":  return "bg-violet-100 text-violet-900"
     case "SO":  return "bg-red-100 text-red-900"
     case "OUT": return "bg-gray-200 text-gray-700"
     case "E":   return "bg-amber-100 text-amber-900"
@@ -852,7 +915,12 @@ export default function RecordGamePage({
       if (draft.replacedLineupIds) setReplacedLineupIds(draft.replacedLineupIds)
       if (Array.isArray(draft.livePlays)) setLivePlays(draft.livePlays)
       if (draft.livePitcherId) setLivePitcherId(draft.livePitcherId)
-      if (draft.livePitchingEntry) setLivePitchingEntry(draft.livePitchingEntry)
+      if (draft.livePitchingEntry) {
+        setLivePitchingEntry({
+          ...draft.livePitchingEntry,
+          hitBatters: draft.livePitchingEntry.hitBatters ?? 0,
+        })
+      }
       if (Array.isArray(draft.livePitchPlays)) setLivePitchPlays(draft.livePitchPlays)
     } catch (error) {
       console.error(error)
@@ -917,6 +985,10 @@ export default function RecordGamePage({
   )
 
   const [gamePositions, setGamePositions] = useState<Position[]>(defaultGamePositions)
+  useEffect(() => {
+    setGamePositions(defaultGamePositions)
+  }, [defaultGamePositions])
+
   const canRecordPitching = gamePositions.includes("P")
   const lineupPlayers = lineupIds
     .map((id) => allPlayers.find((player) => player.id === id))
@@ -1165,7 +1237,7 @@ export default function RecordGamePage({
     ])
 
     onEntryChange({
-      AB: 0,H: 0,doubles: 0,triples: 0,HR: 0,RBI: 0,BB: 0,HBP: 0,SO: 0,note: "",
+      AB: 0,H: 0,doubles: 0,triples: 0,HR: 0,RBI: 0,BB: 0,HBP: 0,SF: 0,SO: 0,note: "",
     })
   }
 
@@ -1803,11 +1875,27 @@ export default function RecordGamePage({
   }
 
   const handleSyncLiveGame = async () => {
-    if (!isMetaComplete || livePlays.length === 0) return
+    if (!isMetaComplete || (livePlays.length === 0 && livePitchPlays.length === 0)) return
+
+    const liveGameMeta: DraftGameMeta = {
+      ...gameMeta,
+      teamScore: awayScore,
+      opponentScore: homeScore,
+      result:
+        awayScore > homeScore
+          ? "W"
+          : awayScore < homeScore
+            ? "L"
+            : "T",
+    }
 
     try {
       setIsSaving(true)
-      await onSaveGame(gameMeta, aggregateLivePlays(livePlays, allPlayers))
+      await onSaveGame(
+        liveGameMeta,
+        aggregateLivePlays(livePlays, allPlayers, livePitchPlays),
+        aggregateLivePitchingPlays(livePitchPlays, allPlayers)
+      )
       // only reset on success
       setLivePlays([])
       setCurrentBatterIndex(0)
@@ -1878,27 +1966,7 @@ export default function RecordGamePage({
   }
 
   const handleSyncLivePitching = async () => {
-    if (!isMetaComplete || livePitchPlays.length === 0) return
-
-    try {
-      setIsSaving(true)
-      onPitchingEntryChange(livePitchingEntry)
-      await onSavePitchingGame(livePitchingEntry, livePitcher.id)
-      setLivePitchPlays([])
-      setQuickPitchNote("")
-      setLivePitchingEntry({
-        inningsPitchedOuts: 0,
-        hitsAllowed: 0,
-        runsAllowed: 0,
-        earnedRuns: 0,
-        walks: 0,
-        hitBatters: 0,
-        strikeouts: 0,
-        homeRunsAllowed: 0,
-      })
-    } finally {
-      setIsSaving(false)
-    }
+    await handleSyncLiveGame()
   }
 
   /* ---------------- UI ---------------- */
@@ -2595,15 +2663,11 @@ export default function RecordGamePage({
                     disabled={
                       isSaving ||
                       !isMetaComplete ||
-                      (liveGameTab === "batting"
-                        ? livePlays.length === 0
-                        : livePitchPlays.length === 0)
+                      (livePlays.length === 0 && livePitchPlays.length === 0)
                     }
                     className="col-span-2 rounded-lg bg-green-900 px-3 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-400"
                   >
-                    {liveGameTab === "batting"
-                      ? `Sync Batting (${livePlays.length})`
-                      : `Sync Pitching (${livePitchPlays.length})`}
+                    {`Sync Game (${livePlays.length + livePitchPlays.length})`}
                   </button>
                 )}
               </div>
@@ -3341,7 +3405,8 @@ export default function RecordGamePage({
                         {entry.HR > 0 && <span className="rounded-full bg-green-900 px-2 py-0.5 text-xs text-white">HR {entry.HR}</span>}
                         {entry.RBI > 0 && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800">RBI {entry.RBI}</span>}
                         {entry.BB > 0 && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700">BB {entry.BB}</span>}
-                        {entry.HBP > 0 && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700">HBP {entry.HBP}</span>}
+                        {(entry.HBP ?? 0) > 0 && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700">HBP {entry.HBP}</span>}
+                        {(entry.SF ?? 0) > 0 && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-xs text-violet-700">SF {entry.SF}</span>}
                         {entry.SO > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700">K {entry.SO}</span>}
                       </div>
                     </div>

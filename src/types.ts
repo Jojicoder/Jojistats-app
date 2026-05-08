@@ -59,6 +59,7 @@ export type BattingEntryData = {
   RBI: number
   BB: number
   HBP: number
+  SF: number
   SO: number
   note: string
 }
@@ -67,6 +68,11 @@ export type PendingBattingEntry = BattingEntryData & {
   playerId: string
   playerName: string
   gamePositions: Position[]
+}
+
+export type PendingPitchingEntry = PitchingEntryData & {
+  playerId: string
+  playerName: string
 }
 
 export type SavedBattingGameEntry = {

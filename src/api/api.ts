@@ -165,6 +165,7 @@ export const archivePlayer = async (playerId: number) => {
 type BattingGameStatPayload = {
   player_id: number
   batting_order: number
+  game_positions?: string[]
   ab?: number
   h?: number
   double_hits?: number
@@ -237,6 +238,7 @@ export const createFullGame = async (data: FullGamePayload) => {
           game_id: game.id,
           player_id: s.player_id,
           batting_order: s.batting_order,
+          game_positions: s.game_positions ?? [],
           ab: s.ab ?? 0,
           h: s.h ?? 0,
           double_hits: s.double_hits ?? 0,
@@ -316,6 +318,7 @@ export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
           game_id: gameId,
           player_id: s.player_id,
           batting_order: s.batting_order,
+          game_positions: s.game_positions ?? [],
           ab: s.ab ?? 0,
           h: s.h ?? 0,
           double_hits: s.double_hits ?? 0,
@@ -511,6 +514,7 @@ export const updateBattingStatEntry = async (
     .update({
       player_id: data.battingStat.player_id,
       batting_order: data.battingStat.batting_order,
+      game_positions: data.battingStat.game_positions ?? [],
       ab: data.battingStat.ab ?? 0,
       h: data.battingStat.h ?? 0,
       double_hits: data.battingStat.double_hits ?? 0,

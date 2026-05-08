@@ -17,6 +17,7 @@ import type {
   BattingEntryData,
   SavedBattingGameEntry,
   PendingBattingEntry,
+  PendingPitchingEntry,
   PitchingEntryData,
 } from "../types"
 
@@ -29,6 +30,7 @@ const emptyBattingEntry: BattingEntryData = {
   RBI: 0,
   BB: 0,
   HBP: 0,
+  SF: 0,
   SO: 0,
   note: "",
 }
@@ -191,7 +193,8 @@ export default function GameRecordPage() {
 
   const handleSaveGame = async (
     nextGameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[]
+    entries: PendingBattingEntry[],
+    pitchingEntries: PendingPitchingEntry[] = []
   ) => {
     if (!activePlayer) return
 
@@ -213,6 +216,7 @@ export default function GameRecordPage() {
         battingStats: entries.map((entry, index) => ({
           player_id: Number(entry.playerId),
           batting_order: index + 1,
+          game_positions: entry.gamePositions,
           ab: entry.AB,
           h: entry.H,
           double_hits: entry.doubles,
@@ -221,9 +225,20 @@ export default function GameRecordPage() {
           rbi: entry.RBI,
           bb: entry.BB,
           hbp: entry.HBP,
+          sf: entry.SF,
           so: entry.SO,
         })),
-        pitchingStats: [],
+        pitchingStats: pitchingEntries.map((entry) => ({
+          player_id: Number(entry.playerId),
+          innings_pitched_outs: entry.inningsPitchedOuts,
+          hits_allowed: entry.hitsAllowed,
+          runs_allowed: entry.runsAllowed,
+          earned_runs: entry.earnedRuns,
+          walks: entry.walks,
+          hbp: entry.hitBatters,
+          strikeouts: entry.strikeouts,
+          home_runs_allowed: entry.homeRunsAllowed,
+        })),
       }
 
       if (editingSavedEntryId) {
@@ -279,6 +294,7 @@ export default function GameRecordPage() {
         battingStat: {
           player_id: Number(editingSavedEntry.playerId),
           batting_order: 1,
+          game_positions: editingSavedEntry.gamePositions,
           ab: nextStatLine.AB,
           h: nextStatLine.H,
           double_hits: nextStatLine.doubles,
@@ -287,6 +303,7 @@ export default function GameRecordPage() {
           rbi: nextStatLine.RBI,
           bb: nextStatLine.BB,
           hbp: nextStatLine.HBP,
+          sf: nextStatLine.SF,
           so: nextStatLine.SO,
         },
       })

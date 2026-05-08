@@ -12,6 +12,8 @@ grant select on public.pitching_game_stats to anon;
 
 alter table public.games add column if not exists memo text;
 alter table public.batting_game_stats add column if not exists hbp integer not null default 0;
+alter table public.batting_game_stats add column if not exists sf integer not null default 0;
+alter table public.batting_game_stats add column if not exists game_positions text[] not null default '{}';
 alter table public.pitching_game_stats add column if not exists hbp integer not null default 0;
 
 create or replace function public.has_team_access(team_id_input bigint)

@@ -102,7 +102,11 @@ export default function MyStatsPage({
 }: MyStatsPageProps) {
   const totalPlateAppearances = savedEntries.reduce(
     (total, entry) =>
-      total + entry.statLine.AB + entry.statLine.BB + entry.statLine.HBP,
+      total +
+      entry.statLine.AB +
+      entry.statLine.BB +
+      (entry.statLine.HBP ?? 0) +
+      (entry.statLine.SF ?? 0),
     0
   )
 
@@ -138,7 +142,7 @@ export default function MyStatsPage({
                 {totalPlateAppearances}
               </p>
               <p className="mt-1 text-xs text-gray-400">
-                PA = AB + BB + HBP
+                PA = AB + BB + HBP + SF
               </p>
             </div>
           </div>

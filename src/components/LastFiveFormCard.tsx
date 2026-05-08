@@ -25,7 +25,8 @@ function calculateLastFiveStats(
       acc.ab += entry.statLine.AB
       acc.h += entry.statLine.H
       acc.bb += entry.statLine.BB
-      acc.hbp += entry.statLine.HBP
+      acc.hbp += entry.statLine.HBP ?? 0
+      acc.sf += entry.statLine.SF ?? 0
       acc.hr += entry.statLine.HR
       acc.rbi += entry.statLine.RBI
       return acc
@@ -35,6 +36,7 @@ function calculateLastFiveStats(
       h: 0,
       bb: 0,
       hbp: 0,
+      sf: 0,
       hr: 0,
       rbi: 0,
     }
@@ -45,7 +47,7 @@ function calculateLastFiveStats(
       ? (totals.h / totals.ab).toFixed(3).replace("0.", ".")
       : ".000"
 
-  const obpDenominator = totals.ab + totals.bb + totals.hbp
+  const obpDenominator = totals.ab + totals.bb + totals.hbp + totals.sf
   const obp =
     obpDenominator > 0
       ? ((totals.h + totals.bb + totals.hbp) / obpDenominator)

@@ -337,6 +337,7 @@ function makeEntries(
         RBI,
         BB,
         HBP: 0,
+        SF: 0,
         SO,
         note: "",
       },

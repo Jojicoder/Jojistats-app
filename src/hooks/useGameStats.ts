@@ -30,7 +30,8 @@ export function useGameStats(
       acc.HR += entry.HR
       acc.RBI += entry.RBI
       acc.BB += entry.BB
-      acc.HBP += entry.HBP
+      acc.HBP += entry.HBP ?? 0
+      acc.SF += entry.SF ?? 0
       acc.SO += entry.SO
       return acc
     },
@@ -43,6 +44,7 @@ export function useGameStats(
       RBI: 0,
       BB: 0,
       HBP: 0,
+      SF: 0,
       SO: 0,
       note: "",
     }
@@ -62,9 +64,9 @@ export function useGameStats(
   const avg = totals.AB > 0 ? formatRate(totals.H / totals.AB) : ".000"
 
   const numericObp =
-    totals.AB + totals.BB + totals.HBP > 0
+    totals.AB + totals.BB + totals.HBP + totals.SF > 0
       ? (totals.H + totals.BB + totals.HBP) /
-        (totals.AB + totals.BB + totals.HBP)
+        (totals.AB + totals.BB + totals.HBP + totals.SF)
       : 0
 
   const obp = formatRate(numericObp)

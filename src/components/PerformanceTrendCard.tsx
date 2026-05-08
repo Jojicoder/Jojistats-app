@@ -66,9 +66,11 @@ function getEntryAvg(entry: SavedBattingGameEntry): number {
 }
 
 function getEntryObp(entry: SavedBattingGameEntry): number {
-  const denominator = entry.statLine.AB + entry.statLine.BB + entry.statLine.HBP
+  const hbp = entry.statLine.HBP ?? 0
+  const sf = entry.statLine.SF ?? 0
+  const denominator = entry.statLine.AB + entry.statLine.BB + hbp + sf
   return denominator > 0
-    ? (entry.statLine.H + entry.statLine.BB + entry.statLine.HBP) / denominator
+    ? (entry.statLine.H + entry.statLine.BB + hbp) / denominator
     : 0
 }
 
@@ -90,10 +92,11 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
       acc.triples += entry.statLine.triples
       acc.hr += entry.statLine.HR
       acc.bb += entry.statLine.BB
-      acc.hbp += entry.statLine.HBP
+      acc.hbp += entry.statLine.HBP ?? 0
+      acc.sf += entry.statLine.SF ?? 0
       return acc
     },
-    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0 }
+    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0, sf: 0 }
   )
 
   const singles = Math.max(
@@ -109,7 +112,7 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
 
   const numericAvg = totals.ab > 0 ? totals.h / totals.ab : 0
 
-  const obpDenominator = totals.ab + totals.bb + totals.hbp
+  const obpDenominator = totals.ab + totals.bb + totals.hbp + totals.sf
   const numericObp =
     obpDenominator > 0
       ? (totals.h + totals.bb + totals.hbp) / obpDenominator
@@ -187,10 +190,11 @@ function buildChartData(
         acc.triples += entry.statLine.triples
         acc.hr += entry.statLine.HR
         acc.bb += entry.statLine.BB
-        acc.hbp += entry.statLine.HBP
+        acc.hbp += entry.statLine.HBP ?? 0
+        acc.sf += entry.statLine.SF ?? 0
         return acc
       },
-      { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0 }
+      { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0, sf: 0 }
     )
 
     const playerAvg = getEntryAvg(playerEntry)
@@ -211,7 +215,8 @@ function buildChartData(
 
     const teamAvg = teamTotals.ab > 0 ? teamTotals.h / teamTotals.ab : 0
 
-    const teamObpDenominator = teamTotals.ab + teamTotals.bb + teamTotals.hbp
+    const teamObpDenominator =
+      teamTotals.ab + teamTotals.bb + teamTotals.hbp + teamTotals.sf
     const teamObp =
       teamObpDenominator > 0
         ? (teamTotals.h + teamTotals.bb + teamTotals.hbp) / teamObpDenominator

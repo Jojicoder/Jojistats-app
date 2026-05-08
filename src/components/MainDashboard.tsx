@@ -5,6 +5,7 @@ import type {
   BattingEntryData,
   DraftGameMeta,
   PendingBattingEntry,
+  PendingPitchingEntry,
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
   DisplayStat,
@@ -57,6 +58,7 @@ const createInitialEntry = (): BattingEntryData => ({
   RBI: 0,
   BB: 0,
   HBP: 0,
+  SF: 0,
   SO: 0,
   note: "",
 })
@@ -126,6 +128,7 @@ export default function MainDashboard({
     { label: "AVG", value: kpi.avg },
     { label: "OBP", value: kpi.obp },
     { label: "OPS", value: kpi.ops },
+    { label: "BB/K", value: kpi.bbPerK },
     { label: "HR", value: String(kpi.hr) },
     { label: "RBI", value: String(kpi.rbi) },
   ]
@@ -141,7 +144,8 @@ export default function MainDashboard({
 
   const buildPayload = (
     nextGameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[]
+    entries: PendingBattingEntry[],
+    pitchingEntries: PendingPitchingEntry[] = []
   ) => ({
     game: {
       team_id: Number(activePlayer.teamId),
@@ -158,6 +162,7 @@ export default function MainDashboard({
     battingStats: entries.map((entry, index) => ({
       player_id: Number(entry.playerId),
       batting_order: index + 1,
+      game_positions: entry.gamePositions,
       ab: entry.AB,
       h: entry.H,
       double_hits: entry.doubles,
@@ -166,9 +171,20 @@ export default function MainDashboard({
       rbi: entry.RBI,
       bb: entry.BB,
       hbp: entry.HBP,
+      sf: entry.SF,
       so: entry.SO,
     })),
-    pitchingStats: [],
+    pitchingStats: pitchingEntries.map((entry) => ({
+      player_id: Number(entry.playerId),
+      innings_pitched_outs: entry.inningsPitchedOuts,
+      hits_allowed: entry.hitsAllowed,
+      runs_allowed: entry.runsAllowed,
+      earned_runs: entry.earnedRuns,
+      walks: entry.walks,
+      hbp: entry.hitBatters,
+      strikeouts: entry.strikeouts,
+      home_runs_allowed: entry.homeRunsAllowed,
+    })),
   })
 
   const refreshSavedEntries = async () => {
@@ -189,10 +205,11 @@ export default function MainDashboard({
 
   const handleSaveGame = async (
     nextGameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[]
+    entries: PendingBattingEntry[],
+    pitchingEntries: PendingPitchingEntry[] = []
   ) => {
     try {
-      const payload = buildPayload(nextGameMeta, entries)
+      const payload = buildPayload(nextGameMeta, entries, pitchingEntries)
 
       if (editingSavedEntryId) {
         const gameId = editingSavedEntry?.gameId ?? Number(editingSavedEntryId.replace("db-", ""))
@@ -202,6 +219,9 @@ export default function MainDashboard({
       }
 
       await refreshSavedEntries()
+      if (pitchingEntries.length > 0) {
+        await refreshPitchingEntries()
+      }
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
     } catch (error) {
@@ -314,6 +334,7 @@ export default function MainDashboard({
         battingStat: {
           player_id: Number(editingSavedEntry.playerId),
           batting_order: 1,
+          game_positions: editingSavedEntry.gamePositions,
           ab: nextStatLine.AB,
           h: nextStatLine.H,
           double_hits: nextStatLine.doubles,
@@ -322,6 +343,7 @@ export default function MainDashboard({
           rbi: nextStatLine.RBI,
           bb: nextStatLine.BB,
           hbp: nextStatLine.HBP,
+          sf: nextStatLine.SF,
           so: nextStatLine.SO,
         },
       })
