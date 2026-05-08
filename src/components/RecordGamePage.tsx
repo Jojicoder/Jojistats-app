@@ -7,6 +7,7 @@ import type {
   PitchingEntryData,
   DraftGameMeta,
   SavedBattingGameEntry,
+  SavedPitchingGameEntry,
   PendingBattingEntry,
   PendingPitchingEntry,
 } from "../types"
@@ -24,6 +25,7 @@ type RecordGamePageProps = {
   currentEntry: BattingEntryData
   gameMeta: DraftGameMeta
   savedEntries: SavedBattingGameEntry[]
+  savedPitchingEntries?: SavedPitchingGameEntry[]
   teamSavedEntries?: SavedBattingGameEntry[]
   onGameMetaChange: (nextMeta: DraftGameMeta) => void
   onEntryChange: (nextEntry: BattingEntryData) => void
@@ -35,6 +37,7 @@ type RecordGamePageProps = {
   teamName: string
   seasonYear: number
   isEditingSavedEntry: boolean
+  isEditingSavedPitchingEntry?: boolean
   editingSavedEntryId: string | null
   onStartEditSavedEntry: (savedEntry: SavedBattingGameEntry) => void
   onUpdateSavedEntry: (
@@ -49,6 +52,13 @@ type RecordGamePageProps = {
   onCancelEditSavedEntry: () => void
   onDeleteSavedEntry: (savedEntry: SavedBattingGameEntry) => void
   onDeleteSavedGame?: () => void | Promise<void>
+  onStartEditSavedPitchingEntry?: (savedEntry: SavedPitchingGameEntry) => void
+  onUpdateSavedPitchingEntry?: (
+    nextGameMeta: DraftGameMeta,
+    nextPitchingEntry: PitchingEntryData
+  ) => void | Promise<void>
+  onCancelEditSavedPitchingEntry?: () => void
+  onDeleteSavedPitchingEntry?: (savedEntry: SavedPitchingGameEntry) => void | Promise<void>
   editingGamePositions?: Position[]
   recordMode: "batting" | "pitching"
   setRecordMode: (mode: "batting" | "pitching") => void
@@ -777,6 +787,7 @@ export default function RecordGamePage({
   currentEntry,
   gameMeta,
   savedEntries,
+  savedPitchingEntries = [],
   teamSavedEntries,
   onGameMetaChange,
   onEntryChange,
@@ -784,6 +795,7 @@ export default function RecordGamePage({
   teamName,
   seasonYear,
   isEditingSavedEntry,
+  isEditingSavedPitchingEntry = false,
   editingSavedEntryId,
   onStartEditSavedEntry,
   onUpdateSavedEntry,
@@ -792,6 +804,10 @@ export default function RecordGamePage({
   onCancelEditSavedEntry,
   onDeleteSavedEntry,
   onDeleteSavedGame,
+  onStartEditSavedPitchingEntry,
+  onUpdateSavedPitchingEntry,
+  onCancelEditSavedPitchingEntry,
+  onDeleteSavedPitchingEntry,
   editingGamePositions,
   recordMode,
   setRecordMode,
@@ -1260,6 +1276,15 @@ export default function RecordGamePage({
     }
 
     handleAdd()
+  }
+
+  const handlePitchingPrimaryAction = () => {
+    if (isEditingSavedPitchingEntry && onUpdateSavedPitchingEntry) {
+      onUpdateSavedPitchingEntry(gameMeta, pitchingEntry)
+      return
+    }
+
+    onSavePitchingGame()
   }
 
   const handleUpdateEditGameEntry = (
@@ -3382,13 +3407,26 @@ export default function RecordGamePage({
                 onCancelEdit={onCancelEditSavedEntry}
               />
             ) : (
-              <PitchingEntryPanel
-                entry={pitchingEntry}
-                onEntryChange={onPitchingEntryChange}
-                onPrimaryAction={onSavePitchingGame}
-                primaryActionLabel="Save Pitching"
-                primaryActionDisabled={isPitchingSaveDisabled}
-              />
+              <div>
+                <PitchingEntryPanel
+                  entry={pitchingEntry}
+                  onEntryChange={onPitchingEntryChange}
+                  onPrimaryAction={handlePitchingPrimaryAction}
+                  primaryActionLabel={
+                    isEditingSavedPitchingEntry ? "Update Pitching" : "Save Pitching"
+                  }
+                  primaryActionDisabled={isPitchingSaveDisabled}
+                />
+                {isEditingSavedPitchingEntry && onCancelEditSavedPitchingEntry && (
+                  <button
+                    type="button"
+                    onClick={onCancelEditSavedPitchingEntry}
+                    className="mt-3 w-full rounded-xl border border-gray-200 bg-white py-3 font-medium text-gray-700"
+                  >
+                    Cancel Edit
+                  </button>
+                )}
+              </div>
             )}
           </div>
 
@@ -3438,6 +3476,55 @@ export default function RecordGamePage({
               onDelete={onDeleteSavedEntry}
               editingSavedEntryId={editingSavedEntryId}
             />
+          )}
+
+          {recordMode === "pitching" && (
+            <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
+              <p className="text-sm font-semibold text-gray-900">Saved Pitching</p>
+              {savedPitchingEntries.length === 0 ? (
+                <p className="mt-3 text-sm text-gray-500">No pitching records yet.</p>
+              ) : (
+                <div className="mt-3 space-y-2">
+                  {savedPitchingEntries.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="rounded-xl border border-gray-100 px-3 py-2.5"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">{entry.gameMeta.opponent}</p>
+                          <p className="text-xs text-gray-400">{entry.gameMeta.date}</p>
+                        </div>
+                        <div className="text-right text-xs text-gray-600">
+                          <p>{formatLiveInnings(entry.statLine.inningsPitchedOuts)} IP</p>
+                          <p>{entry.statLine.earnedRuns} ER</p>
+                        </div>
+                      </div>
+                      <div className="mt-2 flex gap-2">
+                        {onStartEditSavedPitchingEntry && (
+                          <button
+                            type="button"
+                            onClick={() => onStartEditSavedPitchingEntry(entry)}
+                            className="rounded-lg bg-gray-100 px-3 py-1.5 text-xs font-semibold text-gray-700"
+                          >
+                            Edit
+                          </button>
+                        )}
+                        {onDeleteSavedPitchingEntry && (
+                          <button
+                            type="button"
+                            onClick={() => onDeleteSavedPitchingEntry(entry)}
+                            className="rounded-lg bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-700"
+                          >
+                            Delete
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
         </div>

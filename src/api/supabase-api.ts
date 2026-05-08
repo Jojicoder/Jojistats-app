@@ -261,6 +261,8 @@ export async function fetchPitchingEntriesByPlayer(
 
     grouped[playerId].push({
       id: `db-${row.id}`,
+      statId: row.id,
+      gameId: row.game_id,
       teamId: String(row.games.team_id),
       playerId,
       gameMeta: {

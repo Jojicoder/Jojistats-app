@@ -112,6 +112,8 @@ export type PitchingEntryData = {
 
 export type SavedPitchingGameEntry = {
   id: string
+  statId: number
+  gameId: number
   teamId: string
   playerId: string
   gameMeta: DraftGameMeta
