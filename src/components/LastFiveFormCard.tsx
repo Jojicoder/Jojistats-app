@@ -25,6 +25,7 @@ function calculateLastFiveStats(
       acc.ab += entry.statLine.AB
       acc.h += entry.statLine.H
       acc.bb += entry.statLine.BB
+      acc.hbp += entry.statLine.HBP
       acc.hr += entry.statLine.HR
       acc.rbi += entry.statLine.RBI
       return acc
@@ -33,6 +34,7 @@ function calculateLastFiveStats(
       ab: 0,
       h: 0,
       bb: 0,
+      hbp: 0,
       hr: 0,
       rbi: 0,
     }
@@ -43,16 +45,18 @@ function calculateLastFiveStats(
       ? (totals.h / totals.ab).toFixed(3).replace("0.", ".")
       : ".000"
 
-  const obpDenominator = totals.ab + totals.bb
+  const obpDenominator = totals.ab + totals.bb + totals.hbp
   const obp =
     obpDenominator > 0
-      ? ((totals.h + totals.bb) / obpDenominator)
+      ? ((totals.h + totals.bb + totals.hbp) / obpDenominator)
           .toFixed(3)
           .replace("0.", ".")
       : ".000"
 
   const numericObp =
-    obpDenominator > 0 ? (totals.h + totals.bb) / obpDenominator : 0
+    obpDenominator > 0
+      ? (totals.h + totals.bb + totals.hbp) / obpDenominator
+      : 0
 
   let formLabel: LastFiveStats["formLabel"] = "Cold"
   let formClassName =

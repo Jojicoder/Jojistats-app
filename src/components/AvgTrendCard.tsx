@@ -51,9 +51,10 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
       acc.triples += entry.statLine.triples
       acc.hr += entry.statLine.HR
       acc.bb += entry.statLine.BB
+      acc.hbp += entry.statLine.HBP
       return acc
     },
-    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0 }
+    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0 }
   )
 
   const singles = Math.max(
@@ -69,9 +70,9 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
 
   const numericAvg = totals.ab > 0 ? totals.h / totals.ab : 0
 
-  const totalPA = totals.ab + totals.bb
+  const totalPA = totals.ab + totals.bb + totals.hbp
   const numericObp =
-    totalPA > 0 ? (totals.h + totals.bb) / totalPA : 0
+    totalPA > 0 ? (totals.h + totals.bb + totals.hbp) / totalPA : 0
 
   const numericSlg = totals.ab > 0 ? totalBases / totals.ab : 0
   const numericOps =

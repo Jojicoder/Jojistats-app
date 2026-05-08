@@ -28,6 +28,7 @@ const emptyBattingEntry: BattingEntryData = {
   HR: 0,
   RBI: 0,
   BB: 0,
+  HBP: 0,
   SO: 0,
   note: "",
 }
@@ -218,6 +219,7 @@ export default function GameRecordPage() {
           hr: entry.HR,
           rbi: entry.RBI,
           bb: entry.BB,
+          hbp: entry.HBP,
           so: entry.SO,
         })),
         pitchingStats: [],
@@ -283,6 +285,7 @@ export default function GameRecordPage() {
           hr: nextStatLine.HR,
           rbi: nextStatLine.RBI,
           bb: nextStatLine.BB,
+          hbp: nextStatLine.HBP,
           so: nextStatLine.SO,
         },
       })

@@ -58,6 +58,7 @@ export type BattingEntryData = {
   HR: number
   RBI: number
   BB: number
+  HBP: number
   SO: number
   note: string
 }
@@ -88,6 +89,7 @@ export type BattingCalculatedKPI = {
   bbPerK: string
   hr: number
   rbi: number
+  hbp: number
   gamesPlayed: number
 }
 

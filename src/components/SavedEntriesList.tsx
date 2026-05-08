@@ -157,6 +157,7 @@ export default function SavedEntriesList({
                       <span className="rounded-full bg-gray-100 px-2 py-0.5">HR {entry.statLine.HR}</span>
                       <span className="rounded-full bg-gray-100 px-2 py-0.5">RBI {entry.statLine.RBI}</span>
                       <span className="rounded-full bg-gray-100 px-2 py-0.5">BB {entry.statLine.BB}</span>
+                      <span className="rounded-full bg-gray-100 px-2 py-0.5">HBP {entry.statLine.HBP}</span>
                       <span className="rounded-full bg-gray-100 px-2 py-0.5">SO {entry.statLine.SO}</span>
                       {entry.statLine.note?.trim() && (
                         <p className="basis-full text-sm text-gray-500">

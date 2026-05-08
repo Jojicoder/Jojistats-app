@@ -10,6 +10,7 @@ const fieldDescriptions: Record<string, string> = {
   H: "Hits",
   RBI: "Runs Batted In",
   BB: "Walks",
+  HBP: "Hit By Pitch",
   SO: "Strikeouts",
   doubles: "Doubles",
   triples: "Triples",
@@ -85,6 +86,7 @@ export default function BattingStatFields({
     { label: "H" },
     { label: "RBI" },
     { label: "BB" },
+    { label: "HBP" },
     { label: "SO" },
   ]
 

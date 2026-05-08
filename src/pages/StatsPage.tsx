@@ -135,6 +135,7 @@ export default function StatsPage() {
     { label: "BB/K", value: kpi.bbPerK },
     { label: "HR", value: String(kpi.hr) },
     { label: "RBI", value: String(kpi.rbi) },
+    { label: "HBP", value: String(kpi.hbp) },
   ]
 
   /* -------------------- 初期ロード -------------------- */

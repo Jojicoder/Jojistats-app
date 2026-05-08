@@ -56,6 +56,7 @@ type BattingStatRow = {
   hr: number | null
   rbi: number | null
   bb: number | null
+  hbp: number | null
   so: number | null
 }
 
@@ -321,6 +322,7 @@ export const fetchSavedEntriesByPlayer = async (
         HR: stat.hr ?? 0,
         RBI: stat.rbi ?? 0,
         BB: stat.bb ?? 0,
+        HBP: stat.hbp ?? 0,
         SO: stat.so ?? 0,
         note: "",
       },

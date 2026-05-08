@@ -40,17 +40,18 @@ function getPlayerTotals(entries: SavedBattingGameEntry[]) {
       acc.hr += entry.statLine.HR
       acc.rbi += entry.statLine.RBI
       acc.bb += entry.statLine.BB
+      acc.hbp += entry.statLine.HBP
       return acc
     },
-    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0 }
+    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0 }
   )
 }
 
 function getPlayerMetrics(entries: SavedBattingGameEntry[]) {
   const totals = getPlayerTotals(entries)
-  const pa = totals.ab + totals.bb
+  const pa = totals.ab + totals.bb + totals.hbp
   const avg = totals.ab > 0 ? totals.h / totals.ab : 0
-  const obp = pa > 0 ? (totals.h + totals.bb) / pa : 0
+  const obp = pa > 0 ? (totals.h + totals.bb + totals.hbp) / pa : 0
 
   const singles = Math.max(
     totals.h - totals.doubles - totals.triples - totals.hr,

@@ -22,17 +22,18 @@ function getBattingMetrics(entries: SavedBattingGameEntry[]) {
       acc.hr += entry.statLine.HR
       acc.rbi += entry.statLine.RBI
       acc.bb += entry.statLine.BB
+      acc.hbp += entry.statLine.HBP
       acc.so += entry.statLine.SO
       return acc
     },
-    { games: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, so: 0 }
+    { games: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0, so: 0 }
   )
 
   const singles = Math.max(totals.h - totals.doubles - totals.triples - totals.hr, 0)
   const totalBases = singles + totals.doubles * 2 + totals.triples * 3 + totals.hr * 4
-  const pa = totals.ab + totals.bb
+  const pa = totals.ab + totals.bb + totals.hbp
   const avg = totals.ab > 0 ? totals.h / totals.ab : 0
-  const obp = pa > 0 ? (totals.h + totals.bb) / pa : 0
+  const obp = pa > 0 ? (totals.h + totals.bb + totals.hbp) / pa : 0
   const slg = totals.ab > 0 ? totalBases / totals.ab : 0
 
   return { ...totals, avg, obp, ops: obp + slg }

@@ -59,7 +59,7 @@ type RecordGamePageProps = {
 }
 
 type GameHalf = "Top" | "Bottom"
-type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "SO" | "OUT" | "E"
+type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "HBP" | "SO" | "OUT" | "E"
 type LiveGameTab = "batting" | "pitching"
 type InputStyle = "standard" | "game" | "edit"
 type LivePitchResult = "OUT" | "SO" | "BB" | "H" | "2B" | "3B" | "R" | "ER" | "HR" | "E"
@@ -129,6 +129,7 @@ const liveResultLabels: { result: LivePlayResult; label: string }[] = [
   { result: "3B", label: "Triple" },
   { result: "HR", label: "HR" },
   { result: "BB", label: "Walk" },
+  { result: "HBP", label: "Hit By Pitch" },
   { result: "SO", label: "Strikeout" },
   { result: "OUT", label: "Out" },
   { result: "E", label: "Error" },
@@ -150,6 +151,7 @@ function createEmptyBattingLine(): BattingEntryData {
     HR: 0,
     RBI: 0,
     BB: 0,
+    HBP: 0,
     SO: 0,
     note: "",
   }
@@ -161,6 +163,11 @@ function buildLiveStatLine(result: LivePlayResult, rbi: number): BattingEntryDat
 
   if (result === "BB") {
     statLine.BB = 1
+    return statLine
+  }
+
+  if (result === "HBP") {
+    statLine.HBP = 1
     return statLine
   }
 
@@ -279,7 +286,7 @@ function nextBasesForBatting(
   if (result === "2B") return advanceBasesByHit(bases, 2, rbi)
   if (result === "3B") return advanceBasesByHit(bases, 3, rbi)
   if (result === "HR") return { ...emptyBases }
-  if (result === "BB") return advanceBasesByWalk(bases)
+  if (result === "BB" || result === "HBP") return advanceBasesByWalk(bases)
   if (result === "E") {
     return {
       ...removeScoredRunners(bases, bases.third ? 1 : 0),
@@ -293,7 +300,7 @@ function nextBasesForBatting(
 function estimateRunsForBatting(bases: BasesState, result: LivePlayResult, rbi: number) {
   if (result === "E") return bases.third ? 1 : 0
   if (result === "HR") return countBases(bases) + 1
-  if (result === "BB") return isBasesLoaded(bases) ? 1 : 0
+  if (result === "BB" || result === "HBP") return isBasesLoaded(bases) ? 1 : 0
   return rbi
 }
 
@@ -302,7 +309,7 @@ function estimateRbiForBatting(bases: BasesState, result: LivePlayResult) {
   if (result === "3B") return countBases(bases)
   if (result === "2B") return Number(bases.second) + Number(bases.third)
   if (result === "1B") return Number(bases.third)
-  if (result === "BB") {
+  if (result === "BB" || result === "HBP") {
     return isBasesLoaded(bases) ? 1 : 0
   }
 
@@ -521,6 +528,7 @@ function aggregateLivePlays(
     existing.HR += play.statLine.HR
     existing.RBI += play.statLine.RBI
     existing.BB += play.statLine.BB
+    existing.HBP += play.statLine.HBP
     existing.SO += play.statLine.SO
   })
 
@@ -552,7 +560,8 @@ function battingResultClass(result: LivePlayResult): string {
     case "3B":  return "bg-emerald-600 text-white hover:bg-emerald-500"
     case "2B":  return "bg-emerald-500 text-white hover:bg-emerald-400"
     case "1B":  return "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
-    case "BB":  return "bg-sky-100 text-sky-900 hover:bg-sky-200"
+    case "BB":
+    case "HBP": return "bg-sky-100 text-sky-900 hover:bg-sky-200"
     case "SO":  return "bg-red-100 text-red-900 hover:bg-red-200"
     case "OUT": return "bg-gray-800 text-white hover:bg-gray-700"
     case "E":   return "bg-amber-100 text-amber-900 hover:bg-amber-200"
@@ -580,7 +589,8 @@ function battingResultBadge(result: LivePlayResult): string {
     case "3B":  return "bg-emerald-600 text-white"
     case "2B":  return "bg-emerald-500 text-white"
     case "1B":  return "bg-emerald-100 text-emerald-900"
-    case "BB":  return "bg-sky-100 text-sky-900"
+    case "BB":
+    case "HBP": return "bg-sky-100 text-sky-900"
     case "SO":  return "bg-red-100 text-red-900"
     case "OUT": return "bg-gray-200 text-gray-700"
     case "E":   return "bg-amber-100 text-amber-900"
@@ -1149,7 +1159,7 @@ export default function RecordGamePage({
     ])
 
     onEntryChange({
-      AB: 0,H: 0,doubles: 0,triples: 0,HR: 0,RBI: 0,BB: 0,SO: 0,note: "",
+      AB: 0,H: 0,doubles: 0,triples: 0,HR: 0,RBI: 0,BB: 0,HBP: 0,SO: 0,note: "",
     })
   }
 
@@ -3312,6 +3322,7 @@ export default function RecordGamePage({
                         {entry.HR > 0 && <span className="rounded-full bg-green-900 px-2 py-0.5 text-xs text-white">HR {entry.HR}</span>}
                         {entry.RBI > 0 && <span className="rounded-full bg-sky-100 px-2 py-0.5 text-xs text-sky-800">RBI {entry.RBI}</span>}
                         {entry.BB > 0 && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700">BB {entry.BB}</span>}
+                        {entry.HBP > 0 && <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs text-sky-700">HBP {entry.HBP}</span>}
                         {entry.SO > 0 && <span className="rounded-full bg-red-50 px-2 py-0.5 text-xs text-red-700">K {entry.SO}</span>}
                       </div>
                     </div>

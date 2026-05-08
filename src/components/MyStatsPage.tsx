@@ -22,6 +22,7 @@ const statDescriptions: Record<string, string> = {
   "BB/K": "Walks per Strikeout",
   HR: "Home Runs",
   RBI: "Runs Batted In",
+  HBP: "Hit By Pitch",
 }
 
 function getStatCardClass(label: string, value: string, gamesPlayed: number) {
@@ -100,7 +101,8 @@ export default function MyStatsPage({
   seasonYear,
 }: MyStatsPageProps) {
   const totalPlateAppearances = savedEntries.reduce(
-    (total, entry) => total + entry.statLine.AB + entry.statLine.BB,
+    (total, entry) =>
+      total + entry.statLine.AB + entry.statLine.BB + entry.statLine.HBP,
     0
   )
 
@@ -136,7 +138,7 @@ export default function MyStatsPage({
                 {totalPlateAppearances}
               </p>
               <p className="mt-1 text-xs text-gray-400">
-                PA = AB + BB
+                PA = AB + BB + HBP
               </p>
             </div>
           </div>

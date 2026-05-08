@@ -66,9 +66,9 @@ function getEntryAvg(entry: SavedBattingGameEntry): number {
 }
 
 function getEntryObp(entry: SavedBattingGameEntry): number {
-  const denominator = entry.statLine.AB + entry.statLine.BB
+  const denominator = entry.statLine.AB + entry.statLine.BB + entry.statLine.HBP
   return denominator > 0
-    ? (entry.statLine.H + entry.statLine.BB) / denominator
+    ? (entry.statLine.H + entry.statLine.BB + entry.statLine.HBP) / denominator
     : 0
 }
 
@@ -90,9 +90,10 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
       acc.triples += entry.statLine.triples
       acc.hr += entry.statLine.HR
       acc.bb += entry.statLine.BB
+      acc.hbp += entry.statLine.HBP
       return acc
     },
-    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0 }
+    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0 }
   )
 
   const singles = Math.max(
@@ -108,9 +109,11 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
 
   const numericAvg = totals.ab > 0 ? totals.h / totals.ab : 0
 
-  const obpDenominator = totals.ab + totals.bb
+  const obpDenominator = totals.ab + totals.bb + totals.hbp
   const numericObp =
-    obpDenominator > 0 ? (totals.h + totals.bb) / obpDenominator : 0
+    obpDenominator > 0
+      ? (totals.h + totals.bb + totals.hbp) / obpDenominator
+      : 0
 
   const numericSlg = totals.ab > 0 ? totalBases / totals.ab : 0
   const numericOps = numericObp + numericSlg
@@ -184,9 +187,10 @@ function buildChartData(
         acc.triples += entry.statLine.triples
         acc.hr += entry.statLine.HR
         acc.bb += entry.statLine.BB
+        acc.hbp += entry.statLine.HBP
         return acc
       },
-      { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0 }
+      { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0 }
     )
 
     const playerAvg = getEntryAvg(playerEntry)
@@ -207,10 +211,10 @@ function buildChartData(
 
     const teamAvg = teamTotals.ab > 0 ? teamTotals.h / teamTotals.ab : 0
 
-    const teamObpDenominator = teamTotals.ab + teamTotals.bb
+    const teamObpDenominator = teamTotals.ab + teamTotals.bb + teamTotals.hbp
     const teamObp =
       teamObpDenominator > 0
-        ? (teamTotals.h + teamTotals.bb) / teamObpDenominator
+        ? (teamTotals.h + teamTotals.bb + teamTotals.hbp) / teamObpDenominator
         : 0
 
     const teamSlg = teamTotals.ab > 0 ? teamTotalBases / teamTotals.ab : 0

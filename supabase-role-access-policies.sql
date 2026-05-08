@@ -4,7 +4,14 @@ grant select, insert, update, delete on public.games to authenticated;
 grant select, insert, update, delete on public.batting_game_stats to authenticated;
 grant select, insert, update, delete on public.pitching_game_stats to authenticated;
 
+grant select on public.teams to anon;
+grant select on public.players to anon;
+grant select on public.games to anon;
+grant select on public.batting_game_stats to anon;
+grant select on public.pitching_game_stats to anon;
+
 alter table public.games add column if not exists memo text;
+alter table public.batting_game_stats add column if not exists hbp integer not null default 0;
 
 create or replace function public.has_team_access(team_id_input bigint)
 returns boolean
@@ -68,6 +75,15 @@ using (
   public.has_team_access(teams.id)
 );
 
+drop policy if exists "Public can read active teams" on public.teams;
+create policy "Public can read active teams"
+on public.teams
+for select
+to anon
+using (
+  coalesce(teams.is_archived, false) = false
+);
+
 drop policy if exists "Admin can manage players" on public.players;
 create policy "Admin can manage players"
 on public.players
@@ -85,6 +101,21 @@ using (
   public.has_team_access(players.team_id)
 );
 
+drop policy if exists "Public can read active players" on public.players;
+create policy "Public can read active players"
+on public.players
+for select
+to anon
+using (
+  coalesce(players.is_archived, false) = false
+  and exists (
+    select 1
+    from public.teams t
+    where t.id = players.team_id
+      and coalesce(t.is_archived, false) = false
+  )
+);
+
 drop policy if exists "Admin can manage games" on public.games;
 create policy "Admin can manage games"
 on public.games
@@ -100,6 +131,20 @@ for select
 to authenticated
 using (
   public.has_team_access(games.team_id)
+);
+
+drop policy if exists "Public can read active team games" on public.games;
+create policy "Public can read active team games"
+on public.games
+for select
+to anon
+using (
+  exists (
+    select 1
+    from public.teams t
+    where t.id = games.team_id
+      and coalesce(t.is_archived, false) = false
+  )
 );
 
 drop policy if exists "Recorders can create team games" on public.games;
@@ -182,6 +227,24 @@ using (
   )
 );
 
+drop policy if exists "Public can read active team batting stats" on public.batting_game_stats;
+create policy "Public can read active team batting stats"
+on public.batting_game_stats
+for select
+to anon
+using (
+  exists (
+    select 1
+    from public.games g
+    join public.teams t on t.id = g.team_id
+    join public.players p on p.id = batting_game_stats.player_id
+    where g.id = batting_game_stats.game_id
+      and p.team_id = g.team_id
+      and coalesce(t.is_archived, false) = false
+      and coalesce(p.is_archived, false) = false
+  )
+);
+
 drop policy if exists "Recorders can create assigned batting stats" on public.batting_game_stats;
 create policy "Recorders can create assigned batting stats"
 on public.batting_game_stats
@@ -251,6 +314,24 @@ using (
     from public.games g
     where g.id = pitching_game_stats.game_id
       and public.has_team_access(g.team_id)
+  )
+);
+
+drop policy if exists "Public can read active team pitching stats" on public.pitching_game_stats;
+create policy "Public can read active team pitching stats"
+on public.pitching_game_stats
+for select
+to anon
+using (
+  exists (
+    select 1
+    from public.games g
+    join public.teams t on t.id = g.team_id
+    join public.players p on p.id = pitching_game_stats.player_id
+    where g.id = pitching_game_stats.game_id
+      and p.team_id = g.team_id
+      and coalesce(t.is_archived, false) = false
+      and coalesce(p.is_archived, false) = false
   )
 );
 
