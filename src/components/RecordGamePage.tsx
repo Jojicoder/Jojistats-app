@@ -866,6 +866,8 @@ export default function RecordGamePage({
   const [editGameEntries, setEditGameEntries] = useState<PendingBattingEntry[]>([])
   const [editAddPlayerId, setEditAddPlayerId] = useState("")
   const [selectedEditPlayerId, setSelectedEditPlayerId] = useState("")
+  const [dragLineupIndex, setDragLineupIndex] = useState<number | null>(null)
+  const [dragOverLineupIndex, setDragOverLineupIndex] = useState<number | null>(null)
 
   const localDraftKey = `jojistats-live-game-${activePlayer.teamId}-${seasonYear}`
 
@@ -1387,6 +1389,21 @@ export default function RecordGamePage({
     setCurrentBatterIndex((prev) => Math.max(Math.min(prev, lineupIds.length - 2), 0))
   }
 
+  const handleLineupDrop = (toIndex: number) => {
+    if (dragLineupIndex === null || dragLineupIndex === toIndex) {
+      setDragLineupIndex(null)
+      setDragOverLineupIndex(null)
+      return
+    }
+    setLineupIds((prev) => {
+      const next = [...prev]
+      const [moved] = next.splice(dragLineupIndex, 1)
+      next.splice(toIndex, 0, moved)
+      return next
+    })
+    setDragLineupIndex(null)
+    setDragOverLineupIndex(null)
+  }
 
   const advanceGameState = (result: LivePlayResult) => {
     const nextOuts = liveOuts + (isOutResult(result) ? 1 : 0)
@@ -2075,15 +2092,32 @@ export default function RecordGamePage({
                 const replacedPlayer = replacedLineupIds[index]
                   ? allPlayers.find((player) => player.id === replacedLineupIds[index])
                   : null
+                const canDrag = livePlays.length === 0
+                const isDragging = dragLineupIndex === index
+                const isDragOver = dragOverLineupIndex === index
                 return (
-                  <div key={`${playerId}-${index}`}>
+                  <div
+                    key={`${playerId}-${index}`}
+                    draggable={canDrag}
+                    onDragStart={canDrag ? () => setDragLineupIndex(index) : undefined}
+                    onDragOver={canDrag ? (e) => { e.preventDefault(); setDragOverLineupIndex(index) } : undefined}
+                    onDrop={canDrag ? () => handleLineupDrop(index) : undefined}
+                    onDragEnd={() => { setDragLineupIndex(null); setDragOverLineupIndex(null) }}
+                  >
                     <div
-                      className={`flex items-center gap-1.5 rounded-xl border p-2 ${
-                        isCurrent
+                      className={`flex items-center gap-1.5 rounded-xl border p-2 transition-opacity ${
+                        isDragging
+                          ? "opacity-40"
+                          : isDragOver
+                          ? "border-green-400 bg-green-50"
+                          : isCurrent
                           ? "border-green-900 bg-green-50"
                           : "border-gray-100 bg-white"
                       }`}
                     >
+                      {canDrag && (
+                        <span className="shrink-0 cursor-grab text-gray-300 active:cursor-grabbing select-none">⠿</span>
+                      )}
                       <button
                         type="button"
                         onClick={() => setCurrentBatterIndex(index)}

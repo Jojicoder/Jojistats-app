@@ -7,7 +7,7 @@ import {
   fetchTeamById,
   fetchUserAccessByEmail,
 } from "../api/supabase-api"
-import { createFullGame, deleteBattingStatEntry, updateBattingStatEntry, updateFullGame, updateGameInfo } from "../api/api"
+import { createFullGame, deleteBattingStatEntry, deleteGame, updateBattingStatEntry, updateFullGame, updateGameInfo } from "../api/api"
 
 import RecordGamePage from "../components/RecordGamePage"
 
@@ -20,6 +20,9 @@ import type {
   PendingPitchingEntry,
   PitchingEntryData,
 } from "../types"
+
+const OFFLINE_CACHE_KEY = "jojistats-game-cache"
+const OFFLINE_QUEUE_KEY = "jojistats-game-queue"
 
 const emptyBattingEntry: BattingEntryData = {
   AB: 0,
@@ -103,9 +106,42 @@ export default function GameRecordPage() {
   const [pitchingEntry, setPitchingEntry] =
     useState<PitchingEntryData>(emptyPitchingEntry)
 
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [offlineQueueSize, setOfflineQueueSize] = useState(() => {
+    try { return (JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]") as unknown[]).length } catch { return 0 }
+  })
+
   useEffect(() => {
     const checkUser = async () => {
       try {
+        if (!navigator.onLine) {
+          const { data: sessionData } = await supabase.auth.getSession()
+          if (!sessionData.session) { navigate("/login", { replace: true }); return }
+          let cached: null | {
+            team: { id: number; name: string; current_season_year: number }
+            players: Player[]
+            savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
+            preferredPlayerId?: string
+          } = null
+          try { cached = JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) ?? "null") } catch { /* ignore */ }
+          if (!cached) {
+            setAccessError("You're offline and no local cache was found. Please launch the app online first.")
+            return
+          }
+          const preferred = cached.preferredPlayerId
+          const first = (preferred && cached.players.find((p) => p.id === preferred)) ?? cached.players[0]
+          if (!first) { setAccessError("No player data found in cache."); return }
+          setTeamName(cached.team.name)
+          setTeamId(cached.team.id)
+          setSeasonYear(cached.team.current_season_year)
+          setAllPlayers(cached.players)
+          setActivePlayer(first)
+          setGameMeta((prev) => ({ ...prev, seasonYear: cached!.team.current_season_year }))
+          setSavedEntriesByPlayer(cached.savedEntriesByPlayer)
+          setSavedEntries(cached.savedEntriesByPlayer[first.id] ?? [])
+          return
+        }
+
         const { data } = await supabase.auth.getUser()
 
         if (!data.user) {
@@ -175,7 +211,46 @@ export default function GameRecordPage() {
     const entries = await fetchSavedEntriesByPlayer(team.id, team.current_season_year)
     setSavedEntriesByPlayer(entries)
     setSavedEntries(entries[first.id] ?? [])
+
+    try {
+      localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify({
+        team,
+        players: mapped,
+        savedEntriesByPlayer: entries,
+        preferredPlayerId: first.id,
+      }))
+    } catch { /* storage full — skip */ }
   }
+
+  const flushOfflineQueue = async (currentTeamId: number, currentSeasonYear: number, currentPlayerId: string) => {
+    let queue: { payload: Parameters<typeof createFullGame>[0] }[] = []
+    try { queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]") } catch { return }
+    if (queue.length === 0) return
+    for (const item of queue) {
+      try { await createFullGame(item.payload) } catch { return }
+    }
+    localStorage.removeItem(OFFLINE_QUEUE_KEY)
+    setOfflineQueueSize(0)
+    const refreshed = await fetchSavedEntriesByPlayer(currentTeamId, currentSeasonYear)
+    setSavedEntriesByPlayer(refreshed)
+    setSavedEntries(refreshed[currentPlayerId] ?? [])
+  }
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      if (teamId != null && activePlayer) {
+        flushOfflineQueue(teamId, seasonYear, activePlayer.id)
+      }
+    }
+    const handleOffline = () => setIsOnline(false)
+    window.addEventListener("online", handleOnline)
+    window.addEventListener("offline", handleOffline)
+    return () => {
+      window.removeEventListener("online", handleOnline)
+      window.removeEventListener("offline", handleOffline)
+    }
+  }, [teamId, seasonYear, activePlayer])
 
   const handleSelectPlayer = async (player: Player) => {
     if (player.id === activePlayer?.id) return
@@ -244,6 +319,13 @@ export default function GameRecordPage() {
       if (editingSavedEntryId) {
         const gameId = editingSavedEntry?.gameId ?? Number(editingSavedEntryId.replace("db-", ""))
         await updateFullGame(gameId, payload)
+      } else if (!navigator.onLine) {
+        const queue: { payload: typeof payload }[] = []
+        try { queue.push(...JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]")) } catch { /* ignore */ }
+        queue.push({ payload })
+        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue))
+        setOfflineQueueSize(queue.length)
+        return
       } else {
         await createFullGame(payload)
       }
@@ -386,6 +468,28 @@ export default function GameRecordPage() {
     }
   }
 
+  const handleDeleteSavedGame = async () => {
+    if (!activePlayer || !editingSavedEntry) return
+    if (!window.confirm("Delete this entire game? This cannot be undone.")) return
+
+    setSaveError("")
+    try {
+      await deleteGame(editingSavedEntry.gameId)
+      setEditingSavedEntryId(null)
+      setEditingSavedEntry(null)
+      setCurrentEntry(emptyBattingEntry)
+      if (teamId != null) {
+        const refreshed = await fetchSavedEntriesByPlayer(teamId, seasonYear)
+        setSavedEntriesByPlayer(refreshed)
+        setSavedEntries(refreshed[activePlayer.id] ?? [])
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Delete failed"
+      setSaveError(message)
+      window.alert(`Delete failed: ${message}`)
+    }
+  }
+
   const handleSavePitchingGame = async (
     nextPitchingEntry = pitchingEntry,
     pitcherId = activePlayer?.id
@@ -455,6 +559,12 @@ export default function GameRecordPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {!isOnline && (
+        <div className="flex items-center justify-between bg-amber-500 px-4 py-2 text-sm font-medium text-white">
+          <span>Offline{offlineQueueSize > 0 ? ` — ${offlineQueueSize} game(s) pending sync` : ""}</span>
+          <span className="text-xs opacity-80">Will sync automatically when back online</span>
+        </div>
+      )}
       <header className="border-b border-gray-200 bg-white px-3 py-3 shadow-sm sm:px-4">
         <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:gap-4">
           <Link to="/stats" className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -492,6 +602,7 @@ export default function GameRecordPage() {
           onUpdateSavedGameMeta={handleUpdateSavedGameMeta}
           onCancelEditSavedEntry={handleCancelEditSavedEntry}
           onDeleteSavedEntry={handleDeleteSavedEntry}
+          onDeleteSavedGame={handleDeleteSavedGame}
           editingGamePositions={undefined}
           recordMode={recordMode}
           setRecordMode={setRecordMode}
