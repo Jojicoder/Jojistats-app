@@ -184,6 +184,7 @@ type PitchingGameStatPayload = {
   runs_allowed?: number
   earned_runs?: number
   walks?: number
+  hbp?: number
   strikeouts?: number
   home_runs_allowed?: number
   win_flag?: boolean
@@ -263,6 +264,7 @@ export const createFullGame = async (data: FullGamePayload) => {
           runs_allowed: s.runs_allowed ?? 0,
           earned_runs: s.earned_runs ?? 0,
           walks: s.walks ?? 0,
+          hbp: s.hbp ?? 0,
           strikeouts: s.strikeouts ?? 0,
           home_runs_allowed: s.home_runs_allowed ?? 0,
           win_flag: s.win_flag ?? false,
@@ -341,6 +343,7 @@ export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
           runs_allowed: s.runs_allowed ?? 0,
           earned_runs: s.earned_runs ?? 0,
           walks: s.walks ?? 0,
+          hbp: s.hbp ?? 0,
           strikeouts: s.strikeouts ?? 0,
           home_runs_allowed: s.home_runs_allowed ?? 0,
           win_flag: s.win_flag ?? false,

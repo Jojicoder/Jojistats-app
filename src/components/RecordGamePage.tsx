@@ -62,7 +62,7 @@ type GameHalf = "Top" | "Bottom"
 type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "HBP" | "SO" | "OUT" | "E"
 type LiveGameTab = "batting" | "pitching"
 type InputStyle = "standard" | "game" | "edit"
-type LivePitchResult = "OUT" | "SO" | "BB" | "H" | "2B" | "3B" | "R" | "ER" | "HR" | "E"
+type LivePitchResult = "OUT" | "SO" | "BB" | "HBP" | "H" | "2B" | "3B" | "R" | "ER" | "HR" | "E"
 type BaseName = "first" | "second" | "third"
 type BasesState = {
   first: boolean
@@ -139,6 +139,7 @@ const livePitchResultLabels: { result: LivePitchResult; label: string }[] = [
   { result: "OUT", label: "Out" },
   { result: "SO", label: "Strikeout" },
   { result: "BB", label: "Walk" },
+  { result: "HBP", label: "Hit By Pitch" },
   { result: "HR", label: "HR Allowed" },
 ]
 
@@ -323,7 +324,7 @@ function nextBasesForPitching(
   if (result === "H") return advanceBasesByHit(bases, 1, 0)
   if (result === "2B") return advanceBasesByHit(bases, 2, 0)
   if (result === "3B") return advanceBasesByHit(bases, 3, countBases(bases))
-  if (result === "BB") return advanceBasesByWalk(bases)
+  if (result === "BB" || result === "HBP") return advanceBasesByWalk(bases)
   if (result === "E") return advanceBasesByHit(bases, 1, 0)
   if (result === "HR") return { ...emptyBases }
   if (result === "R" || result === "ER") return bases
@@ -335,7 +336,7 @@ function estimateRunsForPitching(bases: BasesState, result: LivePitchResult) {
   if (result === "R" || result === "ER") return 1
   if (result === "HR") return countBases(bases) + 1
   if (result === "3B") return countBases(bases)
-  if (result === "BB") return isBasesLoaded(bases) ? 1 : 0
+  if (result === "BB" || result === "HBP") return isBasesLoaded(bases) ? 1 : 0
   return 0
 }
 
@@ -345,7 +346,7 @@ function estimateEarnedRunsForPitching(
 ) {
   if (result === "ER") return 1
   if (result === "HR") return estimateRunsForPitching(bases, result)
-  if (result === "BB" && isBasesLoaded(bases)) return 1
+  if ((result === "BB" || result === "HBP") && isBasesLoaded(bases)) return 1
   return 0
 }
 
@@ -367,6 +368,7 @@ function buildPitchingEntryFromPlays(plays: LivePitchPlay[]): PitchingEntryData 
         play.result
       )
       entry.walks += play.result === "BB" ? 1 : 0
+      entry.hitBatters += play.result === "HBP" ? 1 : 0
       entry.strikeouts += play.result === "SO" ? 1 : 0
       entry.homeRunsAllowed += play.result === "HR" ? 1 : 0
       return entry
@@ -377,6 +379,7 @@ function buildPitchingEntryFromPlays(plays: LivePitchPlay[]): PitchingEntryData 
       runsAllowed: 0,
       earnedRuns: 0,
       walks: 0,
+      hitBatters: 0,
       strikeouts: 0,
       homeRunsAllowed: 0,
     }
@@ -573,6 +576,7 @@ function pitchingResultClass(result: LivePitchResult): string {
     case "OUT": return "bg-green-800 text-white hover:bg-green-700"
     case "SO":  return "bg-emerald-100 text-emerald-900 hover:bg-emerald-200"
     case "BB":  return "bg-amber-100 text-amber-900 hover:bg-amber-200"
+    case "HBP": return "bg-sky-100 text-sky-900 hover:bg-sky-200"
     case "H":   return "bg-red-100 text-red-900 hover:bg-red-200"
     case "2B":  return "bg-red-100 text-red-900 hover:bg-red-200"
     case "3B":  return "bg-red-100 text-red-900 hover:bg-red-200"
@@ -602,6 +606,7 @@ function pitchingResultBadge(result: LivePitchResult): string {
     case "OUT": return "bg-green-100 text-green-900"
     case "SO":  return "bg-emerald-100 text-emerald-900"
     case "BB":  return "bg-amber-100 text-amber-900"
+    case "HBP": return "bg-sky-100 text-sky-900"
     case "H":   return "bg-red-100 text-red-900"
     case "2B":  return "bg-red-100 text-red-900"
     case "3B":  return "bg-red-100 text-red-900"
@@ -771,6 +776,7 @@ export default function RecordGamePage({
       runsAllowed: 0,
       earnedRuns: 0,
       walks: 0,
+      hitBatters: 0,
       strikeouts: 0,
       homeRunsAllowed: 0,
     })
@@ -1574,6 +1580,7 @@ export default function RecordGamePage({
       earnedRuns:
         prev.earnedRuns + estimateEarnedRunsForPitching(basesBefore, result),
       walks: prev.walks + (result === "BB" ? 1 : 0),
+      hitBatters: prev.hitBatters + (result === "HBP" ? 1 : 0),
       strikeouts: prev.strikeouts + (result === "SO" ? 1 : 0),
       homeRunsAllowed: prev.homeRunsAllowed + (result === "HR" ? 1 : 0),
     }))
@@ -1611,6 +1618,10 @@ export default function RecordGamePage({
         0
       ),
       walks: Math.max(prev.walks - (lastPlay.result === "BB" ? 1 : 0), 0),
+      hitBatters: Math.max(
+        prev.hitBatters - (lastPlay.result === "HBP" ? 1 : 0),
+        0
+      ),
       strikeouts: Math.max(prev.strikeouts - (lastPlay.result === "SO" ? 1 : 0), 0),
       homeRunsAllowed: Math.max(prev.homeRunsAllowed - (lastPlay.result === "HR" ? 1 : 0), 0),
     }))
@@ -1818,6 +1829,7 @@ export default function RecordGamePage({
         runsAllowed: 0,
         earnedRuns: 0,
         walks: 0,
+        hitBatters: 0,
         strikeouts: 0,
         homeRunsAllowed: 0,
       })
@@ -1858,6 +1870,7 @@ export default function RecordGamePage({
       runsAllowed: 0,
       earnedRuns: 0,
       walks: 0,
+      hitBatters: 0,
       strikeouts: 0,
       homeRunsAllowed: 0,
     })
@@ -1879,6 +1892,7 @@ export default function RecordGamePage({
         runsAllowed: 0,
         earnedRuns: 0,
         walks: 0,
+        hitBatters: 0,
         strikeouts: 0,
         homeRunsAllowed: 0,
       })
@@ -2079,7 +2093,8 @@ export default function RecordGamePage({
               </div>
               <div className="mt-3 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">
                 IP {formatLiveInnings(livePitchingEntry.inningsPitchedOuts)} · SO{" "}
-                {livePitchingEntry.strikeouts} · BB {livePitchingEntry.walks}
+                {livePitchingEntry.strikeouts} · BB {livePitchingEntry.walks} · HBP{" "}
+                {livePitchingEntry.hitBatters}
               </div>
             </div>
           </section>
@@ -2429,7 +2444,7 @@ export default function RecordGamePage({
                   </button>
                 </div>
 
-                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">IP</p>
                     <p className="mt-1 text-2xl font-bold">
@@ -2443,6 +2458,10 @@ export default function RecordGamePage({
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">BB</p>
                     <p className="mt-1 text-2xl font-bold">{livePitchingEntry.walks}</p>
+                  </div>
+                  <div className="rounded-xl bg-gray-50 p-3">
+                    <p className="text-xs font-semibold uppercase text-gray-500">HBP</p>
+                    <p className="mt-1 text-2xl font-bold">{livePitchingEntry.hitBatters}</p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">ER</p>

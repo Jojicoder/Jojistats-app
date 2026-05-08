@@ -88,6 +88,7 @@ export default function MainDashboard({
     runsAllowed: 0,
     earnedRuns: 0,
     walks: 0,
+    hitBatters: 0,
     strikeouts: 0,
     homeRunsAllowed: 0,
   })
@@ -246,6 +247,7 @@ export default function MainDashboard({
             runs_allowed: nextPitchingEntry.runsAllowed,
             earned_runs: nextPitchingEntry.earnedRuns,
             walks: nextPitchingEntry.walks,
+            hbp: nextPitchingEntry.hitBatters,
             strikeouts: nextPitchingEntry.strikeouts,
             home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
           },
@@ -259,6 +261,7 @@ export default function MainDashboard({
         runsAllowed: 0,
         earnedRuns: 0,
         walks: 0,
+        hitBatters: 0,
         strikeouts: 0,
         homeRunsAllowed: 0,
       })

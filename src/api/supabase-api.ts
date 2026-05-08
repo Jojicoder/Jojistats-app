@@ -69,6 +69,7 @@ type PitchingStatRow = {
   runs_allowed: number | null
   earned_runs: number | null
   walks: number | null
+  hbp: number | null
   strikeouts: number | null
   home_runs_allowed: number | null
   games: GameRow
@@ -245,6 +246,7 @@ export async function fetchPitchingEntriesByPlayer(
         runsAllowed: row.runs_allowed ?? 0,
         earnedRuns: row.earned_runs ?? 0,
         walks: row.walks ?? 0,
+        hitBatters: row.hbp ?? 0,
         strikeouts: row.strikeouts ?? 0,
         homeRunsAllowed: row.home_runs_allowed ?? 0,
       },

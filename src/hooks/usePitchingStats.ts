@@ -12,6 +12,7 @@ export function usePitchingStats(entries: PitchingEntryData[]) {
         acc.r += e.runsAllowed
         acc.er += e.earnedRuns
         acc.bb += e.walks
+        acc.hbp += e.hitBatters
         acc.so += e.strikeouts
         acc.hr += e.homeRunsAllowed
         return acc
@@ -22,6 +23,7 @@ export function usePitchingStats(entries: PitchingEntryData[]) {
         r: 0,
         er: 0,
         bb: 0,
+        hbp: 0,
         so: 0,
         hr: 0,
       }
@@ -40,6 +42,7 @@ export function usePitchingStats(entries: PitchingEntryData[]) {
       r: totals.r,
       er: totals.er,
       bb: totals.bb,
+      hbp: totals.hbp,
       so: totals.so,
       hr: totals.hr,
     }

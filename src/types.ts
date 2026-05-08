@@ -99,6 +99,7 @@ export type PitchingEntryData = {
   runsAllowed: number
   earnedRuns: number
   walks: number
+  hitBatters: number
   strikeouts: number
   homeRunsAllowed: number
 }

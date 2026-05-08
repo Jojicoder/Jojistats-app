@@ -20,6 +20,7 @@ export default function PitchingStatFields({ entry, onEntryChange }: Props) {
       <Field label="R" value={entry.runsAllowed} onChange={(v) => updateNumber("runsAllowed", v)} />
       <Field label="ER" value={entry.earnedRuns} onChange={(v) => updateNumber("earnedRuns", v)} />
       <Field label="BB" value={entry.walks} onChange={(v) => updateNumber("walks", v)} />
+      <Field label="HBP" value={entry.hitBatters} onChange={(v) => updateNumber("hitBatters", v)} />
       <Field label="SO" value={entry.strikeouts} onChange={(v) => updateNumber("strikeouts", v)} />
       <Field label="HR" value={entry.homeRunsAllowed} onChange={(v) => updateNumber("homeRunsAllowed", v)} />
     </div>

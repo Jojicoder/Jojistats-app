@@ -16,6 +16,7 @@ const statDescriptions: Record<string, string> = {
   R: "Runs Allowed",
   ER: "Earned Runs",
   BB: "Walks",
+  HBP: "Hit Batters",
   SO: "Strikeouts",
   HR: "Home Runs Allowed",
 }
@@ -74,6 +75,7 @@ export default function MyPitchingStatsPage({
           <Stat label="R" value={String(stats.r)} />
           <Stat label="ER" value={String(stats.er)} />
           <Stat label="BB" value={String(stats.bb)} />
+          <Stat label="HBP" value={String(stats.hbp)} />
           <Stat label="SO" value={String(stats.so)} />
           <Stat label="HR" value={String(stats.hr)} />
         </section>
