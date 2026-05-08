@@ -28,7 +28,7 @@ export type UserAccessRow = {
   email: string
   team_id: number
   player_id: number
-  role: string | null
+  role: "player" | "recorder" | "manager" | "admin" | null
   is_active: boolean | number | null
 }
 
