@@ -87,15 +87,15 @@ export default function MyPitchingStatsPage({
 
         {/* 🔥 KPIカード */}
         <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
-          <Stat label="ERA" value={stats.era} />
-          <Stat label="WHIP" value={stats.whip} />
-          <Stat label="H" value={String(stats.h)} />
-          <Stat label="R" value={String(stats.r)} />
-          <Stat label="ER" value={String(stats.er)} />
-          <Stat label="BB" value={String(stats.bb)} />
-          <Stat label="HBP" value={String(stats.hbp)} />
-          <Stat label="SO" value={String(stats.so)} />
-          <Stat label="HR" value={String(stats.hr)} />
+          <Stat label="ERA" value={stats.era} gamesPlayed={gamesPlayed} />
+          <Stat label="WHIP" value={stats.whip} gamesPlayed={gamesPlayed} />
+          <Stat label="H" value={String(stats.h)} gamesPlayed={gamesPlayed} />
+          <Stat label="R" value={String(stats.r)} gamesPlayed={gamesPlayed} />
+          <Stat label="ER" value={String(stats.er)} gamesPlayed={gamesPlayed} />
+          <Stat label="BB" value={String(stats.bb)} gamesPlayed={gamesPlayed} />
+          <Stat label="HBP" value={String(stats.hbp)} gamesPlayed={gamesPlayed} />
+          <Stat label="SO" value={String(stats.so)} gamesPlayed={gamesPlayed} />
+          <Stat label="HR" value={String(stats.hr)} gamesPlayed={gamesPlayed} />
         </section>
 
         <PitchingTrendChart entries={displayedEntries} />
@@ -107,11 +107,52 @@ export default function MyPitchingStatsPage({
   )
 }
 
+/* -------------------- カラーロジック -------------------- */
+
+function getPitchingStatCardClass(label: string, value: string, gamesPlayed: number) {
+  const base = "rounded-xl border p-3 shadow-sm sm:p-4"
+  const strongGood = `${base} border-emerald-300 bg-emerald-100`
+  const good = `${base} border-green-200 bg-green-50`
+  const neutral = `${base} border-gray-200 bg-white`
+  const weak = `${base} border-rose-200 bg-rose-50`
+  const bad = `${base} border-red-200 bg-red-50`
+
+  if (gamesPlayed === 0) return neutral
+
+  const n = Number(value)
+
+  if (label === "ERA") {
+    if (Number.isNaN(n)) return neutral
+    if (n <= 1.50) return strongGood
+    if (n <= 2.50) return good
+    if (n <= 4.50) return neutral
+    if (n <= 6.00) return weak
+    return bad
+  }
+
+  if (label === "WHIP") {
+    if (Number.isNaN(n)) return neutral
+    if (n <= 0.80) return strongGood
+    if (n <= 1.10) return good
+    if (n <= 1.50) return neutral
+    if (n <= 2.00) return weak
+    return bad
+  }
+
+  if (label === "SO") {
+    if (n >= 30) return strongGood
+    if (n >= 15) return good
+    return neutral
+  }
+
+  return neutral
+}
+
 /* -------------------- カード -------------------- */
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({ label, value, gamesPlayed }: { label: string; value: string; gamesPlayed: number }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
+    <div className={getPitchingStatCardClass(label, value, gamesPlayed)}>
       <div>
         <p className="text-xs font-semibold text-gray-700">
           {label}
