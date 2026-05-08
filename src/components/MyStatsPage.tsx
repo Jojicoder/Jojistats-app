@@ -95,31 +95,61 @@ function getStatCardClass(label: string, value: string, gamesPlayed: number) {
   return neutral
 }
 
+function formatRate(value: number) {
+  return value.toFixed(3).replace("0.", ".")
+}
+
+function formatRatio(value: number) {
+  return value.toFixed(2)
+}
+
+function buildBattingStats(entry: SavedBattingGameEntry): DisplayStat[] {
+  const { statLine } = entry
+  const singles = Math.max(
+    statLine.H - statLine.doubles - statLine.triples - statLine.HR,
+    0
+  )
+  const totalBases =
+    singles + statLine.doubles * 2 + statLine.triples * 3 + statLine.HR * 4
+  const hbp = statLine.HBP ?? 0
+  const sf = statLine.SF ?? 0
+  const obpDenominator = statLine.AB + statLine.BB + hbp + sf
+  const avg = statLine.AB > 0 ? statLine.H / statLine.AB : 0
+  const obp =
+    obpDenominator > 0
+      ? (statLine.H + statLine.BB + hbp) / obpDenominator
+      : 0
+  const slg = statLine.AB > 0 ? totalBases / statLine.AB : 0
+  const bbPerK =
+    statLine.SO > 0 ? formatRatio(statLine.BB / statLine.SO) : "--"
+
+  return [
+    { label: "AVG", value: formatRate(avg) },
+    { label: "OBP", value: formatRate(obp) },
+    { label: "OPS", value: formatRate(obp + slg) },
+    { label: "BB/K", value: bbPerK },
+    { label: "HR", value: String(statLine.HR) },
+    { label: "RBI", value: String(statLine.RBI) },
+  ]
+}
+
 export default function MyStatsPage({
   activePlayer,
   calculatedStats,
   savedEntries,
-  pitchingEntries = [],
   teamSavedEntries,
   gamesPlayed,
   seasonYear,
 }: MyStatsPageProps) {
   const [selectedEntry, setSelectedEntry] = useState<SavedBattingGameEntry | null>(null)
-  const selectedPitchingEntry = useMemo(() => {
-    if (!selectedEntry) return null
-    return (
-      pitchingEntries.find((entry) => entry.gameId === selectedEntry.gameId) ??
-      pitchingEntries.find(
-        (entry) =>
-          entry.gameMeta.date === selectedEntry.gameMeta.date &&
-          entry.gameMeta.matchNumber === selectedEntry.gameMeta.matchNumber &&
-          entry.gameMeta.opponent === selectedEntry.gameMeta.opponent
-      ) ??
-      null
-    )
-  }, [pitchingEntries, selectedEntry])
+  const displayedStats = useMemo(
+    () => (selectedEntry ? buildBattingStats(selectedEntry) : calculatedStats),
+    [calculatedStats, selectedEntry]
+  )
 
-  const totalPlateAppearances = savedEntries.reduce(
+  const displayedEntries = selectedEntry ? [selectedEntry] : savedEntries
+  const displayedGamesPlayed = selectedEntry ? 1 : gamesPlayed
+  const totalPlateAppearances = displayedEntries.reduce(
     (total, entry) =>
       total +
       entry.statLine.AB +
@@ -142,6 +172,20 @@ export default function MyStatsPage({
           </h1>
 
           <p className="mt-2 text-sm text-gray-600 sm:mt-3 sm:text-base">{activePlayer.position}</p>
+          {selectedEntry && (
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-green-100 bg-green-50 px-3 py-2">
+              <p className="text-sm font-semibold text-green-900">
+                Showing {selectedEntry.gameMeta.date} vs {selectedEntry.gameMeta.opponent}
+              </p>
+              <button
+                type="button"
+                onClick={() => setSelectedEntry(null)}
+                className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm"
+              >
+                Clear
+              </button>
+            </div>
+          )}
 
           <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4">
             <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4 sm:py-4">
@@ -149,7 +193,7 @@ export default function MyStatsPage({
                 Games Played
               </p>
               <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-                {gamesPlayed}
+                {displayedGamesPlayed}
               </p>
             </div>
 
@@ -168,10 +212,10 @@ export default function MyStatsPage({
         </div>
 
         <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
-          {calculatedStats.map((stat) => (
+          {displayedStats.map((stat) => (
             <div
               key={stat.label}
-              className={getStatCardClass(stat.label, stat.value, gamesPlayed)}
+              className={getStatCardClass(stat.label, stat.value, displayedGamesPlayed)}
             >
               <div>
                 <p className="text-xs font-semibold text-gray-700">
@@ -190,7 +234,7 @@ export default function MyStatsPage({
         </section>
 
         <PerformanceTrendCard
-          playerEntries={savedEntries}
+          playerEntries={displayedEntries}
           teamEntries={teamSavedEntries}
           seasonYear={seasonYear}
         />
@@ -201,85 +245,7 @@ export default function MyStatsPage({
           emptyMessage="No games recorded yet."
           onSelect={setSelectedEntry}
         />
-
-        {selectedEntry && (
-          <GamePerformanceDetail
-            battingEntry={selectedEntry}
-            pitchingEntry={selectedPitchingEntry}
-            onClose={() => setSelectedEntry(null)}
-          />
-        )}
       </div>
     </main>
-  )
-}
-
-function formatInnings(outs: number) {
-  return `${Math.floor(outs / 3)}.${outs % 3}`
-}
-
-function GamePerformanceDetail({
-  battingEntry,
-  pitchingEntry,
-  onClose,
-}: {
-  battingEntry: SavedBattingGameEntry
-  pitchingEntry: SavedPitchingGameEntry | null
-  onClose: () => void
-}) {
-  return (
-    <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">Game Performance</h2>
-          <p className="mt-1 text-sm text-gray-500">
-            {battingEntry.gameMeta.date} vs {battingEntry.gameMeta.opponent}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onClose}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold text-gray-600"
-        >
-          Close
-        </button>
-      </div>
-
-      <div className="mt-4 grid gap-3 md:grid-cols-2">
-        <div className="rounded-xl border border-gray-100 p-3">
-          <p className="text-sm font-semibold text-gray-900">Batting</p>
-          <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-gray-600 sm:text-sm">
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">AB {battingEntry.statLine.AB}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">H {battingEntry.statLine.H}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">2B {battingEntry.statLine.doubles}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">3B {battingEntry.statLine.triples}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">HR {battingEntry.statLine.HR}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">RBI {battingEntry.statLine.RBI}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">BB {battingEntry.statLine.BB}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">HBP {battingEntry.statLine.HBP ?? 0}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">SF {battingEntry.statLine.SF ?? 0}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-0.5">SO {battingEntry.statLine.SO}</span>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-gray-100 p-3">
-          <p className="text-sm font-semibold text-gray-900">Pitching</p>
-          {pitchingEntry ? (
-            <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-gray-600 sm:text-sm">
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">IP {formatInnings(pitchingEntry.statLine.inningsPitchedOuts)}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">H {pitchingEntry.statLine.hitsAllowed}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">R {pitchingEntry.statLine.runsAllowed}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">ER {pitchingEntry.statLine.earnedRuns}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">BB {pitchingEntry.statLine.walks}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">HBP {pitchingEntry.statLine.hitBatters}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">SO {pitchingEntry.statLine.strikeouts}</span>
-              <span className="rounded-full bg-gray-100 px-2 py-0.5">HR {pitchingEntry.statLine.homeRunsAllowed}</span>
-            </div>
-          ) : (
-            <p className="mt-3 text-sm text-gray-500">No pitching record for this game.</p>
-          )}
-        </div>
-      </div>
-    </section>
   )
 }
