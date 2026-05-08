@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Header from "../components/Header"
 import Sidebar from "../components/Sidebar"
+import TopTabs from "../components/TopTabs"
+import MyTeamPage from "../components/MyTeamPage"
+import type { TabItem } from "../components/TopTabs"
 
 import {
   fetchPlayers,
@@ -85,6 +88,8 @@ export default function StatsPage() {
 
   const [mode, setMode] = useState<"batting" | "pitching">("batting")
   const [isRestrictedUser, setIsRestrictedUser] = useState(false)
+  const [userRole, setUserRole] = useState<"player" | "recorder" | "manager" | "admin" | null>(null)
+  const [view, setView] = useState<"stats" | "myteam">("stats")
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
@@ -137,6 +142,27 @@ export default function StatsPage() {
     { label: "RBI", value: String(kpi.rbi) },
     { label: "HBP", value: String(kpi.hbp) },
   ]
+
+  const tabs: TabItem[] = useMemo(() => {
+    if (userRole === "manager") {
+      return [
+        { label: "My Stats", view: "stats" },
+        { label: "Team Stats", view: "myteam" },
+        { label: "Team Manager", href: "/manager" },
+      ]
+    }
+    if (userRole === "recorder") {
+      return [
+        { label: "My Stats", view: "stats" },
+        { label: "My Team", view: "myteam" },
+        { label: "Record Game", href: "/record-game" },
+      ]
+    }
+    return [
+      { label: "My Stats", view: "stats" },
+      { label: "My Team", view: "myteam" },
+    ]
+  }, [userRole])
 
   /* -------------------- 初期ロード -------------------- */
 
@@ -203,6 +229,7 @@ export default function StatsPage() {
           }
 
           setIsRestrictedUser(true)
+          setUserRole(access.role)
           setTeams([team])
           setActiveTeamId(team.id)
           setPlayers(visiblePlayers)
@@ -360,48 +387,62 @@ export default function StatsPage() {
         }}
       />
 
-     {/* Mode switch */}
-<div className="flex w-full gap-2 px-3 pt-3 sm:w-auto sm:px-4">
-  <button
-    onClick={() => setMode("batting")}
-    className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
-      mode === "batting"
-        ? "bg-green-900 text-white shadow-sm"
-        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-    }`}
-  >
-    Batting
-  </button>
+      <TopTabs
+        activeView={view}
+        onChangeView={(v) => setView(v as "stats" | "myteam")}
+        tabs={tabs}
+      />
 
-  <button
-    onClick={() => setMode("pitching")}
-    className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
-      mode === "pitching"
-        ? "bg-green-900 text-white shadow-sm"
-        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-    }`}
-  >
-    Pitching
-  </button>
+      {view === "stats" && (
+        <div className="flex w-full gap-2 px-3 pt-3 sm:w-auto sm:px-4">
+          <button
+            onClick={() => setMode("batting")}
+            className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
+              mode === "batting"
+                ? "bg-green-900 text-white shadow-sm"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            Batting
+          </button>
 
-  <button
-    onClick={handleRefresh}
-    disabled={isLoading}
-    className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-    aria-label="Refresh stats"
-  >
-    ↻
-  </button>
-</div>
+          <button
+            onClick={() => setMode("pitching")}
+            className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
+              mode === "pitching"
+                ? "bg-green-900 text-white shadow-sm"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            }`}
+          >
+            Pitching
+          </button>
+
+          <button
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
+            aria-label="Refresh stats"
+          >
+            ↻
+          </button>
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:p-4">
         {isLoading ? (
           <div>Loading...</div>
         ) : errorMessage ? (
           <div className="text-red-600">{errorMessage}</div>
+        ) : view === "myteam" ? (
+          <MyTeamPage
+            team={activeTeam}
+            players={players}
+            savedEntriesByPlayer={savedEntriesByPlayer}
+            pitchingEntriesByPlayer={pitchingEntriesByPlayer}
+          />
         ) : activePlayer ? (
           <>
-               <Sidebar
+            <Sidebar
               players={players}
               activePlayerId={activePlayer.id}
               setActivePlayerId={setActivePlayerId}
@@ -424,9 +465,7 @@ export default function StatsPage() {
               ) : (
                 <MyPitchingStatsPage
                   activePlayer={activePlayer}
-                  entries={
-                    pitchingEntriesByPlayer[activePlayer.id] ?? []
-                  }
+                  entries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
                   battingEntries={savedEntries}
                 />
               )}

@@ -5,6 +5,7 @@ import MainDashboard from "./MainDashboard"
 import TeamSetupPage from "./TeamSetupPage"
 import TeamManagerDashboard from "./TeamManagerDashboard"
 import UserAccessPanel from "./UserAccessPanel"
+import MyTeamPage from "./MyTeamPage"
 import { useEffect, useState } from "react"
 import type { Dispatch, SetStateAction } from "react"
 import {
@@ -38,7 +39,7 @@ import type {
   UserAccess,
 } from "../types"
 
-type ActiveView = "stats" | "record" | "manager" | "team" | "access"
+type ActiveView = "stats" | "record" | "myteam" | "manager" | "team" | "access"
 type StatMode = "batting" | "pitching"
 
 type LayoutProps = {
@@ -300,7 +301,19 @@ export default function Layout({
         isLoggedIn={true}
       />
 
-      <TopTabs activeView={activeView} onChangeView={setActiveView} />
+      <TopTabs
+        activeView={activeView}
+        onChangeView={(v) => setActiveView(v as ActiveView)}
+        tabs={[
+          { label: "My Stats", view: "stats" },
+          { label: "Record Game", view: "record" },
+          { label: "My Team", view: "myteam" },
+          { label: "Team Manager", view: "manager" },
+          { label: "Team Setup", view: "team" },
+          { label: "User Access", view: "access" },
+          { label: "Archive", href: "/seasons" },
+        ]}
+      />
 
       {activeView === "stats" && (
         <div className="flex gap-2 px-4 pt-3">
@@ -331,7 +344,14 @@ export default function Layout({
 
       <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:p-4">
 
-        {activeView === "team" ? (
+        {activeView === "myteam" ? (
+          <MyTeamPage
+            team={activeTeam}
+            players={teamPlayers}
+            savedEntriesByPlayer={savedEntriesByPlayer}
+            pitchingEntriesByPlayer={pitchingEntriesByPlayer}
+          />
+        ) : activeView === "team" ? (
           <TeamSetupPage
             teams={visibleTeams}
             activeTeamId={activeTeam?.id ?? null}
