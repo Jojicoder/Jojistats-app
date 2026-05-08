@@ -116,19 +116,19 @@ export default function BattingStatFields({
                   <button
                     type="button"
                     onClick={() => handleDecrement("H")}
-                    className="h-8 w-8 rounded-full bg-gray-100 text-gray-700 shadow-sm"
+                    className="h-11 w-11 rounded-full bg-gray-100 text-gray-700 shadow-sm"
                   >
                     -
                   </button>
 
-                  <span className="w-6 text-center font-semibold">
+                  <span className="w-8 text-center text-lg font-semibold">
                     {entry.H}
                   </span>
 
                   <button
                     type="button"
                     onClick={() => handleIncrement("H")}
-                    className="h-8 w-8 rounded-full bg-green-900 text-white shadow-sm"
+                    className="h-11 w-11 rounded-full bg-green-900 text-white shadow-sm"
                   >
                     +
                   </button>
@@ -171,19 +171,19 @@ export default function BattingStatFields({
                           <button
                             type="button"
                             onClick={() => handleDecrement(detailField.label)}
-                            className="h-8 w-8 rounded-full bg-white text-gray-700 shadow-sm"
+                            className="h-10 w-10 rounded-full bg-white text-gray-700 shadow-sm"
                           >
                             -
                           </button>
 
-                          <span className="w-6 text-center font-semibold">
+                          <span className="w-8 text-center font-semibold">
                             {entry[detailField.label]}
                           </span>
 
                           <button
                             type="button"
                             onClick={() => handleIncrement(detailField.label)}
-                            className="h-8 w-8 rounded-full bg-green-900 text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300"
+                            className="h-10 w-10 rounded-full bg-green-900 text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300"
                             disabled={hitDetailTotal >= entry.H}
                           >
                             +
@@ -196,7 +196,7 @@ export default function BattingStatFields({
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-3 sm:px-4">
+            <div className="flex items-center justify-between gap-3 rounded-lg bg-gray-50 px-3 py-4 sm:px-4 sm:py-3">
               <div>
                 <p className="text-sm font-semibold text-gray-700">
                   {field.label}
@@ -210,19 +210,19 @@ export default function BattingStatFields({
                 <button
                   type="button"
                   onClick={() => handleDecrement(field.label)}
-                  className="h-8 w-8 rounded-full bg-white text-gray-700 shadow-sm"
+                  className="h-11 w-11 rounded-full bg-white text-gray-700 shadow-sm"
                 >
                   -
                 </button>
 
-                <span className="w-6 text-center font-semibold">
+                <span className="w-8 text-center text-lg font-semibold">
                   {entry[field.label]}
                 </span>
 
                 <button
                   type="button"
                   onClick={() => handleIncrement(field.label)}
-                  className="h-8 w-8 rounded-full bg-green-900 text-white shadow-sm"
+                  className="h-11 w-11 rounded-full bg-green-900 text-white shadow-sm"
                 >
                   +
                 </button>

@@ -1002,6 +1002,14 @@ export default function RecordGamePage({
     allPlayers.find((player) => player.id === livePitcherId) ??
     allPlayers.find((player) => player.position === "P") ??
     activePlayer
+  const currentLivePitchPlays = useMemo(
+    () => livePitchPlays.filter((play) => play.pitcherId === livePitcher.id),
+    [livePitchPlays, livePitcher.id]
+  )
+  const currentLivePitchingEntry = useMemo(
+    () => buildPitchingEntryFromPlays(currentLivePitchPlays),
+    [currentLivePitchPlays]
+  )
   const currentInningPlays = livePlays.filter(
     (play) => play.inning === liveInning && play.half === liveHalf
   )
@@ -2160,9 +2168,9 @@ export default function RecordGamePage({
                   ))}
               </div>
               <div className="mt-3 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">
-                IP {formatLiveInnings(livePitchingEntry.inningsPitchedOuts)} · SO{" "}
-                {livePitchingEntry.strikeouts} · BB {livePitchingEntry.walks} · HBP{" "}
-                {livePitchingEntry.hitBatters}
+                IP {formatLiveInnings(currentLivePitchingEntry.inningsPitchedOuts)} · SO{" "}
+                {currentLivePitchingEntry.strikeouts} · BB {currentLivePitchingEntry.walks} · HBP{" "}
+                {currentLivePitchingEntry.hitBatters}
               </div>
             </div>
           </section>
@@ -2516,24 +2524,24 @@ export default function RecordGamePage({
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">IP</p>
                     <p className="mt-1 text-2xl font-bold">
-                      {formatLiveInnings(livePitchingEntry.inningsPitchedOuts)}
+                      {formatLiveInnings(currentLivePitchingEntry.inningsPitchedOuts)}
                     </p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">SO</p>
-                    <p className="mt-1 text-2xl font-bold">{livePitchingEntry.strikeouts}</p>
+                    <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.strikeouts}</p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">BB</p>
-                    <p className="mt-1 text-2xl font-bold">{livePitchingEntry.walks}</p>
+                    <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.walks}</p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">HBP</p>
-                    <p className="mt-1 text-2xl font-bold">{livePitchingEntry.hitBatters}</p>
+                    <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.hitBatters}</p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3">
                     <p className="text-xs font-semibold uppercase text-gray-500">ER</p>
-                    <p className="mt-1 text-2xl font-bold">{livePitchingEntry.earnedRuns}</p>
+                    <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.earnedRuns}</p>
                   </div>
                 </div>
 
@@ -2592,19 +2600,19 @@ export default function RecordGamePage({
                 <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
                   <div className="rounded-xl bg-gray-50 p-3 text-sm">
                     <p className="text-xs font-semibold uppercase text-gray-500">H</p>
-                    <p className="mt-1 text-xl font-bold">{livePitchingEntry.hitsAllowed}</p>
+                    <p className="mt-1 text-xl font-bold">{currentLivePitchingEntry.hitsAllowed}</p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3 text-sm">
                     <p className="text-xs font-semibold uppercase text-gray-500">R</p>
-                    <p className="mt-1 text-xl font-bold">{livePitchingEntry.runsAllowed}</p>
+                    <p className="mt-1 text-xl font-bold">{currentLivePitchingEntry.runsAllowed}</p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3 text-sm">
                     <p className="text-xs font-semibold uppercase text-gray-500">HR</p>
-                    <p className="mt-1 text-xl font-bold">{livePitchingEntry.homeRunsAllowed}</p>
+                    <p className="mt-1 text-xl font-bold">{currentLivePitchingEntry.homeRunsAllowed}</p>
                   </div>
                   <div className="rounded-xl bg-gray-50 p-3 text-sm">
                     <p className="text-xs font-semibold uppercase text-gray-500">Events</p>
-                    <p className="mt-1 text-xl font-bold">{livePitchPlays.length}</p>
+                    <p className="mt-1 text-xl font-bold">{currentLivePitchPlays.length}</p>
                   </div>
                 </div>
               </div>

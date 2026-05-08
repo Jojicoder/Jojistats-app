@@ -218,7 +218,7 @@ export default function ProfilePage() {
               className="h-12 w-12 shrink-0 rounded-full object-cover"
             />
 
-            <p className="text-4xl font-extrabold uppercase tracking-tight text-green-900">
+            <p className="text-2xl font-extrabold uppercase tracking-tight text-green-900 sm:text-4xl">
               Joji Stats
             </p>
           </Link>
@@ -318,7 +318,7 @@ export default function ProfilePage() {
                   type="text"
                   value={teamName}
                   onChange={(event) => setTeamName(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
                   placeholder="Team name"
                 />
               ) : (
@@ -337,7 +337,7 @@ export default function ProfilePage() {
                 <select
                   value={primaryPosition}
                   onChange={(event) => setPrimaryPosition(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-green-700"
+                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
                 >
                   <option value="">Select position</option>
                   {positionOptions.map((position) => (
@@ -363,7 +363,7 @@ export default function ProfilePage() {
                   type="number"
                   value={jerseyNumber}
                   onChange={(event) => setJerseyNumber(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
+                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
                   placeholder="Example: 27"
                 />
               ) : (
@@ -382,7 +382,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 rounded-lg bg-green-900 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex-1 rounded-lg bg-green-900 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSaving ? "Saving..." : "Save"}
                 </button>
@@ -390,7 +390,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 rounded-lg border border-gray-300 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="flex-1 rounded-lg border border-gray-300 py-3 sm:py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
@@ -399,7 +399,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="w-full rounded-lg bg-green-900 py-2 text-sm font-semibold text-white hover:bg-green-800"
+                className="w-full rounded-lg bg-green-900 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800"
               >
                 Edit Profile
               </button>

@@ -17,7 +17,7 @@ export default function TopTabs({
     { label: "User Access", view: "access" },
   ]
 
-  const baseClass = "shrink-0 rounded-md px-3 py-2 text-sm font-semibold transition"
+  const baseClass = "shrink-0 rounded-md px-3 py-3 sm:py-2 text-sm font-semibold transition"
   const inactiveClass = "text-gray-600 hover:bg-white/70 hover:text-green-900"
 
   return (

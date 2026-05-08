@@ -74,7 +74,7 @@ export default function GameMetaFields({
             type="date"
             value={gameMeta.date}
             onChange={(e) => handleDateChange(e.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-2"
+            className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
           />
         </div>
 
@@ -87,7 +87,7 @@ export default function GameMetaFields({
               onGameMetaChange({ ...gameMeta, opponent: e.target.value })
             }
             placeholder="e.g. Tigers"
-            className="rounded-lg border border-gray-200 px-3 py-2"
+            className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function GameMetaFields({
                 seasonYear: Number(e.target.value),
               })
             }
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2"
+            className="rounded-lg border border-gray-200 bg-white px-3 py-3 sm:py-2"
           >
             {seasonOptions.map((year) => (
               <option key={year} value={year}>
@@ -129,7 +129,7 @@ export default function GameMetaFields({
                 matchNumber: Math.max(1, Number(e.target.value)),
               })
             }
-            className="rounded-lg border border-gray-200 px-3 py-2"
+            className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
           />
         </div>
       </div>
@@ -146,7 +146,7 @@ export default function GameMetaFields({
                   onGameMetaChange({ ...gameMeta, location: e.target.value })
                 }
                 placeholder="e.g. Home field"
-                className="rounded-lg border border-gray-200 px-3 py-2"
+                className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
               />
             </div>
           )}
@@ -179,7 +179,7 @@ export default function GameMetaFields({
               min={0}
               value={gameMeta.teamScore ?? ""}
               onChange={(e) => handleScoreChange("teamScore", e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-2"
+              className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
             />
           </div>
 
@@ -190,7 +190,7 @@ export default function GameMetaFields({
               min={0}
               value={gameMeta.opponentScore ?? ""}
               onChange={(e) => handleScoreChange("opponentScore", e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-2"
+              className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
             />
           </div>
 
@@ -204,7 +204,7 @@ export default function GameMetaFields({
                   result: e.target.value as DraftGameMeta["result"],
                 })
               }
-              className="rounded-lg border border-gray-200 bg-white px-3 py-2"
+              className="rounded-lg border border-gray-200 bg-white px-3 py-3 sm:py-2"
             >
               <option value="">Not set</option>
               <option value="W">Win</option>

@@ -14,7 +14,7 @@ export default function PitchingStatFields({ entry, onEntryChange }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
       <Field label="Outs" value={entry.inningsPitchedOuts} onChange={(v) => updateNumber("inningsPitchedOuts", v)} />
       <Field label="H" value={entry.hitsAllowed} onChange={(v) => updateNumber("hitsAllowed", v)} />
       <Field label="R" value={entry.runsAllowed} onChange={(v) => updateNumber("runsAllowed", v)} />
@@ -44,7 +44,7 @@ function Field({
         min={0}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm"
       />
     </label>
   )

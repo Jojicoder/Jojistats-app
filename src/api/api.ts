@@ -391,6 +391,13 @@ export const deleteBattingGameEntry = async (gameId: number, playerId: number) =
     )
   }
 
+  const { error: pitchingDeleteError } = await supabase
+    .from("pitching_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+    .eq("player_id", playerId)
+  if (pitchingDeleteError) throw new Error(pitchingDeleteError.message)
+
   const { count: remainingBattingCount, error: battingCountError } = await supabase
     .from("batting_game_stats")
     .select("game_id", { count: "exact", head: true })
@@ -419,13 +426,23 @@ export const deleteBattingStatEntry = async (statId: number, gameId: number) => 
     .from("batting_game_stats")
     .delete()
     .eq("id", statId)
-    .select("id")
+    .select("id, player_id")
 
   if (battingError) throw new Error(battingError.message)
   if (!deletedBattingRows || deletedBattingRows.length === 0) {
     throw new Error(
       `No batting entry was deleted for stat ${statId}. The database delete policy is not allowing this user to delete that row.`
     )
+  }
+
+  const playerId = deletedBattingRows[0]?.player_id
+  if (playerId != null) {
+    const { error: pitchingDeleteError } = await supabase
+      .from("pitching_game_stats")
+      .delete()
+      .eq("game_id", gameId)
+      .eq("player_id", playerId)
+    if (pitchingDeleteError) throw new Error(pitchingDeleteError.message)
   }
 
   const { count: remainingBattingCount, error: battingCountError } = await supabase

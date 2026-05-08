@@ -11,3 +11,12 @@
   --color-danger: #ba1a1a;
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
+
+/* iOSでinputフォーカス時のズームを防止 (font-size < 16px だと自動ズームが発生する) */
+@media (max-width: 640px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}

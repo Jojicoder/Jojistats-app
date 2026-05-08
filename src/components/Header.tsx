@@ -140,7 +140,7 @@ export default function Header({
             <select
               value={teams.includes(teamName) ? teamName : ""}
               onChange={(event) => onChangeTeam(event.target.value)}
-              className="mt-1 w-32 rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 sm:w-36"
+              className="mt-1 w-32 rounded-md border border-gray-200 bg-white px-2 py-2 text-xs text-gray-700 sm:w-36 sm:py-1"
               disabled={teams.length === 0}
             >
               {teams.length === 0 ? (
@@ -164,7 +164,7 @@ export default function Header({
               {accessRole === "recorder" && (
                 <Link
                   to="/record-game"
-                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
                 >
                   Record Game
                 </Link>
@@ -173,7 +173,7 @@ export default function Header({
               {accessRole === "player" && (
                 <Link
                   to="/player"
-                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
                 >
                   My Player
                 </Link>
@@ -182,7 +182,7 @@ export default function Header({
               {accessRole === "manager" && (
                 <Link
                   to="/manager"
-                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
                 >
                   Manager
                 </Link>
@@ -191,7 +191,7 @@ export default function Header({
               {accessRole === "admin" && (
                 <Link
                   to="/admin"
-                  className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
                 >
                   Admin
                 </Link>
@@ -200,7 +200,7 @@ export default function Header({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-lg bg-green-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-800 sm:py-2"
+                className="rounded-lg bg-green-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-green-800 sm:py-2"
               >
                 Logout
               </button>
@@ -217,14 +217,14 @@ export default function Header({
             <>
               <Link
                 to="/login"
-                className="rounded-lg bg-green-900 px-3 py-1.5 text-sm font-semibold text-white hover:bg-green-800 sm:py-2"
+                className="rounded-lg bg-green-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-green-800 sm:py-2"
               >
                 Login
               </Link>
 
               <Link
                 to="/signup"
-                className="rounded-lg border border-green-900 px-3 py-1.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
               >
                 Sign Up
               </Link>

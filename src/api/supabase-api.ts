@@ -243,6 +243,19 @@ export async function fetchPitchingEntriesByPlayer(
   const grouped: Record<string, SavedPitchingGameEntry[]> = {}
 
   ;((data ?? []) as PitchingStatRow[]).forEach((row) => {
+    const statLine = {
+      inningsPitchedOuts: row.innings_pitched_outs ?? 0,
+      hitsAllowed: row.hits_allowed ?? 0,
+      runsAllowed: row.runs_allowed ?? 0,
+      earnedRuns: row.earned_runs ?? 0,
+      walks: row.walks ?? 0,
+      hitBatters: row.hbp ?? 0,
+      strikeouts: row.strikeouts ?? 0,
+      homeRunsAllowed: row.home_runs_allowed ?? 0,
+    }
+    const hasPitchingActivity = Object.values(statLine).some((value) => value > 0)
+    if (!hasPitchingActivity) return
+
     const playerId = String(row.player_id)
     if (!grouped[playerId]) grouped[playerId] = []
 
@@ -264,16 +277,7 @@ export async function fetchPitchingEntriesByPlayer(
             ? row.games.result
             : "",
       },
-      statLine: {
-        inningsPitchedOuts: row.innings_pitched_outs ?? 0,
-        hitsAllowed: row.hits_allowed ?? 0,
-        runsAllowed: row.runs_allowed ?? 0,
-        earnedRuns: row.earned_runs ?? 0,
-        walks: row.walks ?? 0,
-        hitBatters: row.hbp ?? 0,
-        strikeouts: row.strikeouts ?? 0,
-        homeRunsAllowed: row.home_runs_allowed ?? 0,
-      },
+      statLine,
     })
   })
 

@@ -72,7 +72,7 @@ export default function LoginPage() {
               className="h-12 w-12 rounded-full object-cover"
             />
 
-            <p className="text-4xl font-extrabold uppercase tracking-tight text-green-900">
+            <p className="text-2xl font-extrabold uppercase tracking-tight text-green-900 sm:text-4xl">
               Joji Stats
             </p>
           </Link>
@@ -112,7 +112,7 @@ export default function LoginPage() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
             />
           </label>
 
@@ -122,7 +122,7 @@ export default function LoginPage() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm outline-none focus:border-green-700"
+              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
               placeholder="Enter password"
             />
           </label>
@@ -130,7 +130,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-6 w-full rounded-lg bg-green-900 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+            className="mt-6 w-full rounded-lg bg-green-900 px-4 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
           >
             {isLoading ? "Logging in..." : "Login"}
           </button>
