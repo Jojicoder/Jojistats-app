@@ -415,408 +415,308 @@ export default function TeamManagerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
-        <div className="flex w-full items-center justify-between gap-4">
-          <Link to="/stats" className="flex items-center gap-3">
-            <img
-              src="/logo.png"
-              alt="JojiStats logo"
-              className="h-12 w-12 rounded-full object-cover"
-            />
-            <p className="text-4xl font-extrabold uppercase tracking-tight text-green-900">
-              Joji Stats
-            </p>
+    <div className="min-h-screen bg-[#f7f8f3]">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
+          <Link to="/stats" className="flex min-w-0 items-center gap-2.5">
+            <img src="/logo.png" alt="JojiStats logo" className="h-10 w-10 shrink-0 rounded-full object-cover sm:h-11 sm:w-11" />
+            <span className="block truncate text-xl font-extrabold uppercase tracking-tight text-green-900 sm:text-3xl">
+              JojiStats
+            </span>
           </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/stats"
-              className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 hover:bg-green-50"
-            >
+          <div className="flex items-center gap-2">
+            <Link to="/stats" className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-50">
               Stats
             </Link>
-
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-lg bg-green-900 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800"
-            >
+            <button type="button" onClick={handleLogout} className="rounded-lg bg-green-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800">
               Logout
             </button>
-
-            <button
-              type="button"
-              onClick={() => navigate("/profile")}
-              className="h-10 w-10 overflow-hidden rounded-full border border-gray-200"
-              aria-label="Open profile"
-            >
-              <img
-                src={avatarUrl || "/logo.png"}
-                alt="avatar"
-                className="h-full w-full object-cover"
-              />
+            <button type="button" onClick={() => navigate("/profile")} className="h-10 w-10 overflow-hidden rounded-full border border-gray-200" aria-label="Open profile">
+              <img src={avatarUrl || "/logo.png"} alt="avatar" className="h-full w-full object-cover" />
             </button>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6">
+      <main className="mx-auto max-w-6xl px-4 py-8">
         {isLoading ? (
-          <div className="text-gray-600">Loading...</div>
+          <div className="flex items-center gap-3 text-sm text-gray-500">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-900 border-t-transparent" />
+            Loading...
+          </div>
         ) : errorMessage ? (
-          <div className="rounded-2xl bg-white p-6 shadow-sm">
+          <div className="rounded-2xl bg-white p-6 text-sm shadow-sm">
             <p className="text-red-700">{errorMessage}</p>
-            {debugMessage && (
-              <p className="mt-3 text-sm text-gray-500">{debugMessage}</p>
-            )}
+            {debugMessage && <p className="mt-3 text-sm text-gray-500">{debugMessage}</p>}
           </div>
         ) : (
           <div className="space-y-6">
-            <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <p className="text-sm font-medium text-green-900">
-                    Team Manager
-                  </p>
-                  <h1 className="mt-2 text-2xl font-bold">{team?.name}</h1>
-                  <p className="mt-2 text-sm text-gray-600">
-                    Season {team?.currentSeasonYear} · {players.length} players
-                  </p>
-                </div>
 
-                <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
-                  <button
-                    type="button"
-                    onClick={() => setManagerMode("batting")}
-                    className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                      managerMode === "batting"
-                        ? "bg-green-900 text-white shadow-sm"
-                        : "text-gray-600 hover:text-green-900"
-                    }`}
-                  >
-                    Batting
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setManagerMode("pitching")}
-                    className={`rounded-lg px-4 py-2 text-sm font-semibold ${
-                      managerMode === "pitching"
-                        ? "bg-green-900 text-white shadow-sm"
-                        : "text-gray-600 hover:text-green-900"
-                    }`}
-                  >
-                    Pitching
-                  </button>
-                </div>
+            {/* ── Title + Mode Picker ── */}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-green-700">{team?.name}</p>
+                <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
+                  Team Manager
+                </h1>
+                <p className="mt-1 text-sm text-gray-400">
+                  {team?.currentSeasonYear} Season · {players.length} players
+                </p>
               </div>
-              <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-700">
-                {managerMode === "batting" ? (
-                  <>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      G {teamTotals.games}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      AVG {formatRate(teamTotals.avg)}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      OBP {formatRate(teamTotals.obp)}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      OPS {formatRate(teamTotals.ops)}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      HR {teamTotals.hr}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      RBI {teamTotals.rbi}
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      APP {teamPitchingTotals.games}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      ERA {formatDecimal(teamPitchingTotals.era)}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      WHIP {formatDecimal(teamPitchingTotals.whip)}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      IP {teamPitchingTotals.ip}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      SO {teamPitchingTotals.so}
-                    </span>
-                    <span className="rounded-full bg-gray-100 px-3 py-1">
-                      BB {teamPitchingTotals.bb}
-                    </span>
-                  </>
-                )}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => setManagerMode("batting")}
+                  className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                    managerMode === "batting"
+                      ? "bg-green-900 text-white shadow-sm"
+                      : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
+                  }`}
+                >
+                  Batting
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setManagerMode("pitching")}
+                  className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                    managerMode === "pitching"
+                      ? "bg-green-900 text-white shadow-sm"
+                      : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
+                  }`}
+                >
+                  Pitching
+                </button>
+              </div>
+            </div>
+
+            {/* Team summary tiles */}
+            <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+              {managerMode === "batting" ? (
+                <>
+                  {[
+                    { label: "Games", value: String(teamTotals.games), sub: "played", accent: true },
+                    { label: "AVG", value: formatRate(teamTotals.avg), sub: "team batting" },
+                    { label: "OBP", value: formatRate(teamTotals.obp), sub: "on-base" },
+                    { label: "OPS", value: formatRate(teamTotals.ops), sub: "production" },
+                    { label: "HR", value: String(teamTotals.hr), sub: "home runs" },
+                    { label: "RBI", value: String(teamTotals.rbi), sub: "runs batted in" },
+                  ].map(({ label, value, sub, accent }) => (
+                    <ManagerSummaryCard key={label} label={label} value={value} sub={sub} accent={accent} />
+                  ))}
+                </>
+              ) : (
+                <>
+                  {[
+                    { label: "APP", value: String(teamPitchingTotals.games), sub: "appearances", accent: true },
+                    { label: "ERA", value: formatDecimal(teamPitchingTotals.era), sub: "earned runs" },
+                    { label: "WHIP", value: formatDecimal(teamPitchingTotals.whip), sub: "traffic" },
+                    { label: "IP", value: teamPitchingTotals.ip, sub: "innings" },
+                    { label: "SO", value: String(teamPitchingTotals.so), sub: "strikeouts" },
+                    { label: "BB", value: String(teamPitchingTotals.bb), sub: "walks" },
+                  ].map(({ label, value, sub, accent }) => (
+                    <ManagerSummaryCard key={label} label={label} value={value} sub={sub} accent={accent} />
+                  ))}
+                </>
+              )}
+            </section>
+
+            <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Current View</p>
+                  <h2 className="mt-1 text-base font-bold text-gray-900">
+                    {managerMode === "batting" ? "Batting Dashboard" : "Pitching Dashboard"}
+                  </h2>
+                </div>
+                <p className="text-sm text-gray-400">
+                  Review leaders, roster balance, and suggested decisions for the selected team.
+                </p>
               </div>
             </section>
 
             {managerMode === "batting" ? (
               <>
-            <section className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <h2 className="text-lg font-semibold">Team Leaders</h2>
-                <div className="mt-4 space-y-3 text-sm">
-                  <p className="flex justify-between gap-3">
-                    <span className="text-gray-500">AVG</span>
-                    <span className="font-semibold">
-                      {leaders.byAvg
-                        ? `${leaders.byAvg.player.name} ${formatRate(leaders.byAvg.metrics.avg)}`
-                        : "No data"}
-                    </span>
-                  </p>
-                  <p className="flex justify-between gap-3">
-                    <span className="text-gray-500">HR</span>
-                    <span className="font-semibold">
-                      {leaders.byHr
-                        ? `${leaders.byHr.player.name} ${leaders.byHr.metrics.hr}`
-                        : "No data"}
-                    </span>
-                  </p>
-                  <p className="flex justify-between gap-3">
-                    <span className="text-gray-500">RBI</span>
-                    <span className="font-semibold">
-                      {leaders.byRbi
-                        ? `${leaders.byRbi.player.name} ${leaders.byRbi.metrics.rbi}`
-                        : "No data"}
-                    </span>
-                  </p>
-                  <p className="flex justify-between gap-3">
-                    <span className="text-gray-500">Hits</span>
-                    <span className="font-semibold">
-                      {leaders.byHits
-                        ? `${leaders.byHits.player.name} ${leaders.byHits.metrics.h}`
-                        : "No data"}
-                    </span>
-                  </p>
-                </div>
-              </div>
+                {/* ── Leaders row ── */}
+                <section className="grid grid-cols-1 gap-5 xl:grid-cols-4">
+                  <MgrCard title="Team Leaders">
+                    <div className="mt-4 space-y-2">
+                      {[
+                        { label: "AVG",  text: leaders.byAvg  ? leaders.byAvg.player.name  : "", val: leaders.byAvg  ? formatRate(leaders.byAvg.metrics.avg)  : "—" },
+                        { label: "HR",   text: leaders.byHr   ? leaders.byHr.player.name   : "", val: leaders.byHr   ? String(leaders.byHr.metrics.hr)         : "—" },
+                        { label: "RBI",  text: leaders.byRbi  ? leaders.byRbi.player.name  : "", val: leaders.byRbi  ? String(leaders.byRbi.metrics.rbi)        : "—" },
+                        { label: "Hits", text: leaders.byHits ? leaders.byHits.player.name : "", val: leaders.byHits ? String(leaders.byHits.metrics.h)         : "—" },
+                      ].map(({ label, text, val }) => (
+                        <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-gray-900">{text || "No data"}</p>
+                            {text && <p className="text-xs font-bold text-green-900">{val}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </MgrCard>
 
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <h2 className="text-lg font-semibold">Hot Players</h2>
-                <div className="mt-4 space-y-3 text-sm">
-                  {hotPlayers.length === 0 ? (
-                    <p className="text-gray-500">No batting data yet.</p>
-                  ) : (
-                    hotPlayers.map((summary) => (
-                      <p
-                        key={summary.player.id}
-                        className="flex justify-between gap-3"
-                      >
-                        <span className="font-medium">{summary.player.name}</span>
-                        <span className="text-gray-500">
-                          OPS {formatRate(summary.metrics.ops)}
-                        </span>
-                      </p>
-                    ))
-                  )}
-                </div>
-              </div>
+                  <MgrCard title="Hot Players">
+                    <div className="mt-4 space-y-2">
+                      {hotPlayers.length === 0 ? (
+                        <p className="text-sm text-gray-400">No batting data yet.</p>
+                      ) : (
+                        hotPlayers.map((summary) => (
+                          <div key={summary.player.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                            <p className="text-sm font-semibold text-gray-900">{summary.player.name}</p>
+                            <p className="text-xs font-bold text-green-900">OPS {formatRate(summary.metrics.ops)}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </MgrCard>
 
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <h2 className="text-lg font-semibold">Cold Players</h2>
-                <div className="mt-4 space-y-3 text-sm">
-                  {coldPlayers.length === 0 ? (
-                    <p className="text-gray-500">No batting data yet.</p>
-                  ) : (
-                    coldPlayers.map((summary) => (
-                      <p
-                        key={summary.player.id}
-                        className="flex justify-between gap-3"
-                      >
-                        <span className="font-medium">{summary.player.name}</span>
-                        <span className="text-gray-500">
-                          AVG {formatRate(summary.metrics.avg)}
-                        </span>
-                      </p>
-                    ))
-                  )}
-                </div>
-              </div>
+                  <MgrCard title="Cold Players">
+                    <div className="mt-4 space-y-2">
+                      {coldPlayers.length === 0 ? (
+                        <p className="text-sm text-gray-400">No batting data yet.</p>
+                      ) : (
+                        coldPlayers.map((summary) => (
+                          <div key={summary.player.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                            <p className="text-sm font-semibold text-gray-900">{summary.player.name}</p>
+                            <p className="text-xs font-bold text-green-900">AVG {formatRate(summary.metrics.avg)}</p>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </MgrCard>
 
-              <div className="rounded-2xl bg-white p-4 shadow-sm">
-                <h2 className="text-lg font-semibold">Position Balance</h2>
-                <div className="mt-4 space-y-3 text-sm">
-                  {Object.entries(positionBalance).map(([label, count]) => (
-                    <p key={label} className="flex justify-between gap-3">
-                      <span className="text-gray-500">{label}</span>
-                      <span className="font-semibold">{count}</span>
-                    </p>
-                  ))}
-                </div>
-              </div>
-            </section>
+                  <MgrCard title="Position Balance">
+                    <div className="mt-4 space-y-2">
+                      {Object.entries(positionBalance).map(([label, count]) => (
+                        <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
+                          <p className="text-sm font-extrabold text-green-950">{count}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </MgrCard>
+                </section>
 
-            <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h2 className="text-lg font-semibold">Suggested Lineup</h2>
-                <div className="flex flex-wrap gap-2">
-                  {(["balanced", "obp", "power", "contact"] as const).map(
-                    (style) => (
-                      <button
-                        key={style}
-                        type="button"
-                        onClick={() => setLineupStyle(style)}
-                        className={`rounded-lg px-3 py-2 text-xs font-semibold uppercase ${
-                          lineupStyle === style
-                            ? "bg-green-900 text-white"
-                            : "bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-900"
-                        }`}
-                      >
-                        {style}
-                      </button>
-                    )
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
-                {suggestedLineup.map((summary, index) => (
-                  <div
-                    key={summary.player.id}
-                    className="rounded-xl border border-gray-100 px-4 py-3 text-sm"
-                  >
-                    <p className="font-semibold text-gray-900">
-                      {index + 1}. {getPlayerLabel(summary.player)}{" "}
-                      <span className="text-gray-500">
-                        {summary.player.position}
-                      </span>
-                    </p>
-                    <p className="mt-1 text-xs text-gray-500">
-                      AVG {formatRate(summary.metrics.avg)} · OBP{" "}
-                      {formatRate(summary.metrics.obp)} · OPS{" "}
-                      {formatRate(summary.metrics.ops)}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-              <h2 className="text-lg font-semibold">Roster Overview</h2>
-
-              <div className="mt-4 overflow-x-auto">
-                <table className="min-w-full text-left text-sm">
-                  <thead className="border-b border-gray-200 text-xs uppercase text-gray-500">
-                    <tr>
-                      <th className="py-2 pr-4">Player</th>
-                      <th className="py-2 pr-4">Pos</th>
-                      <th className="py-2 pr-4">G</th>
-                      <th className="py-2 pr-4">AB</th>
-                      <th className="py-2 pr-4">H</th>
-                      <th className="py-2 pr-4">AVG</th>
-                      <th className="py-2 pr-4">HR</th>
-                      <th className="py-2 pr-4">RBI</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-100">
-                    {players.map((player) => {
-                      const totals = getMetrics(entriesByPlayer[player.id] ?? [])
-                      return (
-                        <tr key={player.id}>
-                          <td className="py-3 pr-4 font-medium text-gray-900">
-                            {player.jerseyNumber != null
-                              ? `#${player.jerseyNumber} `
-                              : ""}
-                            {player.name}
-                          </td>
-                          <td className="py-3 pr-4 text-gray-600">
-                            {player.position}
-                          </td>
-                          <td className="py-3 pr-4 text-gray-600">
-                            {totals.games}
-                          </td>
-                          <td className="py-3 pr-4 text-gray-600">
-                            {totals.ab}
-                          </td>
-                          <td className="py-3 pr-4 text-gray-600">
-                            {totals.h}
-                          </td>
-                          <td className="py-3 pr-4 text-gray-600">
-                            {formatRate(totals.avg)}
-                          </td>
-                          <td className="py-3 pr-4 text-gray-600">
-                            {totals.hr}
-                          </td>
-                          <td className="py-3 pr-4 text-gray-600">
-                            {totals.rbi}
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            </section>
-              </>
-            ) : (
-              <>
-                <section className="grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
-                  <div className="rounded-2xl bg-white p-4 shadow-sm">
-                    <h2 className="text-lg font-semibold">Pitching Leaders</h2>
-                    <div className="mt-4 space-y-3 text-sm">
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">ERA</span>
-                        <span className="font-semibold">
-                          {pitchingLeaders.byEra
-                            ? `${pitchingLeaders.byEra.player.name} ${formatDecimal(pitchingLeaders.byEra.metrics.era)}`
-                            : "No data"}
-                        </span>
-                      </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">WHIP</span>
-                        <span className="font-semibold">
-                          {pitchingLeaders.byWhip
-                            ? `${pitchingLeaders.byWhip.player.name} ${formatDecimal(pitchingLeaders.byWhip.metrics.whip)}`
-                            : "No data"}
-                        </span>
-                      </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">SO</span>
-                        <span className="font-semibold">
-                          {pitchingLeaders.bySo
-                            ? `${pitchingLeaders.bySo.player.name} ${pitchingLeaders.bySo.metrics.so}`
-                            : "No data"}
-                        </span>
-                      </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">IP</span>
-                        <span className="font-semibold">
-                          {pitchingLeaders.byIp
-                            ? `${pitchingLeaders.byIp.player.name} ${pitchingLeaders.byIp.metrics.ip}`
-                            : "No data"}
-                        </span>
-                      </p>
+                {/* ── Suggested Lineup ── */}
+                <section className="rounded-2xl bg-white p-5 shadow-sm">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="text-base font-bold text-gray-900">Suggested Lineup</h2>
+                    <div className="flex flex-wrap gap-2">
+                      {(["balanced", "obp", "power", "contact"] as const).map((style) => (
+                        <button
+                          key={style}
+                          type="button"
+                          onClick={() => setLineupStyle(style)}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold uppercase transition ${
+                            lineupStyle === style
+                              ? "bg-green-900 text-white"
+                              : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
+                          }`}
+                        >
+                          {style}
+                        </button>
+                      ))}
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-white p-4 shadow-sm xl:col-span-2">
-                    <h2 className="text-lg font-semibold">Pitcher Usage</h2>
+                  <div className="mt-4 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                    {suggestedLineup.map((summary, index) => (
+                      <div key={summary.player.id} className="rounded-xl bg-[#f7f8f3] px-4 py-3">
+                        <p className="text-sm font-semibold text-gray-900">
+                          <span className="mr-1.5 text-xs text-gray-400">{index + 1}.</span>
+                          {getPlayerLabel(summary.player)}{" "}
+                          <span className="text-xs text-gray-400">{summary.player.position}</span>
+                        </p>
+                        <p className="mt-1 text-xs text-gray-400">
+                          AVG {formatRate(summary.metrics.avg)} · OBP {formatRate(summary.metrics.obp)} · OPS {formatRate(summary.metrics.ops)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </section>
+
+                {/* ── Roster Overview ── */}
+                <section className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h2 className="text-base font-bold text-gray-900">Roster Overview</h2>
+                  <div className="mt-4 overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wide text-gray-400">
+                          <th className="pb-3 pr-4 text-left">Player</th>
+                          <th className="pb-3 px-2 text-center">Pos</th>
+                          <th className="pb-3 px-2 text-center">G</th>
+                          <th className="pb-3 px-2 text-center">AB</th>
+                          <th className="pb-3 px-2 text-center">H</th>
+                          <th className="pb-3 px-2 text-center text-green-700">AVG</th>
+                          <th className="pb-3 px-2 text-center">HR</th>
+                          <th className="pb-3 px-2 text-center">RBI</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-50">
+                        {players.map((player) => {
+                          const totals = getMetrics(entriesByPlayer[player.id] ?? [])
+                          return (
+                            <tr key={player.id}>
+                              <td className="py-3 pr-4 font-semibold text-gray-900">
+                                {player.jerseyNumber != null && (
+                                  <span className="mr-1.5 text-xs text-gray-400">#{player.jerseyNumber}</span>
+                                )}
+                                {player.name}
+                              </td>
+                              <td className="px-2 py-3 text-center text-gray-500">{player.position}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{totals.games}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{totals.ab}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{totals.h}</td>
+                              <td className="px-2 py-3 text-center font-bold text-green-900">{formatRate(totals.avg)}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{totals.hr}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{totals.rbi}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </section>
+              </>
+            ) : (
+              <>
+                {/* ── Pitching leaders row ── */}
+                <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-4">
+                  <MgrCard title="Pitching Leaders">
+                    <div className="mt-4 space-y-2">
+                      {[
+                        { label: "ERA",  text: pitchingLeaders.byEra  ? pitchingLeaders.byEra.player.name  : "", val: pitchingLeaders.byEra  ? formatDecimal(pitchingLeaders.byEra.metrics.era)    : "—" },
+                        { label: "WHIP", text: pitchingLeaders.byWhip ? pitchingLeaders.byWhip.player.name : "", val: pitchingLeaders.byWhip ? formatDecimal(pitchingLeaders.byWhip.metrics.whip)  : "—" },
+                        { label: "SO",   text: pitchingLeaders.bySo   ? pitchingLeaders.bySo.player.name   : "", val: pitchingLeaders.bySo   ? String(pitchingLeaders.bySo.metrics.so)              : "—" },
+                        { label: "IP",   text: pitchingLeaders.byIp   ? pitchingLeaders.byIp.player.name   : "", val: pitchingLeaders.byIp   ? pitchingLeaders.byIp.metrics.ip                      : "—" },
+                      ].map(({ label, text, val }) => (
+                        <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
+                          <div className="text-right">
+                            <p className="text-sm font-semibold text-gray-900">{text || "No data"}</p>
+                            {text && <p className="text-xs font-bold text-green-900">{val}</p>}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </MgrCard>
+
+                  <div className="rounded-2xl bg-white p-5 shadow-sm xl:col-span-2">
+                    <h2 className="text-base font-bold text-gray-900">Pitcher Usage</h2>
                     <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                       {pitchingUsage.length === 0 ? (
-                        <p className="text-sm text-gray-500">No pitching data yet.</p>
+                        <p className="text-sm text-gray-400">No pitching data yet.</p>
                       ) : (
                         pitchingUsage.map((summary) => (
-                          <div
-                            key={summary.player.id}
-                            className="rounded-xl border border-gray-100 px-4 py-3 text-sm"
-                          >
-                            <p className="font-semibold text-gray-900">
+                          <div key={summary.player.id} className="rounded-xl bg-[#f7f8f3] px-4 py-3">
+                            <p className="text-sm font-semibold text-gray-900">
                               {getPlayerLabel(summary.player)}{" "}
-                              <span className="text-gray-500">
-                                {summary.player.position}
-                              </span>
+                              <span className="text-xs text-gray-400">{summary.player.position}</span>
                             </p>
-                            <p className="mt-1 text-xs text-gray-500">
-                              IP {summary.metrics.ip} · ERA{" "}
-                              {formatDecimal(summary.metrics.era)} · SO{" "}
-                              {summary.metrics.so}
+                            <p className="mt-1 text-xs text-gray-400">
+                              IP {summary.metrics.ip} · ERA {formatDecimal(summary.metrics.era)} · SO {summary.metrics.so}
                             </p>
                           </div>
                         ))
@@ -824,60 +724,41 @@ export default function TeamManagerPage() {
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-white p-4 shadow-sm">
-                    <h2 className="text-lg font-semibold">Staff Notes</h2>
-                    <div className="mt-4 space-y-3 text-sm">
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">Pitchers</span>
-                        <span className="font-semibold">{positionBalance.Pitchers}</span>
-                      </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">Appearances</span>
-                        <span className="font-semibold">
-                          {teamPitchingTotals.games}
-                        </span>
-                      </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">Runs</span>
-                        <span className="font-semibold">{teamPitchingTotals.r}</span>
-                      </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">ER</span>
-                        <span className="font-semibold">{teamPitchingTotals.er}</span>
-                      </p>
+                  <MgrCard title="Staff Notes">
+                    <div className="mt-4 space-y-2">
+                      {[
+                        { label: "Pitchers",     val: String(positionBalance.Pitchers) },
+                        { label: "Appearances",  val: String(teamPitchingTotals.games) },
+                        { label: "Runs",         val: String(teamPitchingTotals.r) },
+                        { label: "Earned Runs",  val: String(teamPitchingTotals.er) },
+                      ].map(({ label, val }) => (
+                        <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
+                          <p className="text-sm font-extrabold text-green-950">{val}</p>
+                        </div>
+                      ))}
                     </div>
-                  </div>
+                  </MgrCard>
                 </section>
 
-                <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-                  <h2 className="text-lg font-semibold">Strikeouts by Pitcher</h2>
-
+                {/* ── Strikeouts chart ── */}
+                <section className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h2 className="text-base font-bold text-gray-900">Strikeouts by Pitcher</h2>
                   <div className="mt-4 space-y-3">
                     {strikeoutLeaders.length === 0 ? (
-                      <p className="text-sm text-gray-500">No strikeout data yet.</p>
+                      <p className="text-sm text-gray-400">No strikeout data yet.</p>
                     ) : (
                       strikeoutLeaders.map((summary) => {
-                        const maxStrikeouts = Math.max(
-                          ...strikeoutLeaders.map((leader) => leader.metrics.so),
-                          1
-                        )
-                        const width = `${Math.max((summary.metrics.so / maxStrikeouts) * 100, 8)}%`
-
+                        const maxSo = Math.max(...strikeoutLeaders.map((l) => l.metrics.so), 1)
+                        const width = `${Math.max((summary.metrics.so / maxSo) * 100, 6)}%`
                         return (
                           <div key={summary.player.id}>
-                            <div className="mb-1 flex justify-between text-sm">
-                              <span className="font-medium text-gray-900">
-                                {summary.player.name}
-                              </span>
-                              <span className="text-gray-500">
-                                {summary.metrics.so} SO
-                              </span>
+                            <div className="mb-1.5 flex justify-between text-sm">
+                              <span className="font-semibold text-gray-900">{summary.player.name}</span>
+                              <span className="text-xs font-bold text-green-900">{summary.metrics.so} SO</span>
                             </div>
-                            <div className="h-3 rounded-full bg-gray-100">
-                              <div
-                                className="h-3 rounded-full bg-green-900"
-                                style={{ width }}
-                              />
+                            <div className="h-2 rounded-full bg-[#f7f8f3]">
+                              <div className="h-2 rounded-full bg-green-800" style={{ width }} />
                             </div>
                           </div>
                         )
@@ -886,70 +767,47 @@ export default function TeamManagerPage() {
                   </div>
                 </section>
 
-                <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-                  <h2 className="text-lg font-semibold">Pitching Roster Overview</h2>
-
+                {/* ── Pitching Roster Overview ── */}
+                <section className="rounded-2xl bg-white p-5 shadow-sm">
+                  <h2 className="text-base font-bold text-gray-900">Pitching Roster Overview</h2>
                   <div className="mt-4 overflow-x-auto">
-                    <table className="min-w-full text-left text-sm">
-                      <thead className="border-b border-gray-200 text-xs uppercase text-gray-500">
-                        <tr>
-                          <th className="py-2 pr-4">Player</th>
-                          <th className="py-2 pr-4">Pos</th>
-                          <th className="py-2 pr-4">APP</th>
-                          <th className="py-2 pr-4">IP</th>
-                          <th className="py-2 pr-4">ERA</th>
-                          <th className="py-2 pr-4">WHIP</th>
-                          <th className="py-2 pr-4">H</th>
-                          <th className="py-2 pr-4">ER</th>
-                          <th className="py-2 pr-4">BB</th>
-                          <th className="py-2 pr-4">SO</th>
-                          <th className="py-2 pr-4">HR</th>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wide text-gray-400">
+                          <th className="pb-3 pr-4 text-left">Player</th>
+                          <th className="pb-3 px-2 text-center">Pos</th>
+                          <th className="pb-3 px-2 text-center">APP</th>
+                          <th className="pb-3 px-2 text-center">IP</th>
+                          <th className="pb-3 px-2 text-center text-green-700">ERA</th>
+                          <th className="pb-3 px-2 text-center">WHIP</th>
+                          <th className="pb-3 px-2 text-center">H</th>
+                          <th className="pb-3 px-2 text-center">ER</th>
+                          <th className="pb-3 px-2 text-center">BB</th>
+                          <th className="pb-3 px-2 text-center">SO</th>
+                          <th className="pb-3 px-2 text-center">HR</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
-                        {pitchingRosterOverview.map(({ player, metrics: totals }) => {
-
-                          return (
-                            <tr key={player.id}>
-                              <td className="py-3 pr-4 font-medium text-gray-900">
-                                {player.jerseyNumber != null
-                                  ? `#${player.jerseyNumber} `
-                                  : ""}
-                                {player.name}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {player.position}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {totals.games}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {totals.ip}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {formatDecimal(totals.era)}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {formatDecimal(totals.whip)}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {totals.h}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {totals.er}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {totals.bb}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {totals.so}
-                              </td>
-                              <td className="py-3 pr-4 text-gray-600">
-                                {totals.hr}
-                              </td>
-                            </tr>
-                          )
-                        })}
+                      <tbody className="divide-y divide-gray-50">
+                        {pitchingRosterOverview.map(({ player, metrics: totals }) => (
+                          <tr key={player.id}>
+                            <td className="py-3 pr-4 font-semibold text-gray-900">
+                              {player.jerseyNumber != null && (
+                                <span className="mr-1.5 text-xs text-gray-400">#{player.jerseyNumber}</span>
+                              )}
+                              {player.name}
+                            </td>
+                            <td className="px-2 py-3 text-center text-gray-500">{player.position}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{totals.games}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{totals.ip}</td>
+                            <td className="px-2 py-3 text-center font-bold text-green-900">{formatDecimal(totals.era)}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{formatDecimal(totals.whip)}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{totals.h}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{totals.er}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{totals.bb}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{totals.so}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{totals.hr}</td>
+                          </tr>
+                        ))}
                       </tbody>
                     </table>
                   </div>
@@ -959,6 +817,55 @@ export default function TeamManagerPage() {
           </div>
         )}
       </main>
+    </div>
+  )
+}
+
+function MgrCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+      <h2 className="text-base font-bold text-gray-900">{title}</h2>
+      {children}
+    </div>
+  )
+}
+
+function ManagerSummaryCard({
+  label,
+  value,
+  sub,
+  accent = false,
+}: {
+  label: string
+  value: string
+  sub?: string
+  accent?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-2xl p-4 shadow-sm sm:p-5 ${
+        accent ? "bg-green-800 text-white" : "border border-gray-100 bg-white"
+      }`}
+    >
+      <p
+        className={`text-xs font-bold uppercase tracking-widest ${
+          accent ? "text-green-300" : "text-gray-400"
+        }`}
+      >
+        {label}
+      </p>
+      <p
+        className={`mt-2 text-3xl font-extrabold tracking-tight ${
+          accent ? "text-white" : "text-green-950"
+        }`}
+      >
+        {value}
+      </p>
+      {sub && (
+        <p className={`mt-1 text-xs ${accent ? "text-green-400" : "text-gray-400"}`}>
+          {sub}
+        </p>
+      )}
     </div>
   )
 }

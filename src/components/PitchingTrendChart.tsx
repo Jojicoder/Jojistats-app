@@ -86,13 +86,11 @@ export default function PitchingTrendChart({
   const yTicks = [chartMax, chartMax * 0.75, chartMax * 0.5, chartMax * 0.25, 0]
 
   return (
-    <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
+    <section className="rounded-2xl bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Performance Trend
-          </h2>
-          <p className="mt-1 text-sm font-medium text-green-900">
+          <h2 className="text-base font-bold text-gray-900">Performance Trend</h2>
+          <p className="mt-0.5 text-xs font-bold uppercase tracking-widest text-green-700">
             Cumulative {activeMetric.toUpperCase()} over time
           </p>
         </div>
@@ -146,7 +144,7 @@ export default function PitchingTrendChart({
             ))}
           </div>
 
-          <div className="mt-4 overflow-x-auto">
+          <div className="mt-4 rounded-xl bg-[#f7f8f3] p-4 overflow-x-auto">
             <svg
               className="h-60 min-w-105 w-full"
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}

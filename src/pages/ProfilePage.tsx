@@ -200,14 +200,14 @@ export default function ProfilePage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 text-gray-600">
+      <div className="min-h-screen bg-[#f7f8f3] p-6 text-gray-400">
         Loading profile...
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f8f3]">
       {/* HEADER */}
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex w-full items-center justify-between gap-4">
@@ -245,9 +245,10 @@ export default function ProfilePage() {
       {/* CONTENT */}
       <main className="mx-auto max-w-2xl p-6">
         <div className="rounded-2xl bg-white p-6 shadow-sm">
-          <h1 className="text-2xl font-bold text-green-900">My Profile</h1>
+          <p className="text-xs font-bold uppercase tracking-widest text-green-700">My Account</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">My Profile</h1>
 
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-400">
             Manage your JojiStats account and player profile.
           </p>
 
@@ -309,7 +310,7 @@ export default function ProfilePage() {
           {/* PROFILE DETAILS */}
           <div className="mt-8 grid gap-4">
             <div>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                 Team
               </p>
 
@@ -318,18 +319,18 @@ export default function ProfilePage() {
                   type="text"
                   value={teamName}
                   onChange={(event) => setTeamName(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+                  className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700 focus:bg-white"
                   placeholder="Team name"
                 />
               ) : (
-                <p className="mt-1 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                <p className="mt-1 rounded-xl bg-[#f7f8f3] px-3 py-2.5 text-sm text-gray-700">
                   {teamName || "Not set"}
                 </p>
               )}
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                 Primary Position
               </p>
 
@@ -337,7 +338,7 @@ export default function ProfilePage() {
                 <select
                   value={primaryPosition}
                   onChange={(event) => setPrimaryPosition(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+                  className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700 focus:bg-white"
                 >
                   <option value="">Select position</option>
                   {positionOptions.map((position) => (
@@ -347,14 +348,14 @@ export default function ProfilePage() {
                   ))}
                 </select>
               ) : (
-                <p className="mt-1 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                <p className="mt-1 rounded-xl bg-[#f7f8f3] px-3 py-2.5 text-sm text-gray-700">
                   {primaryPosition || "Not set"}
                 </p>
               )}
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                 Jersey Number
               </p>
 
@@ -363,11 +364,11 @@ export default function ProfilePage() {
                   type="number"
                   value={jerseyNumber}
                   onChange={(event) => setJerseyNumber(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+                  className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700 focus:bg-white"
                   placeholder="Example: 27"
                 />
               ) : (
-                <p className="mt-1 rounded-lg bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                <p className="mt-1 rounded-xl bg-[#f7f8f3] px-3 py-2.5 text-sm text-gray-700">
                   {jerseyNumber || "Not set"}
                 </p>
               )}
@@ -382,7 +383,7 @@ export default function ProfilePage() {
                   type="button"
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="flex-1 rounded-lg bg-green-900 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="flex-1 rounded-xl bg-green-900 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isSaving ? "Saving..." : "Save"}
                 </button>
@@ -390,7 +391,7 @@ export default function ProfilePage() {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="flex-1 rounded-lg border border-gray-300 py-3 sm:py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                  className="flex-1 rounded-xl border border-gray-200 py-3 sm:py-2 text-sm font-semibold text-gray-600 hover:bg-[#f7f8f3]"
                 >
                   Cancel
                 </button>
@@ -399,7 +400,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="w-full rounded-lg bg-green-900 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800"
+                className="w-full rounded-xl bg-green-900 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800"
               >
                 Edit Profile
               </button>

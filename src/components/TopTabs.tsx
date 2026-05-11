@@ -11,13 +11,13 @@ type TopTabsProps = {
 }
 
 export default function TopTabs({ activeView, onChangeView, tabs }: TopTabsProps) {
-  const baseClass = "shrink-0 rounded-md px-3 py-3 sm:py-2 text-sm font-semibold transition"
-  const inactiveClass = "text-gray-600 hover:bg-white/70 hover:text-green-900"
+  const baseClass = "shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition"
+  const inactiveClass = "text-gray-500 hover:bg-white hover:text-green-900"
   const activeClass = "bg-white text-green-900 shadow-sm"
 
   return (
     <nav className="shrink-0 border-b border-gray-200 bg-white px-3 py-2">
-      <div className="flex gap-1 overflow-x-auto rounded-lg bg-gray-100 p-1">
+      <div className="flex gap-1 overflow-x-auto rounded-xl bg-[#f7f8f3] p-1">
         {tabs.map((tab) => {
           if ("href" in tab) {
             return (

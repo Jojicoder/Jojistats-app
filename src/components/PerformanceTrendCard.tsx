@@ -238,34 +238,37 @@ function buildChartData(
   })
 }
 
-function getStatCardClass(
+type StatCardStyle = { bg: string; label: string; value: string }
+
+function getStatCardStyle(
   playerValue: number,
-  _teamValue: number,
   type: "avg" | "obp" | "neutral"
-) {
-  const strongGood = "rounded-xl border border-emerald-300 bg-emerald-100 p-3 sm:p-4"
-  const good = "rounded-xl border border-green-200 bg-green-50 p-3 sm:p-4"
-  const neutral = "rounded-xl border border-gray-200 bg-white p-3 sm:p-4"
-  const weak = "rounded-xl border border-rose-200 bg-rose-50 p-3 sm:p-4"
-  const bad = "rounded-xl border border-red-200 bg-red-50 p-3 sm:p-4"
+): StatCardStyle {
+  const map: Record<string, StatCardStyle> = {
+    emerald: { bg: "bg-emerald-50",  label: "text-emerald-700", value: "text-emerald-900" },
+    green:   { bg: "bg-green-50",    label: "text-green-700",   value: "text-green-900"   },
+    neutral: { bg: "bg-[#f7f8f3]",   label: "text-gray-400",    value: "text-green-950"   },
+    rose:    { bg: "bg-rose-50",      label: "text-rose-600",    value: "text-rose-900"    },
+    red:     { bg: "bg-red-50",       label: "text-red-600",     value: "text-red-900"     },
+  }
 
   if (type === "avg") {
-    if (playerValue >= 0.33) return strongGood
-    if (playerValue >= 0.3) return good
-    if (playerValue >= 0.25) return neutral
-    if (playerValue >= 0.22) return weak
-    return bad
+    if (playerValue >= 0.33) return map.emerald
+    if (playerValue >= 0.3)  return map.green
+    if (playerValue >= 0.25) return map.neutral
+    if (playerValue >= 0.22) return map.rose
+    return map.red
   }
 
   if (type === "obp") {
-    if (playerValue >= 0.4) return strongGood
-    if (playerValue >= 0.37) return good
-    if (playerValue >= 0.31) return neutral
-    if (playerValue >= 0.28) return weak
-    return bad
+    if (playerValue >= 0.4)  return map.emerald
+    if (playerValue >= 0.37) return map.green
+    if (playerValue >= 0.31) return map.neutral
+    if (playerValue >= 0.28) return map.rose
+    return map.red
   }
 
-  return neutral
+  return map.neutral
 }
 
 function getChartValues(point: ChartPoint, metric: ChartMetric) {
@@ -431,13 +434,11 @@ export default function PerformanceTrendCard({
   )
 
   return (
-    <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
+    <section className="rounded-2xl bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">
-            Recent performance
-          </h2>
-          <p className="mt-2 text-sm font-medium text-green-900">
+          <h2 className="text-base font-bold text-gray-900">Recent Performance</h2>
+          <p className="mt-0.5 text-xs font-bold uppercase tracking-widest text-green-700">
             Player vs Team Average
           </p>
         </div>
@@ -476,85 +477,28 @@ export default function PerformanceTrendCard({
         </div>
       ) : (
         <>
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-6 sm:grid-cols-4">
-  <div
-    className={getStatCardClass(
-      playerSummary.numericAvg,
-      teamSummary.numericAvg,
-      "avg"
-    )}
-  >
-    <div>
-      <p className="text-xs font-semibold text-gray-700">AVG</p>
-      <p className="text-[11px] text-gray-400">{statDescriptions.AVG}</p>
-    </div>
-    <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-      {playerSummary.avg}
-    </p>
-    <p className="mt-1 text-xs text-gray-500">
-      Team {teamSummary.avg}
-    </p>
-  </div>
-
-  <div
-    className={getStatCardClass(
-      playerSummary.numericObp,
-      teamSummary.numericObp,
-      "obp"
-    )}
-  >
-            <div>
-              <p className="text-xs font-semibold text-gray-700">OBP</p>
-              <p className="text-[11px] text-gray-400">{statDescriptions.OBP}</p>
-            </div>
-            <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-              {playerSummary.obp}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Team {teamSummary.obp}
-            </p>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(
+              [
+                { key: "AVG", type: "avg",     val: playerSummary.avg, teamVal: teamSummary.avg, num: playerSummary.numericAvg },
+                { key: "OBP", type: "obp",     val: playerSummary.obp, teamVal: teamSummary.obp, num: playerSummary.numericObp },
+                { key: "SLG", type: "neutral", val: playerSummary.slg, teamVal: teamSummary.slg, num: playerSummary.numericSlg },
+                { key: "OPS", type: "neutral", val: playerSummary.ops, teamVal: teamSummary.ops, num: playerSummary.numericOps },
+              ] as const
+            ).map(({ key, type, val, teamVal, num }) => {
+              const s = getStatCardStyle(num, type)
+              return (
+                <div key={key} className={`rounded-xl p-3 sm:p-4 ${s.bg}`}>
+                  <p className={`text-xs font-bold uppercase tracking-widest ${s.label}`}>{key}</p>
+                  <p className="text-[11px] text-gray-400">{statDescriptions[key]}</p>
+                  <p className={`mt-2 text-2xl font-extrabold ${s.value}`}>{val}</p>
+                  <p className="mt-0.5 text-xs text-gray-400">Team {teamVal}</p>
+                </div>
+              )
+            })}
           </div>
 
-          <div
-            className={getStatCardClass(
-              playerSummary.numericSlg,
-              teamSummary.numericSlg,
-              "neutral"
-            )}
-          >
-            <div>
-              <p className="text-xs font-semibold text-gray-700">SLG</p>
-              <p className="text-[11px] text-gray-400">{statDescriptions.SLG}</p>
-            </div>
-            <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-              {playerSummary.slg}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Team {teamSummary.slg}
-            </p>
-          </div>
-
-          <div
-            className={getStatCardClass(
-              playerSummary.numericOps,
-              teamSummary.numericOps,
-              "neutral"
-            )}
-          >
-            <div>
-              <p className="text-xs font-semibold text-gray-700">OPS</p>
-              <p className="text-[11px] text-gray-400">{statDescriptions.OPS}</p>
-            </div>
-            <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-              {playerSummary.ops}
-            </p>
-            <p className="mt-1 text-xs text-gray-500">
-              Team {teamSummary.ops}
-            </p>
-          </div>
-        </div>
-
-          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:mt-6 sm:rounded-2xl sm:p-4">
+          <div className="mt-4 rounded-xl bg-[#f7f8f3] p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700">

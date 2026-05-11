@@ -15,14 +15,14 @@ type SavedEntriesListProps = {
 }
 
 function formatGamePositions(gamePositions: string[]) {
-  if (gamePositions.length === 0) return "-"
+  if (gamePositions.length === 0) return "—"
   return gamePositions.join(" / ")
 }
 
 function formatScore(entry: SavedBattingGameEntry) {
   const { teamScore, opponentScore } = entry.gameMeta
   if (teamScore == null || opponentScore == null) return null
-  return `${teamScore}-${opponentScore}`
+  return `${teamScore}–${opponentScore}`
 }
 
 function formatResult(entry: SavedBattingGameEntry) {
@@ -59,42 +59,39 @@ export default function SavedEntriesList({
     [savedEntries]
   )
 
-  const visibleEntries = useMemo(() => {
-    if (isExpanded) return sortedEntries
-    return sortedEntries.slice(0, 3)
-  }, [sortedEntries, isExpanded])
+  const visibleEntries = useMemo(
+    () => (isExpanded ? sortedEntries : sortedEntries.slice(0, 3)),
+    [sortedEntries, isExpanded]
+  )
 
   return (
-    <section className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
+    <section className="rounded-2xl bg-white p-5 shadow-sm">
       {showHeader && (
-        <div className="flex items-start justify-between gap-3 sm:gap-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+            <h2 className="text-base font-bold text-gray-900">{title}</h2>
             {showDescription && (
-              <p className="mt-1 text-sm text-gray-500">
-                Saved batting results for this player
-              </p>
+              <p className="mt-0.5 text-xs text-gray-400">Saved batting results for this player</p>
             )}
           </div>
-
           {hasMoreThanPreview && (
             <button
               type="button"
               onClick={() => setIsExpanded((prev) => !prev)}
-              className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 sm:py-2"
+              className="whitespace-nowrap rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-gray-500 hover:bg-gray-50"
             >
-              {isExpanded ? "Show Less" : "Expand"}
+              {isExpanded ? "Show Less" : "Show All"}
             </button>
           )}
         </div>
       )}
 
       {savedEntries.length === 0 ? (
-        <div className={`${showHeader ? "mt-4 sm:mt-6" : ""} rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500`}>
+        <div className={`${showHeader ? "mt-4" : ""} rounded-xl border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-400`}>
           {emptyMessage}
         </div>
       ) : (
-        <div className={`${showHeader ? "mt-4 sm:mt-6" : ""} space-y-3`}>
+        <div className={`${showHeader ? "mt-4" : ""} space-y-2`}>
           {visibleEntries.map((entry) => {
             const isEditing = editingSavedEntryId === entry.id
             const score = formatScore(entry)
@@ -106,83 +103,74 @@ export default function SavedEntriesList({
                 role={onSelect ? "button" : undefined}
                 tabIndex={onSelect ? 0 : undefined}
                 onClick={() => onSelect?.(entry)}
-                onKeyDown={(event) => {
+                onKeyDown={(e) => {
                   if (!onSelect) return
-                  if (event.key === "Enter" || event.key === " ") {
-                    event.preventDefault()
-                    onSelect(entry)
-                  }
+                  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(entry) }
                 }}
-                className={`rounded-xl border px-3 py-3 transition sm:px-4 sm:py-4 ${
+                className={`rounded-xl px-4 py-3 transition ${
                   isEditing
-                    ? "border-green-900 bg-green-50"
-                    : `border-gray-200 bg-white ${onSelect ? "cursor-pointer hover:border-green-200 hover:bg-green-50/40" : ""}`
+                    ? "border border-green-200 bg-green-50"
+                    : `bg-[#f7f8f3] ${onSelect ? "cursor-pointer hover:bg-[#eef0e9]" : ""}`
                 }`}
               >
-                <div className="flex flex-col gap-3 sm:gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-gray-900">
-                      {entry.gameMeta.date} vs {entry.gameMeta.opponent}
+                    {/* Date + opponent */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-semibold text-gray-900">
+                        vs {entry.gameMeta.opponent}
+                      </p>
+                      {result && (
+                        <span className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-extrabold ${
+                          result === "W" ? "bg-green-100 text-green-800" :
+                          result === "L" ? "bg-red-50 text-red-600" :
+                          "bg-gray-100 text-gray-500"
+                        }`}>
+                          {result}
+                        </span>
+                      )}
+                      {score && (
+                        <span className="font-mono text-xs font-semibold text-gray-500">{score}</span>
+                      )}
+                    </div>
+
+                    <p className="mt-0.5 text-xs text-gray-400">
+                      {entry.gameMeta.date} · #{entry.gameMeta.matchNumber}
+                      {entry.gameMeta.location?.trim() ? ` · ${entry.gameMeta.location}` : ""}
                     </p>
 
-                    <p className="mt-1 text-xs text-gray-500">
-                      Match #{entry.gameMeta.matchNumber} · Season{" "}
-                      {entry.gameMeta.seasonYear}
-                      {entry.gameMeta.location?.trim()
-                        ? ` · ${entry.gameMeta.location}`
-                        : ""}
-                    </p>
-
-                    {(score || result) && (
-                      <div className="mt-2 flex flex-wrap gap-1.5 text-xs font-semibold">
-                        {score && (
-                          <span className="rounded-full bg-gray-100 px-2 py-0.5 text-gray-700">
-                            Score {score}
-                          </span>
-                        )}
-                        {result && (
-                          <span
-                            className={`rounded-full px-2 py-0.5 ${
-                              result === "W"
-                                ? "bg-green-100 text-green-800"
-                                : result === "L"
-                                  ? "bg-red-100 text-red-800"
-                                  : "bg-amber-100 text-amber-800"
-                            }`}
-                          >
-                            {result}
-                          </span>
-                        )}
-                      </div>
-                    )}
-
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-1.5 text-xs text-gray-500">
                       Position: {formatGamePositions(entry.gamePositions)}
                     </p>
 
                     {showStats && (
-                    <div className="mt-3 flex flex-wrap gap-1.5 text-xs text-gray-600 sm:text-sm">
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">AB {entry.statLine.AB}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">H {entry.statLine.H}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">2B {entry.statLine.doubles}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">3B {entry.statLine.triples}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">HR {entry.statLine.HR}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">RBI {entry.statLine.RBI}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">BB {entry.statLine.BB}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">HBP {entry.statLine.HBP ?? 0}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">SF {entry.statLine.SF ?? 0}</span>
-                      <span className="rounded-full bg-gray-100 px-2 py-0.5">SO {entry.statLine.SO}</span>
-                      {entry.statLine.note?.trim() && (
-                        <p className="basis-full text-sm text-gray-500">
-                          Note: {entry.statLine.note}
-                        </p>
-                      )}
-                      {entry.gameMeta.memo?.trim() && (
-                        <p className="basis-full text-sm text-gray-500">
-                          Memo: {entry.gameMeta.memo}
-                        </p>
-                      )}
-                    </div>
+                      <div className="mt-2 flex flex-wrap gap-1.5">
+                        {[
+                          ["AB", entry.statLine.AB],
+                          ["H",  entry.statLine.H],
+                          ["2B", entry.statLine.doubles],
+                          ["3B", entry.statLine.triples],
+                          ["HR", entry.statLine.HR],
+                          ["RBI",entry.statLine.RBI],
+                          ["BB", entry.statLine.BB],
+                          ["SO", entry.statLine.SO],
+                        ].map(([label, val]) => (
+                          <span key={String(label)} className="rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-600">
+                            <span className="font-bold text-gray-400">{label}</span> {val}
+                          </span>
+                        ))}
+                        {(entry.statLine.HBP ?? 0) > 0 && (
+                          <span className="rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-600">
+                            <span className="font-bold text-gray-400">HBP</span> {entry.statLine.HBP}
+                          </span>
+                        )}
+                        {entry.statLine.note?.trim() && (
+                          <p className="basis-full text-xs text-gray-400">Note: {entry.statLine.note}</p>
+                        )}
+                        {entry.gameMeta.memo?.trim() && (
+                          <p className="basis-full text-xs text-gray-400">Memo: {entry.gameMeta.memo}</p>
+                        )}
+                      </div>
                     )}
                   </div>
 
@@ -191,28 +179,21 @@ export default function SavedEntriesList({
                       {onEdit && (
                         <button
                           type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            onEdit(entry)
-                          }}
-                          className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                          onClick={(e) => { e.stopPropagation(); onEdit(entry) }}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
                             isEditing
                               ? "bg-green-900 text-white"
-                              : "border border-gray-200 text-gray-700 hover:bg-gray-50"
+                              : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                           }`}
                         >
                           {isEditing ? "Editing" : "Edit"}
                         </button>
                       )}
-
                       {onDelete && (
                         <button
                           type="button"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            onDelete(entry)
-                          }}
-                          className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                          onClick={(e) => { e.stopPropagation(); onDelete(entry) }}
+                          className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600"
                         >
                           Delete
                         </button>

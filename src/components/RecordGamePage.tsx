@@ -68,6 +68,7 @@ type RecordGamePageProps = {
   isPitchingSaveDisabled: boolean
   saveError?: string
   onClearSaveError?: () => void
+  onGameModeChange?: (isGameMode: boolean) => void
 }
 
 type GameHalf = "Top" | "Bottom"
@@ -765,7 +766,7 @@ function BaseDiamond({
       onPointerCancel={() => setDraggingBase(null)}
       onPointerLeave={() => setDraggingBase(null)}
     >
-      <div className="absolute left-1/2 top-8 h-12 w-12 -translate-x-1/2 rotate-45 rounded-sm border border-gray-200 bg-gray-50" />
+      <div className="absolute left-1/2 top-8 h-12 w-12 -translate-x-1/2 rotate-45 rounded-sm border border-gray-200 bg-gray-100" />
       {renderBase("first", bases.first, { right: 14, top: 34 })}
       {renderBase("second", bases.second, { left: 38, top: 8 })}
       {renderBase("third", bases.third, { left: 14, top: 34 })}
@@ -817,9 +818,15 @@ export default function RecordGamePage({
   isPitchingSaveDisabled,
   saveError = "",
   onClearSaveError,
+  onGameModeChange,
 }: RecordGamePageProps) {
 
   const [inputStyle, setInputStyle] = useState<InputStyle>("standard")
+
+  const handleInputStyleChange = (next: InputStyle) => {
+    setInputStyle(next)
+    onGameModeChange?.(next === "game")
+  }
   const [hoveredEditPlayerId, setHoveredEditPlayerId] = useState<string | null>(null)
   const [liveGameTab, setLiveGameTab] = useState<LiveGameTab>("batting")
   const [pendingEntries, setPendingEntries] = useState<PendingBattingEntry[]>([])
@@ -1326,6 +1333,20 @@ export default function RecordGamePage({
     setEditAddPlayerId("")
   }
 
+  const validateScore = (entries: { RBI: number }[]): boolean => {
+    if (gameMeta.teamScore == null) return true
+    const totalRbi = entries.reduce((sum, e) => sum + e.RBI, 0)
+    const errorRuns = gameMeta.errorRuns ?? 0
+    const expected = totalRbi + errorRuns
+    if (gameMeta.teamScore !== expected) {
+      window.alert(
+        `Score mismatch!\n\nTeam Score entered: ${gameMeta.teamScore}\nTotal RBI: ${totalRbi}${errorRuns > 0 ? ` + Error Runs: ${errorRuns}` : ""} = ${expected}\n\nPlease fix the score, RBI totals, or Error Runs before saving.`
+      )
+      return false
+    }
+    return true
+  }
+
   const handleSaveEditedGame = async () => {
     if (
       !onUpdateSavedGame ||
@@ -1335,6 +1356,8 @@ export default function RecordGamePage({
     ) {
       return
     }
+
+    if (!validateScore(editGameEntries)) return
 
     try {
       setIsSaving(true)
@@ -1346,6 +1369,8 @@ export default function RecordGamePage({
 
   const handleSave = async () => {
     if (!isMetaComplete || pendingEntries.length === 0) return
+
+    if (!validateScore(pendingEntries)) return
 
     try {
       setIsSaving(true)
@@ -2025,7 +2050,7 @@ export default function RecordGamePage({
     <main className="w-full">
       <div className="mb-4 flex flex-col gap-3 rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-medium text-green-900">Record Game</p>
+          <p className="text-xs font-bold uppercase tracking-widest text-green-700">Record Game</p>
           <p className="text-xs text-gray-500">
             {inputStyle === "game"
               ? `Game Mode · Local saved ${lastLocalSaveAt || "now"}`
@@ -2034,10 +2059,10 @@ export default function RecordGamePage({
                 : "Standard entry"}
           </p>
         </div>
-        <div className="inline-flex w-full rounded-xl border border-gray-200 bg-gray-50 p-1 sm:w-auto">
+        <div className="inline-flex w-full rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:w-auto">
           <button
             type="button"
-            onClick={() => setInputStyle("standard")}
+            onClick={() => handleInputStyleChange("standard")}
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold sm:flex-none ${
               inputStyle === "standard"
                 ? "bg-green-900 text-white shadow-sm"
@@ -2048,7 +2073,7 @@ export default function RecordGamePage({
           </button>
           <button
             type="button"
-            onClick={() => setInputStyle("game")}
+            onClick={() => handleInputStyleChange("game")}
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold sm:flex-none ${
               inputStyle === "game"
                 ? "bg-green-900 text-white shadow-sm"
@@ -2059,7 +2084,7 @@ export default function RecordGamePage({
           </button>
           <button
             type="button"
-            onClick={() => setInputStyle("edit")}
+            onClick={() => handleInputStyleChange("edit")}
             className={`flex-1 rounded-lg px-4 py-2 text-sm font-semibold sm:flex-none ${
               inputStyle === "edit"
                 ? "bg-green-900 text-white shadow-sm"
@@ -2075,7 +2100,7 @@ export default function RecordGamePage({
         <div className="grid grid-cols-1 gap-4 sm:gap-6 xl:grid-cols-[280px_1fr_360px]">
           <section className="order-3 rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 xl:sticky xl:top-6 xl:order-none xl:self-start">
             <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">Lineup</h2>
+              <h2 className="text-base font-bold text-gray-900">Lineup</h2>
               <button
                 type="button"
                 onClick={handleAddLineupSpot}
@@ -2202,7 +2227,7 @@ export default function RecordGamePage({
             </div>
 
             <div className="mt-6 border-t border-gray-100 pt-4">
-              <h2 className="text-lg font-semibold">Pitcher</h2>
+              <h2 className="text-base font-bold text-gray-900">Pitcher</h2>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {allPlayers
                   .slice()
@@ -2226,7 +2251,7 @@ export default function RecordGamePage({
                     </button>
                   ))}
               </div>
-              <div className="mt-3 rounded-xl bg-gray-50 p-3 text-sm text-gray-600">
+              <div className="mt-3 rounded-xl bg-[#f7f8f3] p-3 text-sm text-gray-600">
                 IP {formatLiveInnings(currentLivePitchingEntry.inningsPitchedOuts)} · SO{" "}
                 {currentLivePitchingEntry.strikeouts} · BB {currentLivePitchingEntry.walks} · HBP{" "}
                 {currentLivePitchingEntry.hitBatters}
@@ -2240,7 +2265,7 @@ export default function RecordGamePage({
                 gameMeta={gameMeta}
                 onGameMetaChange={onGameMetaChange}
               />
-              <div className="mt-4 inline-flex w-full rounded-xl border border-gray-200 bg-gray-50 p-1 sm:w-auto">
+              <div className="mt-4 inline-flex w-full rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:w-auto">
                 <button
                   type="button"
                   onClick={() => handleSetLiveGameTab("batting")}
@@ -2277,8 +2302,8 @@ export default function RecordGamePage({
                 </p>
               )}
               <div className="mt-4 grid grid-cols-2 gap-2 sm:gap-3 md:grid-cols-4">
-                <div className="rounded-xl bg-gray-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-gray-500">Inning</p>
+                <div className="rounded-xl bg-[#f7f8f3] p-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Inning</p>
                   <div className="mt-2 flex items-center justify-between">
                     <button
                       type="button"
@@ -2298,8 +2323,8 @@ export default function RecordGamePage({
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-gray-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-gray-500">Half</p>
+                <div className="rounded-xl bg-[#f7f8f3] p-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Half</p>
                   <button
                     type="button"
                     onClick={() => setLiveHalf((prev) => (prev === "Top" ? "Bottom" : "Top"))}
@@ -2310,8 +2335,8 @@ export default function RecordGamePage({
                   </button>
                 </div>
 
-                <div className="rounded-xl bg-gray-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-gray-500">Outs</p>
+                <div className="rounded-xl bg-[#f7f8f3] p-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Outs</p>
                   <div className="mt-3 flex items-center justify-around">
                     {[1, 2, 3].map((out) => (
                       <button
@@ -2329,8 +2354,8 @@ export default function RecordGamePage({
                   </div>
                 </div>
 
-                <div className="rounded-xl bg-gray-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-gray-500">Score</p>
+                <div className="rounded-xl bg-[#f7f8f3] p-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Score</p>
                   <div className="mt-1 flex items-center justify-around">
                     <div className="text-center">
                       <p className="text-[10px] font-medium text-gray-400">Away</p>
@@ -2382,7 +2407,7 @@ export default function RecordGamePage({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2 md:min-w-[230px]">
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[230px]">
                     <div className="grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
@@ -2419,15 +2444,15 @@ export default function RecordGamePage({
                 </div>
 
                 <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs">
-                  <div className="rounded-xl bg-gray-50 px-2 py-3 sm:px-4">
+                  <div className="rounded-xl bg-[#f7f8f3] px-2 py-3 sm:px-4">
                     <p className="font-semibold uppercase text-gray-500">This Inning</p>
                     <p className="mt-1 text-lg font-bold">{currentInningPlays.length}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 px-2 py-3 sm:px-4">
+                  <div className="rounded-xl bg-[#f7f8f3] px-2 py-3 sm:px-4">
                     <p className="font-semibold uppercase text-gray-500">Runs</p>
                     <p className="mt-1 text-lg font-bold">{currentInningRuns}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 px-2 py-3 sm:px-4">
+                  <div className="rounded-xl bg-[#f7f8f3] px-2 py-3 sm:px-4">
                     <p className="font-semibold uppercase text-gray-500">Hits</p>
                     <p className="mt-1 text-lg font-bold">{currentInningHits}</p>
                   </div>
@@ -2479,8 +2504,8 @@ export default function RecordGamePage({
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-3">
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-gray-500">Note</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Note</p>
                     <input
                       type="text"
                       value={quickNote}
@@ -2495,7 +2520,7 @@ export default function RecordGamePage({
               <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-5">
                 <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-green-900">Current Pitcher</p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-green-700">Current Pitcher</p>
                     <h2 className="mt-2 text-2xl font-bold sm:text-3xl">
                       {getPlayerLabel(livePitcher)}
                     </h2>
@@ -2504,7 +2529,7 @@ export default function RecordGamePage({
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2 md:min-w-[230px]">
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[230px]">
                     <div className="grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
@@ -2580,26 +2605,26 @@ export default function RecordGamePage({
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-gray-500">IP</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">IP</p>
                     <p className="mt-1 text-2xl font-bold">
                       {formatLiveInnings(currentLivePitchingEntry.inningsPitchedOuts)}
                     </p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-gray-500">SO</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">SO</p>
                     <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.strikeouts}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-gray-500">BB</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">BB</p>
                     <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.walks}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-gray-500">HBP</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">HBP</p>
                     <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.hitBatters}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3">
-                    <p className="text-xs font-semibold uppercase text-gray-500">ER</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">ER</p>
                     <p className="mt-1 text-2xl font-bold">{currentLivePitchingEntry.earnedRuns}</p>
                   </div>
                 </div>
@@ -2645,8 +2670,8 @@ export default function RecordGamePage({
                   </button>
                 </div>
 
-                <div className="mt-5 rounded-xl bg-gray-50 p-3">
-                  <p className="text-xs font-semibold uppercase text-gray-500">Note</p>
+                <div className="mt-5 rounded-xl bg-[#f7f8f3] p-3">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Note</p>
                   <input
                     type="text"
                     value={quickPitchNote}
@@ -2657,20 +2682,20 @@ export default function RecordGamePage({
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
-                  <div className="rounded-xl bg-gray-50 p-3 text-sm">
-                    <p className="text-xs font-semibold uppercase text-gray-500">H</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3 text-sm">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">H</p>
                     <p className="mt-1 text-xl font-bold">{currentLivePitchingEntry.hitsAllowed}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3 text-sm">
-                    <p className="text-xs font-semibold uppercase text-gray-500">R</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3 text-sm">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">R</p>
                     <p className="mt-1 text-xl font-bold">{currentLivePitchingEntry.runsAllowed}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3 text-sm">
-                    <p className="text-xs font-semibold uppercase text-gray-500">HR</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3 text-sm">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">HR</p>
                     <p className="mt-1 text-xl font-bold">{currentLivePitchingEntry.homeRunsAllowed}</p>
                   </div>
-                  <div className="rounded-xl bg-gray-50 p-3 text-sm">
-                    <p className="text-xs font-semibold uppercase text-gray-500">Events</p>
+                  <div className="rounded-xl bg-[#f7f8f3] p-3 text-sm">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Events</p>
                     <p className="mt-1 text-xl font-bold">{currentLivePitchPlays.length}</p>
                   </div>
                 </div>
@@ -2680,7 +2705,7 @@ export default function RecordGamePage({
 
           <aside className="order-2 space-y-4 sm:space-y-6 xl:order-none">
             <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
-              <p className="text-sm font-medium text-green-900">Game Actions</p>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">Game Actions</p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 <button
                   type="button"
@@ -2759,7 +2784,7 @@ export default function RecordGamePage({
             </div>
 
             <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
-              <h2 className="text-lg font-semibold">All Innings</h2>
+              <h2 className="text-base font-bold text-gray-900">All Innings</h2>
               <p className="mt-1 text-sm text-gray-500">
                 {awayScore}-{homeScore} · {liveHalf} {liveInning} · {liveOuts} outs
               </p>
@@ -2785,7 +2810,7 @@ export default function RecordGamePage({
                   return (
                     <div
                       key={summaryKey}
-                      className={`rounded-xl border bg-gray-50 transition ${
+                      className={`rounded-xl border bg-[#f7f8f3] transition ${
                         isExpanded ? "border-green-900" : "border-gray-100"
                       }`}
                     >
@@ -2819,7 +2844,7 @@ export default function RecordGamePage({
 
                       {isExpanded && summary.batting.length > 0 && (
                         <div className="mt-3 space-y-2">
-                          <p className="text-xs font-semibold uppercase text-gray-500">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                             Batting
                           </p>
                           {summary.batting.map((play) => {
@@ -2923,7 +2948,7 @@ export default function RecordGamePage({
 
                       {isExpanded && summary.pitching.length > 0 && (
                         <div className="mt-3 space-y-2">
-                          <p className="text-xs font-semibold uppercase text-gray-500">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                             Pitching
                           </p>
                           {summary.pitching.map((play) => {
@@ -3032,25 +3057,25 @@ export default function RecordGamePage({
             <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-900">{teamName}</p>
-                  <h2 className="mt-1 text-2xl font-bold text-gray-900">
+                  <p className="text-xs font-bold uppercase tracking-widest text-green-700">{teamName}</p>
+                  <h2 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950">
                     {teamRecord.wins}-{teamRecord.losses}
                     {teamRecord.ties > 0 ? `-${teamRecord.ties}` : ""}
                   </h2>
                 </div>
                 <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                  <div className="rounded-lg bg-gray-50 px-3 py-2">
-                    <p className="text-xs font-semibold uppercase text-gray-500">Games</p>
+                  <div className="rounded-lg bg-[#f7f8f3] px-3 py-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Games</p>
                     <p className="mt-1 font-bold text-gray-900">{teamGameEntries.length}</p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 px-3 py-2">
-                    <p className="text-xs font-semibold uppercase text-gray-500">Last</p>
+                  <div className="rounded-lg bg-[#f7f8f3] px-3 py-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Last</p>
                     <p className="mt-1 font-bold text-gray-900">
                       {teamGameEntries[0] ? getGameScore(teamGameEntries[0].gameMeta) : "-"}
                     </p>
                   </div>
-                  <div className="rounded-lg bg-gray-50 px-3 py-2">
-                    <p className="text-xs font-semibold uppercase text-gray-500">Result</p>
+                  <div className="rounded-lg bg-[#f7f8f3] px-3 py-2">
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Result</p>
                     <p className="mt-1 font-bold text-gray-900">
                       {teamGameEntries[0]
                         ? getGameResult(teamGameEntries[0].gameMeta) || "-"
@@ -3085,7 +3110,7 @@ export default function RecordGamePage({
                     <button
                       type="button"
                       onClick={onCancelEditSavedEntry}
-                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-[#f7f8f3]"
                     >
                       Cancel
                     </button>
@@ -3102,13 +3127,13 @@ export default function RecordGamePage({
 
                 <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-lg font-semibold text-gray-900">Players</h2>
-                    <span className="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-semibold text-gray-500">
+                    <h2 className="text-base font-bold text-gray-900">Players</h2>
+                    <span className="rounded-full bg-[#f7f8f3] px-2.5 py-1 text-xs font-bold text-gray-500">
                       {editGameEntries.length}
                     </span>
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3 sm:flex-row">
+                  <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-3 sm:flex-row">
                     <select
                       value={selectedEditAddPlayerId}
                       onChange={(event) => setEditAddPlayerId(event.target.value)}
@@ -3172,7 +3197,7 @@ export default function RecordGamePage({
                                 className={`rounded-lg px-3 py-2 text-sm font-semibold ${
                                   isEditingPlayer
                                     ? "bg-green-900 text-white"
-                                    : "border border-gray-200 text-gray-700 hover:bg-gray-50"
+                                    : "border border-gray-200 text-gray-700 hover:bg-[#f7f8f3]"
                                 }`}
                               >
                                 {isEditingPlayer ? "Close" : "Edit"}
@@ -3222,8 +3247,8 @@ export default function RecordGamePage({
                   )}
 
                   {hoveredEditPlayerEvents.length > 0 && (
-                    <div className="mt-4 rounded-xl bg-gray-50 p-3">
-                      <p className="text-xs font-semibold uppercase text-gray-500">Game Mode Hits</p>
+                    <div className="mt-4 rounded-xl bg-[#f7f8f3] p-3">
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Game Mode Hits</p>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {hoveredEditPlayerEvents.map((play) => (
                           <span
@@ -3248,7 +3273,7 @@ export default function RecordGamePage({
                     <button
                       type="button"
                       onClick={onCancelEditSavedEntry}
-                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                      className="rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-[#f7f8f3]"
                     >
                       Cancel
                     </button>
@@ -3358,7 +3383,7 @@ export default function RecordGamePage({
 
             <div className="mt-4">
               <div className="flex items-center justify-between">
-                <p className="text-xs font-semibold uppercase text-gray-400">Positions</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Positions</p>
                 <button
                   type="button"
                   onClick={addGamePosition}
@@ -3369,7 +3394,7 @@ export default function RecordGamePage({
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 {gamePositions.map((position, index) => (
-                  <div key={`${position}-${index}`} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 pl-2 pr-1 py-1">
+                  <div key={`${position}-${index}`} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-[#f7f8f3] pl-2 pr-1 py-1">
                     <select
                       value={position}
                       onChange={(event) => updateGamePosition(index, event.target.value as Position)}
@@ -3473,7 +3498,7 @@ export default function RecordGamePage({
             <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
               {pendingEntries.length > 0 && (
                 <div className="mb-3 space-y-2">
-                  <p className="text-xs font-semibold uppercase text-gray-400">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                     Queued — {pendingEntries.length} {pendingEntries.length === 1 ? "player" : "players"}
                   </p>
                   {pendingEntries.map((entry) => (
@@ -3493,6 +3518,20 @@ export default function RecordGamePage({
                   ))}
                 </div>
               )}
+              {pendingEntries.length > 0 && gameMeta.teamScore != null && (() => {
+                const totalRbi = pendingEntries.reduce((sum, e) => sum + e.RBI, 0)
+                const errorRuns = gameMeta.errorRuns ?? 0
+                const expected = totalRbi + errorRuns
+                const ok = gameMeta.teamScore === expected
+                return (
+                  <div className={`mb-3 rounded-xl px-3 py-2.5 text-xs ${ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-700"}`}>
+                    <span className="font-bold">Score check: </span>
+                    RBI {totalRbi}{errorRuns > 0 ? ` + Error ${errorRuns}` : ""} = {expected}
+                    {" "}
+                    {ok ? "✓ matches team score" : `≠ team score (${gameMeta.teamScore})`}
+                  </div>
+                )
+              })()}
               <button
                 onClick={handleSave}
                 disabled={isSaving || pendingEntries.length === 0}

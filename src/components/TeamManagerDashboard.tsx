@@ -244,112 +244,136 @@ export default function TeamManagerDashboard({
 
   return (
     <main className="w-full space-y-6">
-      <section className="rounded-2xl bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <p className="text-sm font-medium text-green-900">Team Manager</p>
-            <h1 className="mt-2 text-2xl font-bold">{team?.name ?? "No Team"}</h1>
-            <p className="mt-2 text-sm text-gray-600">
-              Season {team?.currentSeasonYear ?? "-"} · {players.length} players
-            </p>
-          </div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest text-green-700">
+            {team?.name ?? "No Team"}
+          </p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
+            Team Manager
+          </h1>
+          <p className="mt-1 text-sm text-gray-400">
+            {team?.currentSeasonYear ?? "-"} Season · {players.length} players
+          </p>
+        </div>
 
-          <div className="inline-flex rounded-xl border border-gray-200 bg-gray-50 p-1">
+        <div className="flex flex-wrap gap-2">
             {(["batting", "pitching"] as const).map((view) => (
               <button
                 key={view}
                 type="button"
                 onClick={() => setManagerMode(view)}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
                   managerMode === view
                     ? "bg-green-900 text-white shadow-sm"
-                    : "text-gray-600 hover:text-green-900"
+                    : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
                 }`}
               >
                 {view === "batting" ? "Batting" : "Pitching"}
               </button>
             ))}
-          </div>
         </div>
+      </div>
 
-        <div className="mt-4 flex flex-wrap gap-2 text-sm text-gray-700">
-          {managerMode === "batting" ? (
-            <>
-              <span className="rounded-full bg-gray-100 px-3 py-1">G {teamBatting.games}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">AVG {formatRate(teamBatting.avg)}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">OBP {formatRate(teamBatting.obp)}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">OPS {formatRate(teamBatting.ops)}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">HR {teamBatting.hr}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">RBI {teamBatting.rbi}</span>
-            </>
-          ) : (
-            <>
-              <span className="rounded-full bg-gray-100 px-3 py-1">APP {teamPitching.games}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">ERA {formatDecimal(teamPitching.era)}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">WHIP {formatDecimal(teamPitching.whip)}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">IP {teamPitching.ip}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">SO {teamPitching.so}</span>
-              <span className="rounded-full bg-gray-100 px-3 py-1">BB {teamPitching.bb}</span>
-            </>
-          )}
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {managerMode === "batting" ? (
+          <>
+            {[
+              { label: "Games", value: String(teamBatting.games), sub: "played", accent: true },
+              { label: "AVG", value: formatRate(teamBatting.avg), sub: "team batting" },
+              { label: "OBP", value: formatRate(teamBatting.obp), sub: "on-base" },
+              { label: "OPS", value: formatRate(teamBatting.ops), sub: "production" },
+              { label: "HR", value: String(teamBatting.hr), sub: "home runs" },
+              { label: "RBI", value: String(teamBatting.rbi), sub: "runs batted in" },
+            ].map(({ label, value, sub, accent }) => (
+              <ManagerSummaryCard key={label} label={label} value={value} sub={sub} accent={accent} />
+            ))}
+          </>
+        ) : (
+          <>
+            {[
+              { label: "APP", value: String(teamPitching.games), sub: "appearances", accent: true },
+              { label: "ERA", value: formatDecimal(teamPitching.era), sub: "earned runs" },
+              { label: "WHIP", value: formatDecimal(teamPitching.whip), sub: "traffic" },
+              { label: "IP", value: teamPitching.ip, sub: "innings" },
+              { label: "SO", value: String(teamPitching.so), sub: "strikeouts" },
+              { label: "BB", value: String(teamPitching.bb), sub: "walks" },
+            ].map(({ label, value, sub, accent }) => (
+              <ManagerSummaryCard key={label} label={label} value={value} sub={sub} accent={accent} />
+            ))}
+          </>
+        )}
+      </section>
+
+      <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Current View</p>
+            <h2 className="mt-1 text-base font-bold text-gray-900">
+              {managerMode === "batting" ? "Batting Dashboard" : "Pitching Dashboard"}
+            </h2>
+          </div>
+          <p className="text-sm text-gray-400">
+            Review leaders, roster balance, and suggested decisions for the selected team.
+          </p>
         </div>
       </section>
 
       {managerMode === "batting" ? (
         <>
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
-              <h2 className="text-lg font-semibold">Team Leaders</h2>
+          <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-base font-bold text-gray-900">Team Leaders</h2>
               <div className="mt-4 space-y-3 text-sm">
-                <p className="flex justify-between gap-3"><span className="text-gray-500">AVG</span><span className="font-semibold">{renderLeaderValue(battingLeaders.avg, battingLeaders.avg ? formatRate(battingLeaders.avg.metrics.avg) : "")}</span></p>
-                <p className="flex justify-between gap-3"><span className="text-gray-500">HR</span><span className="font-semibold">{renderLeaderValue(battingLeaders.hr, battingLeaders.hr ? String(battingLeaders.hr.metrics.hr) : "")}</span></p>
-                <p className="flex justify-between gap-3"><span className="text-gray-500">RBI</span><span className="font-semibold">{renderLeaderValue(battingLeaders.rbi, battingLeaders.rbi ? String(battingLeaders.rbi.metrics.rbi) : "")}</span></p>
-                <p className="flex justify-between gap-3"><span className="text-gray-500">Hits</span><span className="font-semibold">{renderLeaderValue(battingLeaders.hits, battingLeaders.hits ? String(battingLeaders.hits.metrics.h) : "")}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">AVG</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.avg, battingLeaders.avg ? formatRate(battingLeaders.avg.metrics.avg) : "")}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">HR</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.hr, battingLeaders.hr ? String(battingLeaders.hr.metrics.hr) : "")}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">RBI</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.rbi, battingLeaders.rbi ? String(battingLeaders.rbi.metrics.rbi) : "")}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">Hits</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.hits, battingLeaders.hits ? String(battingLeaders.hits.metrics.h) : "")}</span></p>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
-              <h2 className="text-lg font-semibold">Hot Players</h2>
+            <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-base font-bold text-gray-900">Hot Players</h2>
               <div className="mt-4 space-y-3 text-sm">
                 {hotPlayers.length === 0 ? (
-                  <p className="text-gray-500">No batting data yet.</p>
+                  <p className="text-gray-400">No batting data yet.</p>
                 ) : (
                   hotPlayers.map((summary) => (
-                    <p key={summary.player.id} className="flex justify-between gap-3">
-                      <span className="font-medium">{summary.player.name}</span>
-                      <span className="text-gray-500">OPS {formatRate(summary.metrics.ops)}</span>
+                    <p key={summary.player.id} className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                      <span className="font-semibold text-gray-900">{summary.player.name}</span>
+                      <span className="text-xs font-bold text-green-900">OPS {formatRate(summary.metrics.ops)}</span>
                     </p>
                   ))
                 )}
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
-              <h2 className="text-lg font-semibold">Position Balance</h2>
+            <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-base font-bold text-gray-900">Position Balance</h2>
               <div className="mt-4 space-y-3 text-sm">
                 {Object.entries(positionBalance).map(([label, count]) => (
-                  <p key={label} className="flex justify-between gap-3">
-                    <span className="text-gray-500">{label}</span>
-                    <span className="font-semibold">{count}</span>
+                  <p key={label} className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                    <span className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</span>
+                    <span className="font-extrabold text-green-950">{count}</span>
                   </p>
                 ))}
               </div>
             </div>
           </section>
 
-          <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
+          <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold">Suggested Lineup</h2>
+              <h2 className="text-base font-bold text-gray-900">Suggested Lineup</h2>
               <div className="flex flex-wrap gap-2">
                 {(["balanced", "obp", "power", "contact"] as const).map((style) => (
                   <button
                     key={style}
                     type="button"
                     onClick={() => setLineupStyle(style)}
-                    className={`rounded-lg px-3 py-2 text-xs font-semibold uppercase ${
+                    className={`rounded-lg px-3 py-1.5 text-xs font-semibold uppercase transition-colors ${
                       lineupStyle === style
                         ? "bg-green-900 text-white"
-                        : "bg-gray-100 text-gray-600 hover:bg-green-50 hover:text-green-900"
+                        : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
                     }`}
                   >
                     {style}
@@ -373,33 +397,33 @@ export default function TeamManagerDashboard({
         </>
       ) : (
         <>
-          <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-            <div className="rounded-2xl bg-white p-4 shadow-sm">
-              <h2 className="text-lg font-semibold">Pitching Leaders</h2>
+          <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+            <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <h2 className="text-base font-bold text-gray-900">Pitching Leaders</h2>
               <div className="mt-4 space-y-3 text-sm">
-                <p className="flex justify-between gap-3"><span className="text-gray-500">ERA</span><span className="font-semibold">{pitchingLeaders.era ? `${pitchingLeaders.era.player.name} ${formatDecimal(pitchingLeaders.era.metrics.era)}` : "No data"}</span></p>
-                <p className="flex justify-between gap-3"><span className="text-gray-500">WHIP</span><span className="font-semibold">{pitchingLeaders.whip ? `${pitchingLeaders.whip.player.name} ${formatDecimal(pitchingLeaders.whip.metrics.whip)}` : "No data"}</span></p>
-                <p className="flex justify-between gap-3"><span className="text-gray-500">SO</span><span className="font-semibold">{pitchingLeaders.so ? `${pitchingLeaders.so.player.name} ${pitchingLeaders.so.metrics.so}` : "No data"}</span></p>
-                <p className="flex justify-between gap-3"><span className="text-gray-500">IP</span><span className="font-semibold">{pitchingLeaders.ip ? `${pitchingLeaders.ip.player.name} ${pitchingLeaders.ip.metrics.ip}` : "No data"}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">ERA</span><span className="font-semibold text-gray-900">{pitchingLeaders.era ? `${pitchingLeaders.era.player.name} ${formatDecimal(pitchingLeaders.era.metrics.era)}` : "No data"}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">WHIP</span><span className="font-semibold text-gray-900">{pitchingLeaders.whip ? `${pitchingLeaders.whip.player.name} ${formatDecimal(pitchingLeaders.whip.metrics.whip)}` : "No data"}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">SO</span><span className="font-semibold text-gray-900">{pitchingLeaders.so ? `${pitchingLeaders.so.player.name} ${pitchingLeaders.so.metrics.so}` : "No data"}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">IP</span><span className="font-semibold text-gray-900">{pitchingLeaders.ip ? `${pitchingLeaders.ip.player.name} ${pitchingLeaders.ip.metrics.ip}` : "No data"}</span></p>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white p-4 shadow-sm xl:col-span-2">
-              <h2 className="text-lg font-semibold">Strikeouts by Pitcher</h2>
+            <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6 xl:col-span-2">
+              <h2 className="text-base font-bold text-gray-900">Strikeouts by Pitcher</h2>
               <div className="mt-4 space-y-3">
                 {strikeoutLeaders.length === 0 ? (
-                  <p className="text-sm text-gray-500">No strikeout data yet.</p>
+                  <p className="text-sm text-gray-400">No strikeout data yet.</p>
                 ) : (
                   strikeoutLeaders.map((summary) => {
                     const maxStrikeouts = Math.max(...strikeoutLeaders.map((leader) => leader.metrics.so), 1)
                     return (
                       <div key={summary.player.id}>
                         <div className="mb-1 flex justify-between text-sm">
-                          <span className="font-medium text-gray-900">{summary.player.name}</span>
-                          <span className="text-gray-500">{summary.metrics.so} SO</span>
+                          <span className="font-semibold text-gray-900">{summary.player.name}</span>
+                          <span className="text-xs font-bold text-green-900">{summary.metrics.so} SO</span>
                         </div>
-                        <div className="h-3 rounded-full bg-gray-100">
-                          <div className="h-3 rounded-full bg-green-900" style={{ width: `${Math.max((summary.metrics.so / maxStrikeouts) * 100, 8)}%` }} />
+                        <div className="h-2 rounded-full bg-[#f7f8f3]">
+                          <div className="h-2 rounded-full bg-green-800" style={{ width: `${Math.max((summary.metrics.so / maxStrikeouts) * 100, 8)}%` }} />
                         </div>
                       </div>
                     )
@@ -409,33 +433,33 @@ export default function TeamManagerDashboard({
             </div>
           </section>
 
-          <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-            <h2 className="text-lg font-semibold">Pitching Roster Overview</h2>
+          <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-base font-bold text-gray-900">Pitching Roster Overview</h2>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="border-b border-gray-200 text-xs uppercase text-gray-500">
+                <thead>
                   <tr>
-                    <th className="py-2 pr-4">Player</th>
-                    <th className="py-2 pr-4">Pos</th>
-                    <th className="py-2 pr-4">APP</th>
-                    <th className="py-2 pr-4">IP</th>
-                    <th className="py-2 pr-4">ERA</th>
-                    <th className="py-2 pr-4">WHIP</th>
-                    <th className="py-2 pr-4">H</th>
-                    <th className="py-2 pr-4">ER</th>
-                    <th className="py-2 pr-4">BB</th>
-                    <th className="py-2 pr-4">SO</th>
-                    <th className="py-2 pr-4">HR</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Player</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">Pos</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">APP</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">IP</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-green-700">ERA</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">WHIP</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">H</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">ER</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">BB</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">SO</th>
+                    <th className="border-b border-gray-100 pb-3 pr-4 text-left text-xs font-bold uppercase tracking-wide text-gray-400">HR</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100">
+                <tbody className="divide-y divide-gray-50">
                   {pitchingRoster.map(({ player, metrics }) => (
                     <tr key={player.id}>
-                      <td className="py-3 pr-4 font-medium text-gray-900">{getPlayerLabel(player)}</td>
+                      <td className="py-3 pr-4 font-semibold text-gray-900">{getPlayerLabel(player)}</td>
                       <td className="py-3 pr-4 text-gray-600">{player.position}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.games}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.ip}</td>
-                      <td className="py-3 pr-4 text-gray-600">{formatDecimal(metrics.era)}</td>
+                      <td className="py-3 pr-4 font-bold text-green-900">{formatDecimal(metrics.era)}</td>
                       <td className="py-3 pr-4 text-gray-600">{formatDecimal(metrics.whip)}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.h}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.er}</td>
@@ -451,5 +475,45 @@ export default function TeamManagerDashboard({
         </>
       )}
     </main>
+  )
+}
+
+function ManagerSummaryCard({
+  label,
+  value,
+  sub,
+  accent = false,
+}: {
+  label: string
+  value: string
+  sub?: string
+  accent?: boolean
+}) {
+  return (
+    <div
+      className={`rounded-2xl p-4 shadow-sm sm:p-5 ${
+        accent ? "bg-green-800 text-white" : "border border-gray-100 bg-white"
+      }`}
+    >
+      <p
+        className={`text-xs font-bold uppercase tracking-widest ${
+          accent ? "text-green-300" : "text-gray-400"
+        }`}
+      >
+        {label}
+      </p>
+      <p
+        className={`mt-2 text-3xl font-extrabold tracking-tight ${
+          accent ? "text-white" : "text-green-950"
+        }`}
+      >
+        {value}
+      </p>
+      {sub && (
+        <p className={`mt-1 text-xs ${accent ? "text-green-400" : "text-gray-400"}`}>
+          {sub}
+        </p>
+      )}
+    </div>
   )
 }

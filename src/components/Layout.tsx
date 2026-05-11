@@ -122,6 +122,7 @@ export default function Layout({
 }: LayoutProps) {
   const [activeView, setActiveView] = useState<ActiveView>("stats")
   const [mode, setMode] = useState<StatMode>("batting")
+  const [isGameMode, setIsGameMode] = useState(false)
 
   const [entriesByPlayer, setEntriesByPlayer] = useState<Record<string, BattingEntryData>>({})
   const [gameMeta, setGameMeta] = useState<DraftGameMeta>(() =>
@@ -401,14 +402,16 @@ export default function Layout({
           </main>
         ) : (
           <>
-            <Sidebar
-              players={teamPlayers}
-              activePlayerId={activePlayer?.id ?? ""}
-              setActivePlayerId={setActivePlayerId}
-              savedEntriesByPlayer={savedEntriesByPlayer}
-              pitchingEntriesByPlayer={pitchingEntriesByPlayer}
-              mode={mode}
-            />
+            {!(activeView === "record" && isGameMode) && (
+              <Sidebar
+                players={teamPlayers}
+                activePlayerId={activePlayer?.id ?? ""}
+                setActivePlayerId={setActivePlayerId}
+                savedEntriesByPlayer={savedEntriesByPlayer}
+                pitchingEntriesByPlayer={pitchingEntriesByPlayer}
+                mode={mode}
+              />
+            )}
 
             {activePlayer ? (
               <MainDashboard
@@ -426,6 +429,7 @@ export default function Layout({
                 mode={mode}
                 setSavedEntriesByPlayer={setSavedEntriesByPlayer}
                 setPitchingEntriesByPlayer={setPitchingEntriesByPlayer}
+                onGameModeChange={setIsGameMode}
               />
             ) : (
               <main className="w-full rounded-2xl bg-white p-6 text-sm text-gray-600 shadow-sm">

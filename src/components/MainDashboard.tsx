@@ -49,6 +49,7 @@ type MainDashboardProps = {
   setPitchingEntriesByPlayer: Dispatch<
     SetStateAction<Record<string, SavedPitchingGameEntry[]>>
   >
+  onGameModeChange?: (isGameMode: boolean) => void
 }
 
 const createInitialEntry = (): BattingEntryData => ({
@@ -80,6 +81,7 @@ export default function MainDashboard({
   mode,
   setSavedEntriesByPlayer,
   setPitchingEntriesByPlayer,
+  onGameModeChange,
 }: MainDashboardProps) {
 
   /* ---------------- TAB ---------------- */
@@ -583,6 +585,7 @@ export default function MainDashboard({
         !gameMeta.opponent.trim() ||
         pitchingEntry.earnedRuns > pitchingEntry.runsAllowed
       }
+      onGameModeChange={onGameModeChange}
     />
   ) : (
       <MyStatsPage

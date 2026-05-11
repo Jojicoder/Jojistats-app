@@ -403,7 +403,7 @@ export default function StatsPage() {
             className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
               mode === "batting"
                 ? "bg-green-900 text-white shadow-sm"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
             }`}
           >
             Batting
@@ -414,7 +414,7 @@ export default function StatsPage() {
             className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
               mode === "pitching"
                 ? "bg-green-900 text-white shadow-sm"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
             }`}
           >
             Pitching

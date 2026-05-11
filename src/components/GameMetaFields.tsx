@@ -69,17 +69,17 @@ export default function GameMetaFields({
       {/* Primary game metadata fields */}
       <div className="mb-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-600">Game Date</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Game Date</label>
           <input
             type="date"
             value={gameMeta.date}
             onChange={(e) => handleDateChange(e.target.value)}
-            className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
+            className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-600">Opponent</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Opponent</label>
           <input
             type="text"
             value={gameMeta.opponent}
@@ -87,7 +87,7 @@ export default function GameMetaFields({
               onGameMetaChange({ ...gameMeta, opponent: e.target.value })
             }
             placeholder="e.g. Tigers"
-            className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
+            className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
           />
         </div>
       </div>
@@ -95,7 +95,7 @@ export default function GameMetaFields({
       {/* Secondary metadata fields */}
       <div className="mb-4 grid grid-cols-1 gap-3 sm:mb-6 sm:grid-cols-2 sm:gap-4">
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-600">Season Year</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Season Year</label>
           <select
             value={gameMeta.seasonYear}
             onChange={(e) =>
@@ -104,7 +104,7 @@ export default function GameMetaFields({
                 seasonYear: Number(e.target.value),
               })
             }
-            className="rounded-lg border border-gray-200 bg-white px-3 py-3 sm:py-2"
+            className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
           >
             {seasonOptions.map((year) => (
               <option key={year} value={year}>
@@ -112,13 +112,13 @@ export default function GameMetaFields({
               </option>
             ))}
           </select>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 normal-case tracking-normal">
             Auto-filled from Game Date. You can override it if needed.
           </p>
         </div>
 
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium text-gray-600">Match Number</label>
+          <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Match Number</label>
           <input
             type="number"
             min={1}
@@ -129,7 +129,7 @@ export default function GameMetaFields({
                 matchNumber: Math.max(1, Number(e.target.value)),
               })
             }
-            className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
+            className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
           />
         </div>
       </div>
@@ -138,7 +138,7 @@ export default function GameMetaFields({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
           {showLocation && (
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-600">Location</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Location</label>
               <input
                 type="text"
                 value={gameMeta.location ?? ""}
@@ -146,14 +146,14 @@ export default function GameMetaFields({
                   onGameMetaChange({ ...gameMeta, location: e.target.value })
                 }
                 placeholder="e.g. Home field"
-                className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
+                className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
               />
             </div>
           )}
 
           {showMemo && (
             <div className="flex flex-col gap-2">
-              <label className="text-sm font-medium text-gray-600">Memo</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Memo</label>
               <textarea
                 value={gameMeta.memo ?? ""}
                 onChange={(e) =>
@@ -169,9 +169,9 @@ export default function GameMetaFields({
       )}
 
       {showScore && (
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-600">
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
               {teamName} Score
             </label>
             <input
@@ -179,23 +179,23 @@ export default function GameMetaFields({
               min={0}
               value={gameMeta.teamScore ?? ""}
               onChange={(e) => handleScoreChange("teamScore", e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
+              className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-600">Opponent Score</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Opponent Score</label>
             <input
               type="number"
               min={0}
               value={gameMeta.opponentScore ?? ""}
               onChange={(e) => handleScoreChange("opponentScore", e.target.value)}
-              className="rounded-lg border border-gray-200 px-3 py-3 sm:py-2"
+              className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <label className="text-sm font-medium text-gray-600">Result</label>
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Result</label>
             <select
               value={gameMeta.result ?? ""}
               onChange={(e) =>
@@ -204,13 +204,34 @@ export default function GameMetaFields({
                   result: e.target.value as DraftGameMeta["result"],
                 })
               }
-              className="rounded-lg border border-gray-200 bg-white px-3 py-3 sm:py-2"
+              className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
             >
               <option value="">Not set</option>
               <option value="W">Win</option>
               <option value="L">Loss</option>
               <option value="T">Tie</option>
             </select>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
+              Error Runs
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={gameMeta.errorRuns ?? ""}
+              onChange={(e) => {
+                const val = e.target.value === "" ? null : Math.max(0, Number(e.target.value))
+                onGameMetaChange({
+                  ...gameMeta,
+                  errorRuns: Number.isFinite(val) ? val : null,
+                })
+              }}
+              placeholder="0"
+              className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
+            />
+            <p className="text-xs text-gray-400">相手エラーによる得点</p>
           </div>
         </div>
       )}

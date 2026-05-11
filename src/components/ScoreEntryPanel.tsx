@@ -26,15 +26,15 @@ export default function ScoreEntryPanel({
 }: ScoreEntryPanelProps) {
   return (
     <section>
-      <p className="text-sm font-medium text-green-900">Batting Entry</p>
+      <p className="text-xs font-bold uppercase tracking-widest text-green-700">Batting Entry</p>
 
       <div className="mt-4">
         <BattingStatFields entry={entry} onEntryChange={onEntryChange} />
       </div>
 
-      <div className="mt-6 flex items-center justify-between rounded-xl bg-gray-50 px-4 py-3">
-        <span className="text-sm font-medium text-gray-600">Calculated AVG</span>
-        <span className="text-lg font-bold text-green-900">{calculatedAvg}</span>
+      <div className="mt-6 flex items-center justify-between rounded-xl bg-[#f7f8f3] px-4 py-3">
+        <span className="text-xs font-bold uppercase tracking-widest text-gray-400">Calculated AVG</span>
+        <span className="text-lg font-extrabold text-green-950">{calculatedAvg}</span>
       </div>
 
       {saveSuccessMessage && (

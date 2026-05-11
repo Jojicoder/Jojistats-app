@@ -43,6 +43,7 @@ export type DraftGameMeta = {
   teamScore?: number | null
   opponentScore?: number | null
   result?: "W" | "L" | "T" | ""
+  errorRuns?: number | null
 }
 
 export type DisplayStat = {

@@ -39,7 +39,7 @@ export default function LoginPage() {
     navigate("/stats", { replace: true })
   }
 
-  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: { preventDefault(): void }) => {
     event.preventDefault()
 
     try {
@@ -62,7 +62,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f8f3]">
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex w-full items-center justify-between gap-4">
           <Link to="/stats" className="flex items-center gap-3">
@@ -100,29 +100,30 @@ export default function LoginPage() {
           onSubmit={handleLogin}
           className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm"
         >
-          <h1 className="text-2xl font-bold text-green-900">Login</h1>
+          <p className="text-xs font-bold uppercase tracking-widest text-green-700">Joji Stats</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">Login</h1>
 
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-1 text-sm text-gray-400">
             Sign in to manage JojiStats.
           </p>
 
-          <label className="mt-6 block text-sm font-medium text-gray-700">
+          <label className="mt-6 block text-xs font-bold uppercase tracking-widest text-gray-400">
             Email
             <input
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
             />
           </label>
 
-          <label className="mt-4 block text-sm font-medium text-gray-700">
+          <label className="mt-4 block text-xs font-bold uppercase tracking-widest text-gray-400">
             Password
             <input
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+              className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
               placeholder="Enter password"
             />
           </label>
@@ -130,18 +131,18 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="mt-6 w-full rounded-lg bg-green-900 px-4 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+            className="mt-6 w-full rounded-xl bg-green-900 px-4 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
           >
             {isLoading ? "Logging in..." : "Login"}
           </button>
 
           <p className="mt-3 text-center text-sm">
-            <Link to="/forgot-password" className="text-gray-500 hover:text-green-900">
+            <Link to="/forgot-password" className="text-gray-400 hover:text-green-900">
               Forgot your password?
             </Link>
           </p>
 
-          <p className="mt-4 text-center text-sm text-gray-600">
+          <p className="mt-4 text-center text-sm text-gray-400">
             Need an account?{" "}
             <Link to="/signup" className="font-semibold text-green-900">
               Sign Up

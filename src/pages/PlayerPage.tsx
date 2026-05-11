@@ -362,7 +362,7 @@ export default function PlayerPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f8f3]">
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex w-full items-center justify-between gap-4">
           <Link to="/stats" className="flex items-center gap-3">
@@ -371,7 +371,7 @@ export default function PlayerPage() {
               alt="JojiStats logo"
               className="h-12 w-12 rounded-full object-cover"
             />
-            <p className="text-4xl font-extrabold uppercase tracking-tight text-green-900">
+            <p className="text-2xl font-extrabold uppercase tracking-tight text-green-900 sm:text-4xl">
               Joji Stats
             </p>
           </Link>
@@ -408,25 +408,28 @@ export default function PlayerPage() {
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         {isLoading ? (
-          <div className="text-gray-600">Loading...</div>
+          <div className="flex items-center gap-3 text-sm text-gray-500">
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-900 border-t-transparent" />
+            Loading...
+          </div>
         ) : errorMessage ? (
           <div className="rounded-2xl bg-white p-6 text-red-700 shadow-sm">
             {errorMessage}
           </div>
         ) : player && team ? (
           <div className="space-y-6">
-            <section className="rounded-2xl bg-white p-6 shadow-sm">
-              <p className="text-sm font-medium text-green-900">
+            <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">
                 My Player Page
               </p>
-              <h1 className="mt-2 text-2xl font-bold">
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
                 {player.jerseyNumber != null ? `#${player.jerseyNumber} ` : ""}
                 {player.name}
               </h1>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-1 text-sm text-gray-500">
                 {player.position} · {team.name} · {team.currentSeasonYear} Season
               </p>
-              <p className="mt-4 rounded-xl bg-green-50 px-4 py-3 text-sm font-medium text-green-900">
+              <p className="mt-4 rounded-xl bg-[#f7f8f3] px-4 py-3 text-sm font-medium text-green-900">
                 Goal: {goals.seasonGoal || "Not set"}
               </p>
             </section>
@@ -435,10 +438,10 @@ export default function PlayerPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("batting")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                   activeTab === "batting"
                     ? "bg-green-900 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 Batting
@@ -446,10 +449,10 @@ export default function PlayerPage() {
               <button
                 type="button"
                 onClick={() => setActiveTab("pitching")}
-                className={`rounded-lg px-4 py-2 text-sm font-semibold ${
+                className={`rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
                   activeTab === "pitching"
                     ? "bg-green-900 text-white"
-                    : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                 }`}
               >
                 Pitching
@@ -458,16 +461,16 @@ export default function PlayerPage() {
 
             {activeTab === "batting" ? (
               <>
-            <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
               {statCards.map((stat) => (
                 <div
                   key={stat.label}
-                  className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                  className="rounded-xl bg-[#f7f8f3] p-4"
                 >
-                  <p className="text-xs font-semibold uppercase text-gray-500">
+                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                     {stat.label}
                   </p>
-                  <p className="mt-2 text-2xl font-bold text-gray-900">
+                  <p className="mt-2 text-2xl font-extrabold tracking-tight text-green-950">
                     {stat.value}
                   </p>
                 </div>
@@ -477,7 +480,7 @@ export default function PlayerPage() {
             <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <div className="rounded-2xl bg-white p-5 shadow-sm">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-lg font-semibold">Season Goals</h2>
+                  <h2 className="text-base font-bold text-gray-900">Season Goals</h2>
                   <button
                     type="button"
                     onClick={() =>
@@ -498,7 +501,7 @@ export default function PlayerPage() {
                   {isEditingGoals ? (
                     <>
                       <label className="block">
-                        <span className="text-xs font-medium text-gray-500">
+                        <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
                           Season Goal
                         </span>
                         <input
@@ -509,12 +512,12 @@ export default function PlayerPage() {
                               seasonGoal: event.target.value,
                             }))
                           }
-                          className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
+                          className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
                         />
                       </label>
                       <div className="grid grid-cols-3 gap-2">
                         <label className="block">
-                          <span className="text-xs font-medium text-gray-500">
+                          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
                             AVG Goal
                           </span>
                           <input
@@ -525,13 +528,13 @@ export default function PlayerPage() {
                                 avgGoal: event.target.value,
                               }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-                            placeholder="Example: .350"
+                            className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
+                            placeholder=".350"
                           />
                         </label>
 
                         <label className="block">
-                          <span className="text-xs font-medium text-gray-500">
+                          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
                             HR Goal
                           </span>
                           <input
@@ -542,13 +545,13 @@ export default function PlayerPage() {
                                 hrGoal: event.target.value,
                               }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-                            placeholder="Example: 5"
+                            className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
+                            placeholder="5"
                           />
                         </label>
 
                         <label className="block">
-                          <span className="text-xs font-medium text-gray-500">
+                          <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
                             RBI Goal
                           </span>
                           <input
@@ -559,30 +562,30 @@ export default function PlayerPage() {
                                 rbiGoal: event.target.value,
                               }))
                             }
-                            className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-                            placeholder="Example: 20"
+                            className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
+                            placeholder="20"
                           />
                         </label>
                       </div>
                     </>
                   ) : (
                     <>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">AVG Goal</span>
-                        <span className="font-semibold">
-                          {goals.avgGoal} → Current {formatRate(metrics.avg)}
+                      <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                        <span className="text-xs font-bold uppercase tracking-widest text-gray-400">AVG Goal</span>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {goals.avgGoal} → {formatRate(metrics.avg)}
                         </span>
                       </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">HR Goal</span>
-                        <span className="font-semibold">
-                          {goals.hrGoal} → Current {metrics.hr}
+                      <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                        <span className="text-xs font-bold uppercase tracking-widest text-gray-400">HR Goal</span>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {goals.hrGoal} → {metrics.hr}
                         </span>
                       </p>
-                      <p className="flex justify-between gap-3">
-                        <span className="text-gray-500">RBI Goal</span>
-                        <span className="font-semibold">
-                          {goals.rbiGoal} → Current {metrics.rbi}
+                      <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                        <span className="text-xs font-bold uppercase tracking-widest text-gray-400">RBI Goal</span>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {goals.rbiGoal} → {metrics.rbi}
                         </span>
                       </p>
                     </>
@@ -591,31 +594,31 @@ export default function PlayerPage() {
               </div>
 
               <div className="rounded-2xl bg-white p-5 shadow-sm">
-                <h2 className="text-lg font-semibold">Recent Form</h2>
-                <p className="mt-4 text-sm text-gray-700">
+                <h2 className="text-base font-bold text-gray-900">Recent Form</h2>
+                <p className="mt-4 text-sm text-gray-500">
                   Last 5 Games: AVG {formatRate(recentMetrics.avg)} · H{" "}
                   {recentMetrics.h} · RBI {recentMetrics.rbi} · SO{" "}
                   {recentMetrics.so}
                 </p>
-                <div className="mt-4 rounded-xl bg-gray-50 p-4 text-sm text-gray-700">
+                <div className="mt-4 rounded-xl bg-[#f7f8f3] p-4 text-sm text-gray-700">
                   {bestGame ? (
                     <>
-                      <p className="font-semibold">Personal Strength</p>
-                      <p className="mt-1">
+                      <p className="font-bold text-gray-900">Personal Strength</p>
+                      <p className="mt-1 text-gray-500">
                         Best game: {bestGame.statLine.H} hits vs{" "}
                         {bestGame.gameMeta.opponent}
                       </p>
                     </>
                   ) : (
-                    "No games recorded yet."
+                    <span className="text-gray-400">No games recorded yet.</span>
                   )}
                 </div>
               </div>
             </section>
 
             <section className="rounded-2xl bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold">Hits by Game</h2>
-              <div className="mt-4 flex h-48 items-end gap-2 border-b border-gray-200 px-2">
+              <h2 className="text-base font-bold text-gray-900">Hits by Game</h2>
+              <div className="mt-4 flex h-48 items-end gap-2 rounded-xl bg-[#f7f8f3] px-4 pb-0 pt-4">
                 {entries.length === 0 ? (
                   <p className="self-center text-sm text-gray-500">
                     No games recorded yet.
@@ -644,22 +647,22 @@ export default function PlayerPage() {
             </section>
 
             <section className="rounded-2xl bg-white p-5 shadow-sm">
-              <h2 className="text-lg font-semibold">Game Log</h2>
+              <h2 className="text-base font-bold text-gray-900">Game Log</h2>
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="border-b border-gray-200 text-xs uppercase text-gray-500">
-                    <tr>
-                      <th className="py-2 pr-4">Date</th>
-                      <th className="py-2 pr-4">Opponent</th>
-                      <th className="py-2 pr-4">AB</th>
-                      <th className="py-2 pr-4">H</th>
-                      <th className="py-2 pr-4">HR</th>
-                      <th className="py-2 pr-4">RBI</th>
-                      <th className="py-2 pr-4">BB</th>
-                      <th className="py-2 pr-4">SO</th>
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left text-xs font-bold uppercase tracking-wide text-gray-400">
+                      <th className="pb-3 pr-4">Date</th>
+                      <th className="pb-3 pr-4">Opponent</th>
+                      <th className="pb-3 pr-4">AB</th>
+                      <th className="pb-3 pr-4">H</th>
+                      <th className="pb-3 pr-4">HR</th>
+                      <th className="pb-3 pr-4">RBI</th>
+                      <th className="pb-3 pr-4">BB</th>
+                      <th className="pb-3 pr-4">SO</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-100">
+                  <tbody className="divide-y divide-gray-50">
                     {entries.map((entry) => (
                       <tr key={entry.id}>
                         <td className="py-3 pr-4 text-gray-600">
@@ -707,12 +710,12 @@ export default function PlayerPage() {
                   {pitchingStatCards.map((stat) => (
                     <div
                       key={stat.label}
-                      className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm"
+                      className="rounded-xl bg-[#f7f8f3] p-4"
                     >
-                      <p className="text-xs font-semibold uppercase text-gray-500">
+                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                         {stat.label}
                       </p>
-                      <p className="mt-2 text-2xl font-bold text-gray-900">
+                      <p className="mt-2 text-2xl font-extrabold tracking-tight text-green-950">
                         {stat.value}
                       </p>
                     </div>
@@ -722,7 +725,7 @@ export default function PlayerPage() {
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
                   <div className="rounded-2xl bg-white p-5 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
-                      <h2 className="text-lg font-semibold">Pitching Goals</h2>
+                      <h2 className="text-base font-bold text-gray-900">Pitching Goals</h2>
                       <button
                         type="button"
                         onClick={() =>
@@ -745,7 +748,7 @@ export default function PlayerPage() {
                       {isEditingGoals ? (
                         <div className="grid grid-cols-3 gap-2">
                           <label className="block">
-                            <span className="text-xs font-medium text-gray-500">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
                               ERA Goal
                             </span>
                             <input
@@ -756,12 +759,12 @@ export default function PlayerPage() {
                                   eraGoal: event.target.value,
                                 }))
                               }
-                              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-                              placeholder="Example: 3.00"
+                              className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
+                              placeholder="3.00"
                             />
                           </label>
                           <label className="block">
-                            <span className="text-xs font-medium text-gray-500">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
                               SO Goal
                             </span>
                             <input
@@ -772,12 +775,12 @@ export default function PlayerPage() {
                                   soGoal: event.target.value,
                                 }))
                               }
-                              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-                              placeholder="Example: 50"
+                              className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
+                              placeholder="50"
                             />
                           </label>
                           <label className="block">
-                            <span className="text-xs font-medium text-gray-500">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
                               WHIP Goal
                             </span>
                             <input
@@ -788,31 +791,29 @@ export default function PlayerPage() {
                                   whipGoal: event.target.value,
                                 }))
                               }
-                              className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2"
-                              placeholder="Example: 1.20"
+                              className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
+                              placeholder="1.20"
                             />
                           </label>
                         </div>
                       ) : (
                         <>
-                          <p className="flex justify-between gap-3">
-                            <span className="text-gray-500">ERA Goal</span>
-                            <span className="font-semibold">
-                              under {goals.eraGoal} → Current{" "}
-                              {formatDecimal(pitchingMetrics.era)}
+                          <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">ERA Goal</span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              under {goals.eraGoal} → {formatDecimal(pitchingMetrics.era)}
                             </span>
                           </p>
-                          <p className="flex justify-between gap-3">
-                            <span className="text-gray-500">SO Goal</span>
-                            <span className="font-semibold">
-                              {goals.soGoal} → Current {pitchingMetrics.so}
+                          <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">SO Goal</span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              {goals.soGoal} → {pitchingMetrics.so}
                             </span>
                           </p>
-                          <p className="flex justify-between gap-3">
-                            <span className="text-gray-500">WHIP Goal</span>
-                            <span className="font-semibold">
-                              under {goals.whipGoal} → Current{" "}
-                              {formatDecimal(pitchingMetrics.whip)}
+                          <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                            <span className="text-xs font-bold uppercase tracking-widest text-gray-400">WHIP Goal</span>
+                            <span className="text-sm font-semibold text-gray-900">
+                              under {goals.whipGoal} → {formatDecimal(pitchingMetrics.whip)}
                             </span>
                           </p>
                         </>
@@ -821,8 +822,8 @@ export default function PlayerPage() {
                   </div>
 
                   <div className="rounded-2xl bg-white p-5 shadow-sm">
-                    <h2 className="text-lg font-semibold">Recent Pitching Form</h2>
-                    <p className="mt-4 text-sm text-gray-700">
+                    <h2 className="text-base font-bold text-gray-900">Recent Pitching Form</h2>
+                    <p className="mt-4 text-sm text-gray-500">
                       Last 3 Appearances: ERA{" "}
                       {formatDecimal(recentPitchingMetrics.era)} · IP{" "}
                       {recentPitchingMetrics.ip} · SO {recentPitchingMetrics.so} · BB{" "}
@@ -833,10 +834,10 @@ export default function PlayerPage() {
                 </section>
 
                 <section className="rounded-2xl bg-white p-5 shadow-sm">
-                  <h2 className="text-lg font-semibold">
+                  <h2 className="text-base font-bold text-gray-900">
                     Strikeouts by Appearance
                   </h2>
-                  <div className="mt-4 flex h-48 items-end gap-2 border-b border-gray-200 px-2">
+                  <div className="mt-4 flex h-48 items-end gap-2 rounded-xl bg-[#f7f8f3] px-4 pb-0 pt-4">
                     {pitchingEntries.length === 0 ? (
                       <p className="self-center text-sm text-gray-500">
                         No pitching records yet.
@@ -877,23 +878,23 @@ export default function PlayerPage() {
                 <PitchingTrendChart entries={pitchingEntries} />
 
                 <section className="rounded-2xl bg-white p-5 shadow-sm">
-                  <h2 className="text-lg font-semibold">Pitching Game Log</h2>
+                  <h2 className="text-base font-bold text-gray-900">Pitching Game Log</h2>
                   <div className="mt-4 overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
-                      <thead className="border-b border-gray-200 text-xs uppercase text-gray-500">
-                        <tr>
-                          <th className="py-2 pr-4">Date</th>
-                          <th className="py-2 pr-4">Opponent</th>
-                          <th className="py-2 pr-4">IP</th>
-                          <th className="py-2 pr-4">H</th>
-                          <th className="py-2 pr-4">R</th>
-                          <th className="py-2 pr-4">ER</th>
-                          <th className="py-2 pr-4">BB</th>
-                          <th className="py-2 pr-4">SO</th>
-                          <th className="py-2 pr-4">HR</th>
+                      <thead>
+                        <tr className="border-b border-gray-100 text-left text-xs font-bold uppercase tracking-wide text-gray-400">
+                          <th className="pb-3 pr-4">Date</th>
+                          <th className="pb-3 pr-4">Opponent</th>
+                          <th className="pb-3 pr-4">IP</th>
+                          <th className="pb-3 pr-4">H</th>
+                          <th className="pb-3 pr-4">R</th>
+                          <th className="pb-3 pr-4">ER</th>
+                          <th className="pb-3 pr-4">BB</th>
+                          <th className="pb-3 pr-4">SO</th>
+                          <th className="pb-3 pr-4">HR</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-gray-100">
+                      <tbody className="divide-y divide-gray-50">
                         {pitchingEntries.map((entry) => (
                           <tr key={entry.id}>
                             <td className="py-3 pr-4 text-gray-600">

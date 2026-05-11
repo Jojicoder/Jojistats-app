@@ -165,11 +165,11 @@ export default function TeamSetupPage({
     <main className="w-full">
       <div className="w-full space-y-6">
         <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-          <p className="text-sm font-medium text-green-900">Team Setup</p>
-          <h1 className="mt-2 text-2xl font-bold">Manage team and roster</h1>
+          <p className="text-xs font-bold uppercase tracking-widest text-green-700">Team Setup</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">Manage team and roster</h1>
 
           <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <div className="flex items-center gap-3 rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+            <div className="flex items-center gap-3 rounded-full bg-[#f7f8f3] px-3 py-1 text-sm text-gray-600">
               <span>Season</span>
 
               <select
@@ -190,7 +190,7 @@ export default function TeamSetupPage({
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <section className="space-y-6">
             <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-              <h2 className="text-lg font-semibold">Add Team</h2>
+              <h2 className="text-base font-bold text-gray-900">Add Team</h2>
 
               <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <input
@@ -216,7 +216,7 @@ export default function TeamSetupPage({
             </div>
 
             <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-              <h2 className="mb-4 text-lg font-semibold">Team List</h2>
+              <h2 className="mb-4 text-base font-bold text-gray-900">Team List</h2>
 
               {teams.length === 0 ? (
                 <div className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
@@ -275,8 +275,8 @@ export default function TeamSetupPage({
                         </div>
 
                         {isActive && isEditingTeam && (
-                          <div className="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-                            <label className="text-xs font-medium text-gray-500">
+                          <div className="mt-4 rounded-xl bg-[#f7f8f3] p-4">
+                            <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
                               Edit Team Name
                             </label>
 
@@ -327,21 +327,21 @@ export default function TeamSetupPage({
 
           <section className="space-y-6">
             <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-              <p className="text-sm font-medium text-green-900">Roster</p>
-              <h2 className="mt-2 break-words text-2xl font-bold">
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">Roster</p>
+              <h2 className="mt-1 break-words text-2xl font-extrabold tracking-tight text-gray-900">
                 {teamName}
               </h2>
-              <p className="mt-2 text-gray-600">
+              <p className="mt-1 text-sm text-gray-500">
                 Season {seasonYear} · Manage your players here.
               </p>
 
-              <div className="mt-4 flex flex-wrap gap-3">
-                <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+              <div className="mt-4 flex flex-wrap gap-2">
+                <div className="rounded-full bg-[#f7f8f3] px-3 py-1 text-sm text-gray-600">
                   Total Players: {players.length}
                 </div>
 
-                <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-                  Active Player:{" "}
+                <div className="rounded-full bg-[#f7f8f3] px-3 py-1 text-sm text-gray-600">
+                  Active:{" "}
                   {activePlayer
                     ? activePlayer.jerseyNumber != null
                       ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
@@ -353,7 +353,7 @@ export default function TeamSetupPage({
 
             {activeTeamId ? (
               <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-                <h3 className="text-lg font-semibold">Add Player</h3>
+                <h3 className="text-base font-bold text-gray-900">Add Player</h3>
 
                 <div className="mt-4">
                   <PlayerForm
@@ -374,10 +374,10 @@ export default function TeamSetupPage({
           <section className="self-start">
             <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <h3 className="text-lg font-semibold">Player List</h3>
+                <h3 className="text-base font-bold text-gray-900">Player List</h3>
 
                 <div className="flex items-center gap-2">
-                  <label className="text-xs font-medium text-gray-500">
+                  <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
                     Sort by
                   </label>
 

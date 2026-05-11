@@ -6,9 +6,10 @@ import {
   fetchPlayers,
   fetchSavedEntriesByPlayer,
   fetchTeamById,
+  fetchTeams,
   fetchUserAccessByEmail,
 } from "../api/supabase-api"
-import type { GameRow, PlayerRow } from "../api/supabase-api"
+import type { GameRow, PlayerRow, TeamRow } from "../api/supabase-api"
 import type { SavedBattingGameEntry } from "../types"
 
 function formatRate(v: number) {
@@ -53,6 +54,8 @@ function buildRoster(
 
 export default function SeasonArchivePage() {
   const navigate = useNavigate()
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [allTeams, setAllTeams] = useState<TeamRow[]>([])
   const [teamId, setTeamId] = useState<number | null>(null)
   const [teamName, setTeamName] = useState("")
   const [availableSeasons, setAvailableSeasons] = useState<number[]>([])
@@ -64,6 +67,25 @@ export default function SeasonArchivePage() {
   const [isSeasonLoading, setIsSeasonLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
 
+  const loadSeasonsForTeam = async (id: number) => {
+    const { data: gamesData } = await supabase
+      .from("games").select("season_year").eq("team_id", id)
+    const years = [...new Set((gamesData ?? []).map((r) => r.season_year as number))].sort((a, b) => b - a)
+    setAvailableSeasons(years)
+    setSelectedSeason(years[0] ?? null)
+  }
+
+  const handleSelectTeam = async (id: number, name: string) => {
+    setTeamId(id)
+    setTeamName(name)
+    setSelectedSeason(null)
+    setAvailableSeasons([])
+    setGames([])
+    setPlayers([])
+    setEntriesByPlayer({})
+    await loadSeasonsForTeam(id)
+  }
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -72,19 +94,25 @@ export default function SeasonArchivePage() {
         const email = data.user?.email?.trim().toLowerCase()
         if (!data.user || !email) { navigate("/login", { replace: true }); return }
 
+        if (email === "admin@jojistats.com") {
+          setIsAdmin(true)
+          const teams = await fetchTeams()
+          setAllTeams(teams)
+          const first = teams[0]
+          if (!first) return
+          setTeamId(first.id)
+          setTeamName(first.name)
+          await loadSeasonsForTeam(first.id)
+          return
+        }
+
         const access = await fetchUserAccessByEmail(email)
         if (!access) { setErrorMessage("No team access assigned."); return }
 
         const teamRow = await fetchTeamById(Number(access.team_id))
         setTeamId(teamRow.id)
         setTeamName(teamRow.name)
-
-        const { data: gamesData } = await supabase
-          .from("games").select("season_year").eq("team_id", teamRow.id)
-
-        const years = [...new Set((gamesData ?? []).map((r) => r.season_year as number))].sort((a, b) => b - a)
-        setAvailableSeasons(years)
-        if (years.length > 0) setSelectedSeason(years[0])
+        await loadSeasonsForTeam(teamRow.id)
       } catch (err) {
         setErrorMessage(err instanceof Error ? err.message : "Failed to load.")
       } finally {
@@ -162,8 +190,8 @@ export default function SeasonArchivePage() {
             </span>
           </Link>
           <div className="flex items-center gap-2">
-            <Link to="/stats" className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-50">
-              Stats
+            <Link to={isAdmin ? "/admin" : "/stats"} className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-50">
+              {isAdmin ? "Admin" : "Stats"}
             </Link>
             <button
               type="button"
@@ -186,6 +214,29 @@ export default function SeasonArchivePage() {
           <div className="rounded-2xl bg-white p-6 text-sm text-red-600 shadow-sm">{errorMessage}</div>
         ) : (
           <div className="space-y-6">
+
+            {/* ── Team Picker (admin only) ── */}
+            {isAdmin && allTeams.length > 1 && (
+              <section className="rounded-2xl bg-white p-5 shadow-sm">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Team</p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {allTeams.map((t) => (
+                    <button
+                      key={t.id}
+                      type="button"
+                      onClick={() => handleSelectTeam(t.id, t.name)}
+                      className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                        teamId === t.id
+                          ? "bg-green-900 text-white shadow-sm"
+                          : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
+                      }`}
+                    >
+                      {t.name}
+                    </button>
+                  ))}
+                </div>
+              </section>
+            )}
 
             {/* ── Title + Season Picker ── */}
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">

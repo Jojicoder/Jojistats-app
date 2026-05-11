@@ -73,19 +73,19 @@ export default function RosterPage({
   return (
     <main className="w-full">
       <div className="max-w-6xl">
-        <div className="max-w-3xl rounded-2xl bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-green-900">Roster</p>
-          <h1 className="mt-2 text-2xl font-bold">{teamName}</h1>
-          <p className="mt-2 text-gray-600">
+        <div className="max-w-3xl rounded-2xl bg-white p-5 shadow-sm sm:p-6">
+          <p className="text-xs font-bold uppercase tracking-widest text-green-700">Roster</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">{teamName}</h1>
+          <p className="mt-1 text-sm text-gray-500">
             Season {seasonYear} · Manage your players here.
           </p>
 
-          <div className="mt-4 flex flex-wrap gap-3">
-            <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
+          <div className="mt-4 flex flex-wrap gap-2">
+            <div className="rounded-full bg-[#f7f8f3] px-3 py-1 text-sm text-gray-600">
               Total Players: {players.length}
             </div>
-            <div className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">
-              Active Player:{" "}
+            <div className="rounded-full bg-[#f7f8f3] px-3 py-1 text-sm text-gray-600">
+              Active:{" "}
               {activePlayer
                 ? activePlayer.jerseyNumber != null
                   ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
@@ -125,10 +125,10 @@ export default function RosterPage({
         <div className="mt-6 flex justify-start">
           <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-sm">
             <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-lg font-semibold">Player List</h2>
+              <h2 className="text-base font-bold text-gray-900">Player List</h2>
 
               <div className="flex items-center gap-2">
-                <label className="text-xs font-medium text-gray-500">
+                <label className="text-xs font-bold uppercase tracking-widest text-gray-400">
                   Sort by
                 </label>
                 <select

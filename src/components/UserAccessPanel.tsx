@@ -100,8 +100,8 @@ export default function UserAccessPanel({
 
   return (
     <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
-      <p className="text-sm font-medium text-green-900">User Access</p>
-      <h2 className="mt-2 text-xl font-bold">Assign GameRecord login</h2>
+      <p className="text-xs font-bold uppercase tracking-widest text-green-700">User Access</p>
+      <h2 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900">Assign Login</h2>
 
       <div className="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-[1fr_180px_220px_180px_auto]">
         <input
@@ -109,7 +109,7 @@ export default function UserAccessPanel({
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="player@example.com"
-          className="rounded-lg border border-gray-200 px-3 py-2 text-sm"
+          className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm outline-none focus:border-green-700 focus:bg-white"
         />
 
         <select
@@ -118,7 +118,7 @@ export default function UserAccessPanel({
             setTeamId(event.target.value)
             setPlayerId("")
           }}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm outline-none focus:border-green-700 focus:bg-white"
         >
           {teams.map((team) => (
             <option key={team.id} value={team.id}>
@@ -130,7 +130,7 @@ export default function UserAccessPanel({
         <select
           value={selectedPlayerId}
           onChange={(event) => setPlayerId(event.target.value)}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm outline-none focus:border-green-700 focus:bg-white"
         >
           {playerOptions.map((player) => (
             <option key={player.id} value={player.id}>
@@ -142,7 +142,7 @@ export default function UserAccessPanel({
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as UserAccess["role"])}
-          className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+          className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-2 text-sm outline-none focus:border-green-700 focus:bg-white"
         >
           {roleOptions.map((option) => (
             <option key={option.value} value={option.value}>
@@ -173,14 +173,14 @@ export default function UserAccessPanel({
 
       <div className="mt-5 space-y-2">
         {userAccesses.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-gray-200 px-4 py-6 text-center text-sm text-gray-500">
+          <div className="rounded-xl bg-[#f7f8f3] px-4 py-6 text-center text-sm text-gray-400">
             No user access yet.
           </div>
         ) : (
           userAccesses.map((access) => (
             <div
               key={access.id}
-              className="flex flex-col gap-3 rounded-xl border border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-3 rounded-xl bg-[#f7f8f3] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-gray-800">

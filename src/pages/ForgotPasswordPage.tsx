@@ -31,7 +31,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f8f3]">
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex w-full items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3">
@@ -60,8 +60,8 @@ export default function ForgotPasswordPage() {
                   <path d="M3 8l7.89 5.26a2 2 0 0 0 2.22 0L21 8M5 19h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2z" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
-              <h1 className="mt-4 text-xl font-bold text-gray-900">Check your email</h1>
-              <p className="mt-2 text-sm text-gray-500">
+              <h1 className="mt-4 text-xl font-extrabold tracking-tight text-gray-900">Check your email</h1>
+              <p className="mt-2 text-sm text-gray-400">
                 We sent a password reset link to{" "}
                 <span className="font-semibold text-gray-700">{email}</span>.
               </p>
@@ -70,20 +70,21 @@ export default function ForgotPasswordPage() {
               </p>
               <Link
                 to="/login"
-                className="mt-6 block rounded-lg border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                className="mt-6 block rounded-xl border border-gray-200 bg-[#f7f8f3] px-4 py-2 text-sm font-semibold text-gray-600 hover:bg-white"
               >
                 Back to login
               </Link>
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-green-900">Forgot password</h1>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">Joji Stats</p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">Forgot password</h1>
+              <p className="mt-1 text-sm text-gray-400">
                 Enter your email and we'll send you a reset link.
               </p>
 
               <form onSubmit={handleSubmit}>
-                <label className="mt-6 block text-sm font-medium text-gray-700">
+                <label className="mt-6 block text-xs font-bold uppercase tracking-widest text-gray-400">
                   Email
                   <input
                     type="email"
@@ -91,12 +92,12 @@ export default function ForgotPasswordPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     required
                     placeholder="you@example.com"
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+                    className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
                   />
                 </label>
 
                 {error && (
-                  <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
+                  <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
                     {error}
                   </p>
                 )}
@@ -104,13 +105,13 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={isLoading || !email}
-                  className="mt-6 w-full rounded-lg bg-green-900 px-4 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+                  className="mt-6 w-full rounded-xl bg-green-900 px-4 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
                 >
                   {isLoading ? "Sending..." : "Send reset link"}
                 </button>
               </form>
 
-              <p className="mt-4 text-center text-sm text-gray-600">
+              <p className="mt-4 text-center text-sm text-gray-400">
                 <Link to="/login" className="font-semibold text-green-900">
                   Back to login
                 </Link>

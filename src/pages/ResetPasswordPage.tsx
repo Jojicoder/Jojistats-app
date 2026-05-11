@@ -54,7 +54,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[#f7f8f3]">
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex w-full items-center justify-between gap-4">
           <Link to="/" className="flex items-center gap-3">
@@ -71,7 +71,7 @@ export default function ResetPasswordPage() {
           {!ready ? (
             <div className="text-center">
               <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-green-900 border-t-transparent" />
-              <p className="mt-4 text-sm text-gray-500">Verifying link...</p>
+              <p className="mt-4 text-sm text-gray-400">Verifying link...</p>
               <p className="mt-6 text-xs text-gray-400">
                 This page is only accessible from a password reset email.
               </p>
@@ -81,13 +81,14 @@ export default function ResetPasswordPage() {
             </div>
           ) : (
             <>
-              <h1 className="text-2xl font-bold text-green-900">Set new password</h1>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">Joji Stats</p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">Set new password</h1>
+              <p className="mt-1 text-sm text-gray-400">
                 Choose a new password with at least 6 characters.
               </p>
 
               <form onSubmit={handleSubmit}>
-                <label className="mt-6 block text-sm font-medium text-gray-700">
+                <label className="mt-6 block text-xs font-bold uppercase tracking-widest text-gray-400">
                   New password
                   <input
                     type="password"
@@ -95,11 +96,11 @@ export default function ResetPasswordPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     placeholder="At least 6 characters"
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+                    className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
                   />
                 </label>
 
-                <label className="mt-4 block text-sm font-medium text-gray-700">
+                <label className="mt-4 block text-xs font-bold uppercase tracking-widest text-gray-400">
                   Confirm password
                   <input
                     type="password"
@@ -107,12 +108,12 @@ export default function ResetPasswordPage() {
                     onChange={(e) => setConfirm(e.target.value)}
                     required
                     placeholder="Repeat password"
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-3 sm:py-2 text-sm outline-none focus:border-green-700"
+                    className="mt-1.5 w-full rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 text-sm font-normal normal-case tracking-normal text-gray-900 outline-none focus:border-green-700 focus:bg-white"
                   />
                 </label>
 
                 {error && (
-                  <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
+                  <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-xs font-medium text-red-600">
                     {error}
                   </p>
                 )}
@@ -120,7 +121,7 @@ export default function ResetPasswordPage() {
                 <button
                   type="submit"
                   disabled={isLoading || !password || !confirm}
-                  className="mt-6 w-full rounded-lg bg-green-900 px-4 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
+                  className="mt-6 w-full rounded-xl bg-green-900 px-4 py-3 sm:py-2 text-sm font-semibold text-white hover:bg-green-800 disabled:opacity-60"
                 >
                   {isLoading ? "Updating..." : "Update password"}
                 </button>
