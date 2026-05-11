@@ -4,6 +4,7 @@ import type {
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
 } from "../types"
+import { calcBattingMetrics, calcPitchingMetrics } from "../utils/metrics"
 
 type SidebarSortKey =
   | "jersey"
@@ -30,77 +31,6 @@ type SidebarProps = {
   mode?: "batting" | "pitching"
 }
 
-function getPlayerTotals(entries: SavedBattingGameEntry[]) {
-  return entries.reduce(
-    (acc, entry) => {
-      acc.ab += entry.statLine.AB
-      acc.h += entry.statLine.H
-      acc.doubles += entry.statLine.doubles
-      acc.triples += entry.statLine.triples
-      acc.hr += entry.statLine.HR
-      acc.rbi += entry.statLine.RBI
-      acc.bb += entry.statLine.BB
-      acc.hbp += entry.statLine.HBP ?? 0
-      acc.sf += entry.statLine.SF ?? 0
-      return acc
-    },
-    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0, sf: 0 }
-  )
-}
-
-function getPlayerMetrics(entries: SavedBattingGameEntry[]) {
-  const totals = getPlayerTotals(entries)
-  const pa = totals.ab + totals.bb + totals.hbp + totals.sf
-  const avg = totals.ab > 0 ? totals.h / totals.ab : 0
-  const obp = pa > 0 ? (totals.h + totals.bb + totals.hbp) / pa : 0
-
-  const singles = Math.max(
-    totals.h - totals.doubles - totals.triples - totals.hr,
-    0
-  )
-
-  const totalBases =
-    singles + totals.doubles * 2 + totals.triples * 3 + totals.hr * 4
-
-  const slg = totals.ab > 0 ? totalBases / totals.ab : 0
-  const ops = obp + slg
-
-  return {
-    games: entries.length,
-    pa,
-    avg,
-    ops,
-    hr: totals.hr,
-    rbi: totals.rbi,
-  }
-}
-
-function getPitchingMetrics(entries: SavedPitchingGameEntry[]) {
-  const totals = entries.reduce(
-    (acc, entry) => {
-      acc.outs += entry.statLine.inningsPitchedOuts
-      acc.h += entry.statLine.hitsAllowed
-      acc.er += entry.statLine.earnedRuns
-      acc.bb += entry.statLine.walks
-      acc.so += entry.statLine.strikeouts
-      return acc
-    },
-    { outs: 0, h: 0, er: 0, bb: 0, so: 0 }
-  )
-
-  const ip = totals.outs / 3
-  const era = ip > 0 ? (totals.er * 9) / ip : 999
-  const whip = ip > 0 ? (totals.bb + totals.h) / ip : 999
-
-  return {
-    games: entries.length,
-    ip,
-    era,
-    whip,
-    so: totals.so,
-    bb: totals.bb,
-  }
-}
 
 export default function Sidebar({
   players,
@@ -115,6 +45,20 @@ export default function Sidebar({
   useEffect(() => {
     if (mode === "pitching") setSortBy("games")
   }, [mode])
+
+  const playerMetrics = useMemo(() => {
+    const map: Record<string, {
+      batting: ReturnType<typeof calcBattingMetrics>
+      pitching: ReturnType<typeof calcPitchingMetrics>
+    }> = {}
+    for (const player of players) {
+      map[player.id] = {
+        batting: calcBattingMetrics(savedEntriesByPlayer[player.id] ?? []),
+        pitching: calcPitchingMetrics(pitchingEntriesByPlayer[player.id] ?? []),
+      }
+    }
+    return map
+  }, [players, savedEntriesByPlayer, pitchingEntriesByPlayer])
 
   const sortedPlayers = useMemo(() => {
     const nextPlayers = [...players]
@@ -131,72 +75,72 @@ export default function Sidebar({
       if (mode === "pitching") {
         const aIsPitcher = a.position === "P"
         const bIsPitcher = b.position === "P"
-        const aMetrics = getPitchingMetrics(pitchingEntriesByPlayer[a.id] ?? [])
-        const bMetrics = getPitchingMetrics(pitchingEntriesByPlayer[b.id] ?? [])
-        const aHasPitchingRecord = aMetrics.games > 0
-        const bHasPitchingRecord = bMetrics.games > 0
+        const am = playerMetrics[a.id].pitching
+        const bm = playerMetrics[b.id].pitching
 
         if (sortBy === "jersey") {
-          if (aHasPitchingRecord && !bHasPitchingRecord) return -1
-          if (!aHasPitchingRecord && bHasPitchingRecord) return 1
+          if (am.games > 0 && bm.games === 0) return -1
+          if (am.games === 0 && bm.games > 0) return 1
           if (aIsPitcher && !bIsPitcher) return -1
           if (!aIsPitcher && bIsPitcher) return 1
           return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
         }
 
         if (sortBy === "games") {
-          const games = bMetrics.games - aMetrics.games
+          const games = bm.games - am.games
           if (games !== 0) return games
           if (aIsPitcher && !bIsPitcher) return -1
           if (!aIsPitcher && bIsPitcher) return 1
           return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
         }
-        if (sortBy === "era") return aMetrics.era - bMetrics.era
-        if (sortBy === "whip") return aMetrics.whip - bMetrics.whip
-        if (sortBy === "ip") return bMetrics.ip - aMetrics.ip
-        if (sortBy === "so") return bMetrics.so - aMetrics.so
-        if (sortBy === "bb") return aMetrics.bb - bMetrics.bb
+        if (sortBy === "era") {
+          const aEra = am.ip > 0 ? am.era : Infinity
+          const bEra = bm.ip > 0 ? bm.era : Infinity
+          return aEra - bEra
+        }
+        if (sortBy === "whip") {
+          const aWhip = am.ip > 0 ? am.whip : Infinity
+          const bWhip = bm.ip > 0 ? bm.whip : Infinity
+          return aWhip - bWhip
+        }
+        if (sortBy === "ip") return bm.ip - am.ip
+        if (sortBy === "so") return bm.so - am.so
+        if (sortBy === "bb") return am.bb - bm.bb
 
         return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
       }
 
-      const aMetrics = getPlayerMetrics(savedEntriesByPlayer[a.id] ?? [])
-      const bMetrics = getPlayerMetrics(savedEntriesByPlayer[b.id] ?? [])
+      const am = playerMetrics[a.id].batting
+      const bm = playerMetrics[b.id].batting
 
-      if (sortBy === "games") return bMetrics.games - aMetrics.games
-      if (sortBy === "pa") return bMetrics.pa - aMetrics.pa
-      if (sortBy === "avg") return bMetrics.avg - aMetrics.avg
-      if (sortBy === "ops") return bMetrics.ops - aMetrics.ops
-      if (sortBy === "hr") return bMetrics.hr - aMetrics.hr
-      if (sortBy === "rbi") return bMetrics.rbi - aMetrics.rbi
+      if (sortBy === "games") return bm.games - am.games
+      if (sortBy === "pa") return bm.pa - am.pa
+      if (sortBy === "avg") return bm.avg - am.avg
+      if (sortBy === "ops") return bm.ops - am.ops
+      if (sortBy === "hr") return bm.hr - am.hr
+      if (sortBy === "rbi") return bm.rbi - am.rbi
 
       return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
     })
 
     return nextPlayers
-  }, [
-    players,
-    savedEntriesByPlayer,
-    pitchingEntriesByPlayer,
-    sortBy,
-    mode,
-  ])
+  }, [players, playerMetrics, sortBy, mode])
 
   return (
-    <aside className="w-full shrink-0 rounded-2xl bg-white p-4 shadow-sm lg:max-w-[240px]">
-      <div className="flex items-center justify-between gap-2 lg:block">
-        <div>
+    <aside className="h-fit w-full shrink-0 overflow-visible rounded-2xl bg-white p-4 shadow-sm lg:max-h-[calc(100vh-8rem)] lg:w-72 lg:max-w-72 lg:overflow-y-auto">
+      <div className="flex min-w-0 items-center justify-between gap-2 lg:block">
+        <div className="min-w-0">
           <h2 className="text-base font-bold text-gray-900">Team Roster</h2>
           <p className="hidden text-xs text-gray-400 lg:mt-0.5 lg:block">{players.length} players</p>
         </div>
 
-        <div className="flex items-center gap-2 lg:mt-4 lg:flex-col lg:items-start lg:gap-0">
-          <span className="text-xs font-bold uppercase tracking-widest text-gray-400 lg:hidden">Sort</span>
+        <div className="flex min-w-0 items-center gap-2 lg:mt-4 lg:flex-col lg:items-start lg:gap-0">
+          <span className="shrink-0 text-xs font-bold uppercase tracking-widest text-gray-400 lg:hidden">Sort</span>
           <label className="hidden text-xs font-bold uppercase tracking-widest text-gray-400 lg:block">Sort by</label>
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SidebarSortKey)}
-            className="max-w-36 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 lg:mt-1 lg:w-full lg:max-w-none lg:px-3 lg:py-2"
+            className="min-w-0 max-w-36 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 lg:mt-1 lg:w-full lg:max-w-none lg:px-3 lg:py-2"
           >
             <option value="jersey">Jersey Number</option>
             <option value="name">Name</option>
@@ -227,15 +171,15 @@ export default function Sidebar({
       <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-2 lg:overflow-visible lg:pb-0">
         {sortedPlayers.map((player) => {
           const isActive = player.id === activePlayerId
-          const battingMetrics = getPlayerMetrics(savedEntriesByPlayer[player.id] ?? [])
-          const pitchingMetrics = getPitchingMetrics(pitchingEntriesByPlayer[player.id] ?? [])
+          const battingMetrics = playerMetrics[player.id].batting
+          const pitchingMetrics = playerMetrics[player.id].pitching
 
           return (
             <button
               key={player.id}
               type="button"
               onClick={() => setActivePlayerId(player.id)}
-              className={`flex min-w-[150px] items-center gap-3 rounded-xl px-3 py-2.5 text-left transition lg:min-w-0 ${
+              className={`flex min-w-[180px] max-w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left transition lg:w-full lg:min-w-0 ${
                 isActive
                   ? "bg-green-900 text-white"
                   : "bg-[#f7f8f3] text-gray-800 hover:bg-[#eef0e9]"
@@ -249,11 +193,11 @@ export default function Sidebar({
                 {player.jerseyNumber != null ? player.jerseyNumber : "—"}
               </div>
 
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 overflow-hidden">
                 <p className="truncate text-sm font-semibold">
                   {player.name}
                 </p>
-                <p className={`mt-0.5 text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
+                <p className={`mt-0.5 truncate text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
                   {player.position} · {mode === "pitching" ? pitchingMetrics.games : battingMetrics.games}G
                 </p>
               </div>

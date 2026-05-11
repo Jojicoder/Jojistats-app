@@ -2,12 +2,23 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
 import {
+  fetchGamesBySeason,
   fetchPlayers,
+  fetchPitchingEntriesByPlayer,
   fetchSavedEntriesByPlayer,
   fetchTeamById,
   fetchUserAccessByEmail,
 } from "../api/supabase-api"
-import { createFullGame, deleteBattingStatEntry, deleteGame, updateBattingStatEntry, updateFullGame, updateGameInfo } from "../api/api"
+import {
+  createFullGame,
+  deleteBattingStatEntry,
+  deleteGame,
+  deletePitchingStatEntry,
+  updateBattingStatEntry,
+  updateFullGame,
+  updateGameInfo,
+  updatePitchingStatEntry,
+} from "../api/api"
 
 import RecordGamePage from "../components/RecordGamePage"
 
@@ -16,10 +27,12 @@ import type {
   DraftGameMeta,
   BattingEntryData,
   SavedBattingGameEntry,
+  SavedPitchingGameEntry,
   PendingBattingEntry,
   PendingPitchingEntry,
   PitchingEntryData,
 } from "../types"
+import type { GameRow } from "../api/supabase-api"
 
 const OFFLINE_CACHE_KEY = "jojistats-game-cache"
 const OFFLINE_QUEUE_KEY = "jojistats-game-queue"
@@ -69,6 +82,15 @@ function mapPlayer(row: {
   }
 }
 
+function getNextMatchNumber(games: GameRow[]) {
+  const maxMatchNumber = games.reduce(
+    (max, game) => Math.max(max, Number(game.match_number) || 0),
+    0
+  )
+
+  return maxMatchNumber + 1
+}
+
 export default function GameRecordPage() {
   const navigate = useNavigate()
 
@@ -95,13 +117,21 @@ export default function GameRecordPage() {
 
   const [savedEntries, setSavedEntries] = useState<SavedBattingGameEntry[]>([])
   const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<Record<string, SavedBattingGameEntry[]>>({})
+  const [pitchingEntriesByPlayer, setPitchingEntriesByPlayer] = useState<Record<string, SavedPitchingGameEntry[]>>({})
+  const [seasonGames, setSeasonGames] = useState<GameRow[]>([])
   const [editingSavedEntryId, setEditingSavedEntryId] = useState<string | null>(null)
   const [editingSavedEntry, setEditingSavedEntry] = useState<SavedBattingGameEntry | null>(null)
+  const [editingSavedPitchingEntry, setEditingSavedPitchingEntry] =
+    useState<SavedPitchingGameEntry | null>(null)
 
   const [recordMode, setRecordMode] = useState<"batting" | "pitching">(
     "batting"
   )
   const teamSavedEntries = Object.values(savedEntriesByPlayer).flat()
+  const teamSavedPitchingEntries = Object.values(pitchingEntriesByPlayer).flat()
+  const savedPitchingEntries = activePlayer
+    ? pitchingEntriesByPlayer[activePlayer.id] ?? []
+    : []
 
   const [pitchingEntry, setPitchingEntry] =
     useState<PitchingEntryData>(emptyPitchingEntry)
@@ -208,9 +238,20 @@ export default function GameRecordPage() {
     setActivePlayer(first)
     setGameMeta((prev) => ({ ...prev, seasonYear: team.current_season_year }))
 
-    const entries = await fetchSavedEntriesByPlayer(team.id, team.current_season_year)
+    const [entries, pitchingEntries, games] = await Promise.all([
+      fetchSavedEntriesByPlayer(team.id, team.current_season_year),
+      fetchPitchingEntriesByPlayer(team.id, team.current_season_year),
+      fetchGamesBySeason(team.id, team.current_season_year),
+    ])
     setSavedEntriesByPlayer(entries)
+    setPitchingEntriesByPlayer(pitchingEntries)
     setSavedEntries(entries[first.id] ?? [])
+    setSeasonGames(games)
+    setGameMeta((prev) => ({
+      ...prev,
+      seasonYear: team.current_season_year,
+      matchNumber: getNextMatchNumber(games),
+    }))
 
     try {
       localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify({
@@ -256,8 +297,12 @@ export default function GameRecordPage() {
     if (player.id === activePlayer?.id) return
     setActivePlayer(player)
     if (teamId == null) return
-    const refreshed = await fetchSavedEntriesByPlayer(teamId, seasonYear)
+    const [refreshed, refreshedPitching] = await Promise.all([
+      fetchSavedEntriesByPlayer(teamId, seasonYear),
+      fetchPitchingEntriesByPlayer(teamId, seasonYear),
+    ])
     setSavedEntriesByPlayer(refreshed)
+    setPitchingEntriesByPlayer(refreshedPitching)
     setSavedEntries(refreshed[player.id] ?? [])
   }
 
@@ -331,9 +376,19 @@ export default function GameRecordPage() {
       }
 
       if (teamId != null) {
-        const refreshed = await fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear)
+        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
+          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
+        ])
         setSavedEntriesByPlayer(refreshed)
+        setPitchingEntriesByPlayer(refreshedPitching)
         setSavedEntries(refreshed[activePlayer.id] ?? [])
+        setSeasonGames(refreshedGames)
+        setGameMeta((prev) => ({
+          ...prev,
+          matchNumber: getNextMatchNumber(refreshedGames),
+        }))
       }
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
@@ -391,9 +446,15 @@ export default function GameRecordPage() {
       })
 
       if (teamId != null) {
-        const refreshed = await fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear)
+        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
+          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
+        ])
         setSavedEntriesByPlayer(refreshed)
+        setPitchingEntriesByPlayer(refreshedPitching)
         setSavedEntries(refreshed[activePlayer.id] ?? [])
+        setSeasonGames(refreshedGames)
       }
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
@@ -424,9 +485,15 @@ export default function GameRecordPage() {
       })
 
       if (teamId != null) {
-        const refreshed = await fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear)
+        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
+          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
+        ])
         setSavedEntriesByPlayer(refreshed)
+        setPitchingEntriesByPlayer(refreshedPitching)
         setSavedEntries(refreshed[activePlayer.id] ?? [])
+        setSeasonGames(refreshedGames)
       }
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
@@ -452,9 +519,15 @@ export default function GameRecordPage() {
     try {
       await deleteBattingStatEntry(savedEntry.statId, savedEntry.gameId)
       if (teamId != null && activePlayer) {
-        const refreshed = await fetchSavedEntriesByPlayer(teamId, seasonYear)
+        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
+          fetchSavedEntriesByPlayer(teamId, seasonYear),
+          fetchPitchingEntriesByPlayer(teamId, seasonYear),
+          fetchGamesBySeason(teamId, seasonYear),
+        ])
         setSavedEntriesByPlayer(refreshed)
+        setPitchingEntriesByPlayer(refreshedPitching)
         setSavedEntries(refreshed[activePlayer.id] ?? [])
+        setSeasonGames(refreshedGames)
       }
       if (editingSavedEntryId === savedEntry.id) {
         setEditingSavedEntryId(null)
@@ -479,14 +552,126 @@ export default function GameRecordPage() {
       setEditingSavedEntry(null)
       setCurrentEntry(emptyBattingEntry)
       if (teamId != null) {
-        const refreshed = await fetchSavedEntriesByPlayer(teamId, seasonYear)
+        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
+          fetchSavedEntriesByPlayer(teamId, seasonYear),
+          fetchPitchingEntriesByPlayer(teamId, seasonYear),
+          fetchGamesBySeason(teamId, seasonYear),
+        ])
         setSavedEntriesByPlayer(refreshed)
+        setPitchingEntriesByPlayer(refreshedPitching)
         setSavedEntries(refreshed[activePlayer.id] ?? [])
+        setSeasonGames(refreshedGames)
+        setGameMeta((prev) => ({
+          ...prev,
+          matchNumber: getNextMatchNumber(refreshedGames),
+        }))
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "Delete failed"
       setSaveError(message)
       window.alert(`Delete failed: ${message}`)
+    }
+  }
+
+  const handleStartEditSavedPitchingEntry = (savedEntry: SavedPitchingGameEntry) => {
+    setEditingSavedPitchingEntry(savedEntry)
+    setEditingSavedEntryId(null)
+    setEditingSavedEntry(null)
+    setGameMeta(savedEntry.gameMeta)
+    setPitchingEntry(savedEntry.statLine)
+    setRecordMode("pitching")
+  }
+
+  const handleUpdateSavedPitchingEntry = async (
+    nextGameMeta: DraftGameMeta,
+    nextPitchingEntry: PitchingEntryData
+  ) => {
+    if (!activePlayer || !editingSavedPitchingEntry) return
+
+    setSaveError("")
+    try {
+      await updatePitchingStatEntry(
+        editingSavedPitchingEntry.statId,
+        editingSavedPitchingEntry.gameId,
+        {
+          game: {
+            team_id: Number(activePlayer.teamId),
+            game_date: nextGameMeta.date,
+            opponent_name: nextGameMeta.opponent,
+            season_year: nextGameMeta.seasonYear,
+            match_number: nextGameMeta.matchNumber,
+            location: nextGameMeta.location?.trim() || null,
+            ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
+            team_score: nextGameMeta.teamScore ?? null,
+            opponent_score: nextGameMeta.opponentScore ?? null,
+            result: nextGameMeta.result || null,
+          },
+          pitchingStat: {
+            player_id: Number(editingSavedPitchingEntry.playerId),
+            innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
+            hits_allowed: nextPitchingEntry.hitsAllowed,
+            runs_allowed: nextPitchingEntry.runsAllowed,
+            earned_runs: nextPitchingEntry.earnedRuns,
+            walks: nextPitchingEntry.walks,
+            hbp: nextPitchingEntry.hitBatters,
+            strikeouts: nextPitchingEntry.strikeouts,
+            home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
+          },
+        }
+      )
+
+      if (teamId != null) {
+        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
+          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
+          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
+        ])
+        setSavedEntriesByPlayer(refreshed)
+        setPitchingEntriesByPlayer(refreshedPitching)
+        setSavedEntries(refreshed[activePlayer.id] ?? [])
+        setSeasonGames(refreshedGames)
+      }
+
+      setEditingSavedPitchingEntry(null)
+      setPitchingEntry(emptyPitchingEntry)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Pitching update failed"
+      setSaveError(message)
+      throw err
+    }
+  }
+
+  const handleCancelEditSavedPitchingEntry = () => {
+    setEditingSavedPitchingEntry(null)
+    setPitchingEntry(emptyPitchingEntry)
+  }
+
+  const handleDeleteSavedPitchingEntry = async (savedEntry: SavedPitchingGameEntry) => {
+    if (!activePlayer) return
+    if (!window.confirm("Delete this pitching entry?")) return
+
+    setSaveError("")
+    try {
+      await deletePitchingStatEntry(savedEntry.statId, savedEntry.gameId)
+      if (teamId != null) {
+        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
+          fetchSavedEntriesByPlayer(teamId, seasonYear),
+          fetchPitchingEntriesByPlayer(teamId, seasonYear),
+          fetchGamesBySeason(teamId, seasonYear),
+        ])
+        setSavedEntriesByPlayer(refreshed)
+        setPitchingEntriesByPlayer(refreshedPitching)
+        setSavedEntries(refreshed[activePlayer.id] ?? [])
+        setSeasonGames(refreshedGames)
+      }
+      if (editingSavedPitchingEntry?.id === savedEntry.id) {
+        setEditingSavedPitchingEntry(null)
+        setPitchingEntry(emptyPitchingEntry)
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Pitching delete failed"
+      setSaveError(message)
+      window.alert(`Pitching delete failed: ${message}`)
     }
   }
 
@@ -526,6 +711,24 @@ export default function GameRecordPage() {
     })
 
     setPitchingEntry(emptyPitchingEntry)
+
+    if (teamId != null) {
+      const [refreshedPitching, refreshedGames] = await Promise.all([
+        fetchPitchingEntriesByPlayer(teamId, gameMeta.seasonYear),
+        fetchGamesBySeason(teamId, gameMeta.seasonYear),
+      ])
+      setPitchingEntriesByPlayer(refreshedPitching)
+      setSeasonGames(refreshedGames)
+      setGameMeta((prev) => ({
+        ...prev,
+        matchNumber: getNextMatchNumber(refreshedGames),
+      }))
+    } else {
+      setGameMeta((prev) => ({
+        ...prev,
+        matchNumber: Math.max(prev.matchNumber + 1, getNextMatchNumber(seasonGames)),
+      }))
+    }
   }
 
   if (isLoading) {
@@ -589,27 +792,36 @@ export default function GameRecordPage() {
           currentEntry={currentEntry}
           gameMeta={gameMeta}
           savedEntries={savedEntries}
+          savedPitchingEntries={savedPitchingEntries}
           teamSavedEntries={teamSavedEntries}
+          teamSavedPitchingEntries={teamSavedPitchingEntries}
+          savedGames={seasonGames}
           onGameMetaChange={setGameMeta}
           onEntryChange={setCurrentEntry}
           onSaveGame={handleSaveGame}
           teamName={teamName}
           seasonYear={activePlayer.seasonYear}
           isEditingSavedEntry={editingSavedEntryId !== null}
+          isEditingSavedPitchingEntry={editingSavedPitchingEntry !== null}
           editingSavedEntryId={editingSavedEntryId}
           onStartEditSavedEntry={handleStartEditSavedEntry}
           onUpdateSavedEntry={handleUpdateSavedEntry}
+          onUpdateSavedGame={handleSaveGame}
           onUpdateSavedGameMeta={handleUpdateSavedGameMeta}
           onCancelEditSavedEntry={handleCancelEditSavedEntry}
           onDeleteSavedEntry={handleDeleteSavedEntry}
           onDeleteSavedGame={handleDeleteSavedGame}
+          onStartEditSavedPitchingEntry={handleStartEditSavedPitchingEntry}
+          onUpdateSavedPitchingEntry={handleUpdateSavedPitchingEntry}
+          onCancelEditSavedPitchingEntry={handleCancelEditSavedPitchingEntry}
+          onDeleteSavedPitchingEntry={handleDeleteSavedPitchingEntry}
           editingGamePositions={undefined}
           recordMode={recordMode}
           setRecordMode={setRecordMode}
           pitchingEntry={pitchingEntry}
           onPitchingEntryChange={setPitchingEntry}
           onSavePitchingGame={handleSavePitchingGame}
-          isPitchingSaveDisabled={false}
+          isPitchingSaveDisabled={pitchingEntry.earnedRuns > pitchingEntry.runsAllowed}
           saveError={saveError}
           onClearSaveError={() => setSaveError("")}
         />

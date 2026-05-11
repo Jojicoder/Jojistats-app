@@ -16,6 +16,7 @@ import PitchingEntryPanel from "./PitchingEntryPanel"
 import SavedEntriesList from "./SavedEntriesList"
 import GameMetaFields from "./GameMetaFields"
 import BattingStatFields from "./BattingStatFields"
+import PitchingStatFields from "./PitchingStatFields"
 
 type RecordGamePageProps = {
   activePlayer: Player
@@ -27,6 +28,8 @@ type RecordGamePageProps = {
   savedEntries: SavedBattingGameEntry[]
   savedPitchingEntries?: SavedPitchingGameEntry[]
   teamSavedEntries?: SavedBattingGameEntry[]
+  teamSavedPitchingEntries?: SavedPitchingGameEntry[]
+  savedGames?: SavedGameSummary[]
   onGameMetaChange: (nextMeta: DraftGameMeta) => void
   onEntryChange: (nextEntry: BattingEntryData) => void
   onSaveGame: (
@@ -46,7 +49,8 @@ type RecordGamePageProps = {
   ) => void
   onUpdateSavedGame?: (
     nextGameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[]
+    entries: PendingBattingEntry[],
+    pitchingEntries?: PendingPitchingEntry[]
   ) => void | Promise<void>
   onUpdateSavedGameMeta?: (nextGameMeta: DraftGameMeta) => void
   onCancelEditSavedEntry: () => void
@@ -71,10 +75,25 @@ type RecordGamePageProps = {
   onGameModeChange?: (isGameMode: boolean) => void
 }
 
+type SavedGameSummary = {
+  id: number
+  team_id: number
+  game_date: string
+  opponent_name: string
+  season_year: number
+  match_number: number
+  location?: string | null
+  memo?: string | null
+  team_score?: number | null
+  opponent_score?: number | null
+  result?: "W" | "L" | "T" | string | null
+}
+
 type GameHalf = "Top" | "Bottom"
 type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "HBP" | "SF" | "SO" | "OUT" | "E"
 type LiveGameTab = "batting" | "pitching"
 type InputStyle = "standard" | "game" | "edit"
+type EditGameTab = "batting" | "pitching"
 type LivePitchResult = "OUT" | "SO" | "BB" | "HBP" | "H" | "2B" | "3B" | "R" | "ER" | "HR" | "E"
 type BaseName = "first" | "second" | "third"
 type BasesState = {
@@ -124,6 +143,12 @@ type RunnerRbiAction = {
   half: GameHalf
   basesBefore: BasesState
   playBefore: LivePlay
+}
+
+type RunnerRunAction = {
+  id: string
+  half: GameHalf
+  basesBefore: BasesState
 }
 
 const emptyBases: BasesState = {
@@ -790,6 +815,8 @@ export default function RecordGamePage({
   savedEntries,
   savedPitchingEntries = [],
   teamSavedEntries,
+  teamSavedPitchingEntries,
+  savedGames = [],
   onGameMetaChange,
   onEntryChange,
   onSaveGame,
@@ -843,6 +870,7 @@ export default function RecordGamePage({
   const [selectedBase, setSelectedBase] = useState<BaseName | null>(null)
   const [runnerOutHistory, setRunnerOutHistory] = useState<RunnerOutAction[]>([])
   const [runnerRbiHistory, setRunnerRbiHistory] = useState<RunnerRbiAction[]>([])
+  const [runnerRunHistory, setRunnerRunHistory] = useState<RunnerRunAction[]>([])
   const [awayScore, setAwayScore] = useState(0)
   const [homeScore, setHomeScore] = useState(0)
   const [quickRbi, setQuickRbi] = useState(0)
@@ -870,9 +898,13 @@ export default function RecordGamePage({
   const [lastLocalSaveAt, setLastLocalSaveAt] = useState("")
   const [editingLiveEventId, setEditingLiveEventId] = useState<string | null>(null)
   const [expandedLiveInningKey, setExpandedLiveInningKey] = useState("")
+  const [editGameTab, setEditGameTab] = useState<EditGameTab>("batting")
   const [editGameEntries, setEditGameEntries] = useState<PendingBattingEntry[]>([])
+  const [editGamePitchingEntries, setEditGamePitchingEntries] = useState<PendingPitchingEntry[]>([])
   const [editAddPlayerId, setEditAddPlayerId] = useState("")
+  const [editAddPitcherId, setEditAddPitcherId] = useState("")
   const [selectedEditPlayerId, setSelectedEditPlayerId] = useState("")
+  const [selectedEditPitcherId, setSelectedEditPitcherId] = useState("")
   const [dragLineupIndex, setDragLineupIndex] = useState<number | null>(null)
   const [dragOverLineupIndex, setDragOverLineupIndex] = useState<number | null>(null)
 
@@ -908,6 +940,7 @@ export default function RecordGamePage({
         selectedBase?: BaseName | null
         runnerOutHistory?: RunnerOutAction[]
         runnerRbiHistory?: RunnerRbiAction[]
+        runnerRunHistory?: RunnerRunAction[]
         replacedLineupIds?: Record<number, string>
         livePlays?: LivePlay[]
         livePitcherId?: string
@@ -936,6 +969,9 @@ export default function RecordGamePage({
       }
       if (Array.isArray(draft.runnerRbiHistory)) {
         setRunnerRbiHistory(draft.runnerRbiHistory)
+      }
+      if (Array.isArray(draft.runnerRunHistory)) {
+        setRunnerRunHistory(draft.runnerRunHistory)
       }
       if (draft.replacedLineupIds) setReplacedLineupIds(draft.replacedLineupIds)
       if (Array.isArray(draft.livePlays)) setLivePlays(draft.livePlays)
@@ -966,6 +1002,7 @@ export default function RecordGamePage({
       selectedBase,
       runnerOutHistory,
       runnerRbiHistory,
+      runnerRunHistory,
       replacedLineupIds,
       livePlays,
       livePitcherId,
@@ -995,6 +1032,7 @@ export default function RecordGamePage({
     quickPitchNote,
     runnerOutHistory,
     runnerRbiHistory,
+    runnerRunHistory,
     replacedLineupIds,
     selectedBase,
   ])
@@ -1101,7 +1139,73 @@ export default function RecordGamePage({
     }
   }, [currentLiveInningKey, expandedLiveInningKey])
 
+  const teamGameEntries = useMemo(() => {
+    const battingEntries = teamSavedEntries ?? savedEntries
+    const pitchingEntries = teamSavedPitchingEntries ?? savedPitchingEntries
+    const byGame = new Map<number, SavedBattingGameEntry>()
+
+    savedGames.forEach((game) => {
+      byGame.set(game.id, {
+        id: `game-${game.id}`,
+        statId: 0,
+        gameId: game.id,
+        teamId: String(game.team_id),
+        playerId: "",
+        gameMeta: {
+          date: game.game_date,
+          opponent: game.opponent_name,
+          location: game.location ?? "",
+          seasonYear: game.season_year,
+          matchNumber: game.match_number,
+          memo: game.memo ?? "",
+          teamScore: game.team_score ?? null,
+          opponentScore: game.opponent_score ?? null,
+          result:
+            game.result === "W" || game.result === "L" || game.result === "T"
+              ? game.result
+              : "",
+        },
+        gamePositions: [],
+        statLine: createEmptyBattingLine(),
+      })
+    })
+
+    battingEntries.forEach((entry) => {
+      const existing = byGame.get(entry.gameId)
+      if (!existing || existing.statId === 0 || entry.statId < existing.statId) {
+        byGame.set(entry.gameId, entry)
+      }
+    })
+
+    pitchingEntries.forEach((entry) => {
+      if (byGame.has(entry.gameId)) return
+
+      byGame.set(entry.gameId, {
+        id: `pitching-game-${entry.gameId}`,
+        statId: entry.statId,
+        gameId: entry.gameId,
+        teamId: entry.teamId,
+        playerId: entry.playerId,
+        gameMeta: entry.gameMeta,
+        gamePositions: ["P"],
+        statLine: createEmptyBattingLine(),
+      })
+    })
+
+    return Array.from(byGame.values()).sort((a, b) => {
+      const dateCompare = b.gameMeta.date.localeCompare(a.gameMeta.date)
+      if (dateCompare !== 0) return dateCompare
+      return b.gameMeta.matchNumber - a.gameMeta.matchNumber
+    })
+  }, [
+    savedEntries,
+    savedGames,
+    savedPitchingEntries,
+    teamSavedEntries,
+    teamSavedPitchingEntries,
+  ])
   const selectedGameEntry =
+    teamGameEntries.find((entry) => entry.id === editingSavedEntryId) ??
     (teamSavedEntries ?? savedEntries).find((entry) => entry.id === editingSavedEntryId) ??
     savedEntries.find((entry) => entry.id === editingSavedEntryId) ??
     null
@@ -1118,23 +1222,19 @@ export default function RecordGamePage({
         : [],
     [allPlayers, savedEntries, selectedGameEntry, teamSavedEntries]
   )
-  const teamGameEntries = useMemo(() => {
-    const entries = teamSavedEntries ?? savedEntries
-    const byGame = new Map<number, SavedBattingGameEntry>()
-
-    entries.forEach((entry) => {
-      const existing = byGame.get(entry.gameId)
-      if (!existing || entry.statId < existing.statId) {
-        byGame.set(entry.gameId, entry)
-      }
-    })
-
-    return Array.from(byGame.values()).sort((a, b) => {
-      const dateCompare = b.gameMeta.date.localeCompare(a.gameMeta.date)
-      if (dateCompare !== 0) return dateCompare
-      return b.gameMeta.matchNumber - a.gameMeta.matchNumber
-    })
-  }, [savedEntries, teamSavedEntries])
+  const pitchingEntriesForEditing = useMemo(
+    () =>
+      selectedGameEntry
+        ? (teamSavedPitchingEntries ?? savedPitchingEntries)
+            .filter((entry) => entry.gameId === selectedGameEntry.gameId)
+            .sort((a, b) => {
+              const playerA = allPlayers.find((player) => player.id === a.playerId)
+              const playerB = allPlayers.find((player) => player.id === b.playerId)
+              return (playerA?.jerseyNumber ?? 999) - (playerB?.jerseyNumber ?? 999)
+            })
+        : [],
+    [allPlayers, savedPitchingEntries, selectedGameEntry, teamSavedPitchingEntries]
+  )
   const teamRecord = useMemo(
     () =>
       teamGameEntries.reduce(
@@ -1152,15 +1252,27 @@ export default function RecordGamePage({
   const editAvailablePlayers = allPlayers.filter(
     (player) => !editGameEntries.some((entry) => entry.playerId === player.id)
   )
+  const editAvailablePitchers = allPlayers.filter(
+    (player) =>
+      !editGamePitchingEntries.some((entry) => entry.playerId === player.id)
+  )
   const selectedEditAddPlayerId =
     editAddPlayerId || editAvailablePlayers[0]?.id || ""
+  const selectedEditAddPitcherId =
+    editAddPitcherId || editAvailablePitchers[0]?.id || ""
   const selectedEditGameEntry = selectedEditPlayerId
     ? editGameEntries.find((entry) => entry.playerId === selectedEditPlayerId) ?? null
+    : null
+  const selectedEditPitchingEntry = selectedEditPitcherId
+    ? editGamePitchingEntries.find((entry) => entry.playerId === selectedEditPitcherId) ?? null
     : null
   const hasInvalidEditGameStats = editGameEntries.some(
     (entry) =>
       entry.H > entry.AB ||
       entry.doubles + entry.triples + entry.HR > entry.H
+  )
+  const hasInvalidEditPitchingStats = editGamePitchingEntries.some(
+    (entry) => entry.earnedRuns > entry.runsAllowed
   )
   const hoveredEditPlayerEvents = hoveredEditPlayerId
     ? livePlays.filter((play) => play.playerId === hoveredEditPlayerId)
@@ -1187,6 +1299,21 @@ export default function RecordGamePage({
   }, [allPlayers, gameEntriesForEditing])
 
   useEffect(() => {
+    setEditGamePitchingEntries(
+      pitchingEntriesForEditing.map((entry) => {
+        const player = allPlayers.find((item) => item.id === entry.playerId)
+        return {
+          ...entry.statLine,
+          playerId: entry.playerId,
+          playerName: player?.name ?? `Player ${entry.playerId}`,
+        }
+      })
+    )
+    setSelectedEditPitcherId("")
+    setEditAddPitcherId("")
+  }, [allPlayers, pitchingEntriesForEditing])
+
+  useEffect(() => {
     if (
       editAddPlayerId &&
       !editAvailablePlayers.some((player) => player.id === editAddPlayerId)
@@ -1197,12 +1324,30 @@ export default function RecordGamePage({
 
   useEffect(() => {
     if (
+      editAddPitcherId &&
+      !editAvailablePitchers.some((player) => player.id === editAddPitcherId)
+    ) {
+      setEditAddPitcherId("")
+    }
+  }, [editAddPitcherId, editAvailablePitchers])
+
+  useEffect(() => {
+    if (
       selectedEditPlayerId &&
       !editGameEntries.some((entry) => entry.playerId === selectedEditPlayerId)
     ) {
       setSelectedEditPlayerId("")
     }
   }, [editGameEntries, selectedEditPlayerId])
+
+  useEffect(() => {
+    if (
+      selectedEditPitcherId &&
+      !editGamePitchingEntries.some((entry) => entry.playerId === selectedEditPitcherId)
+    ) {
+      setSelectedEditPitcherId("")
+    }
+  }, [editGamePitchingEntries, selectedEditPitcherId])
 
   useEffect(() => {
     if (!canRecordPitching && recordMode === "pitching") {
@@ -1333,6 +1478,49 @@ export default function RecordGamePage({
     setEditAddPlayerId("")
   }
 
+  const handleUpdateEditGamePitchingEntry = (
+    playerId: string,
+    nextPitchingEntry: PitchingEntryData
+  ) => {
+    setEditGamePitchingEntries((prev) =>
+      prev.map((entry) =>
+        entry.playerId === playerId ? { ...entry, ...nextPitchingEntry } : entry
+      )
+    )
+  }
+
+  const handleRemoveEditGamePitchingEntry = (playerId: string) => {
+    setEditGamePitchingEntries((prev) =>
+      prev.filter((entry) => entry.playerId !== playerId)
+    )
+    if (selectedEditPitcherId === playerId) {
+      setSelectedEditPitcherId("")
+    }
+  }
+
+  const handleAddEditGamePitchingEntry = () => {
+    const player = allPlayers.find((item) => item.id === selectedEditAddPitcherId)
+    if (!player) return
+
+    setEditGamePitchingEntries((prev) => [
+      ...prev,
+      {
+        inningsPitchedOuts: 0,
+        hitsAllowed: 0,
+        runsAllowed: 0,
+        earnedRuns: 0,
+        walks: 0,
+        hitBatters: 0,
+        strikeouts: 0,
+        homeRunsAllowed: 0,
+        playerId: player.id,
+        playerName: player.name,
+      },
+    ])
+    setSelectedEditPitcherId(player.id)
+    setEditAddPitcherId("")
+  }
+
   const validateScore = (entries: { RBI: number }[]): boolean => {
     if (gameMeta.teamScore == null) return true
     const totalRbi = entries.reduce((sum, e) => sum + e.RBI, 0)
@@ -1351,17 +1539,18 @@ export default function RecordGamePage({
     if (
       !onUpdateSavedGame ||
       !isMetaComplete ||
-      editGameEntries.length === 0 ||
-      hasInvalidEditGameStats
+      (editGameEntries.length === 0 && editGamePitchingEntries.length === 0) ||
+      hasInvalidEditGameStats ||
+      hasInvalidEditPitchingStats
     ) {
       return
     }
 
-    if (!validateScore(editGameEntries)) return
+    if (editGameEntries.length > 0 && !validateScore(editGameEntries)) return
 
     try {
       setIsSaving(true)
-      await onUpdateSavedGame(gameMeta, editGameEntries)
+      await onUpdateSavedGame(gameMeta, editGameEntries, editGamePitchingEntries)
     } finally {
       setIsSaving(false)
     }
@@ -1535,6 +1724,24 @@ export default function RecordGamePage({
     else setHomeScore((prev) => prev + 1)
   }
 
+  const handleRunnerRun = () => {
+    if (!selectedBase || !bases[selectedBase]) return
+
+    setRunnerRunHistory((prev) => [
+      ...prev,
+      {
+        id: `${Date.now()}-runner-run`,
+        half: liveHalf,
+        basesBefore: bases,
+      },
+    ])
+
+    setBases((prev) => ({ ...prev, [selectedBase]: false }))
+    setSelectedBase(null)
+    if (liveHalf === "Top") setAwayScore((prev) => prev + 1)
+    else setHomeScore((prev) => prev + 1)
+  }
+
   const undoRunnerOut = () => {
     const lastAction = runnerOutHistory[runnerOutHistory.length - 1]
     if (!lastAction) return false
@@ -1564,6 +1771,17 @@ export default function RecordGamePage({
     return true
   }
 
+  const undoRunnerRun = () => {
+    const lastAction = runnerRunHistory[runnerRunHistory.length - 1]
+    if (!lastAction) return false
+
+    setRunnerRunHistory((prev) => prev.slice(0, -1))
+    setBases(lastAction.basesBefore)
+    if (lastAction.half === "Top") setAwayScore((prev) => Math.max(prev - 1, 0))
+    else setHomeScore((prev) => Math.max(prev - 1, 0))
+    return true
+  }
+
   const getActionTime = (id: string | undefined) => {
     if (!id) return 0
     const time = Number(id.split("-")[0])
@@ -1574,10 +1792,22 @@ export default function RecordGamePage({
     const lastRunnerOut = runnerOutHistory[runnerOutHistory.length - 1]
     const lastRunnerRbi =
       tab === "batting" ? runnerRbiHistory[runnerRbiHistory.length - 1] : undefined
+    const lastRunnerRun =
+      tab === "batting" ? runnerRunHistory[runnerRunHistory.length - 1] : undefined
     const lastPlay =
       tab === "batting"
         ? livePlays[livePlays.length - 1]
         : livePitchPlays[livePitchPlays.length - 1]
+
+    if (
+      lastRunnerRun &&
+      getActionTime(lastRunnerRun.id) > getActionTime(lastRunnerRbi?.id) &&
+      getActionTime(lastRunnerRun.id) > getActionTime(lastRunnerOut?.id) &&
+      getActionTime(lastRunnerRun.id) > getActionTime(lastPlay?.id)
+    ) {
+      undoRunnerRun()
+      return
+    }
 
     if (
       lastRunnerRbi &&
@@ -1818,6 +2048,7 @@ export default function RecordGamePage({
     setLivePitchingEntry(recomputed.livePitchingEntry)
     setRunnerOutHistory([])
     setRunnerRbiHistory([])
+    setRunnerRunHistory([])
     setCurrentBatterIndex(getBatterIndexAfterPlay(recomputed.livePlays))
     setLiveInning(recomputed.liveInning)
     setLiveHalf(recomputed.liveHalf)
@@ -1870,6 +2101,7 @@ export default function RecordGamePage({
     setLivePitchingEntry(recomputed.livePitchingEntry)
     setRunnerOutHistory([])
     setRunnerRbiHistory([])
+    setRunnerRunHistory([])
 
     if (editingLiveEventId === playId && nextCursor) {
       setCurrentBatterIndex(getBatterIndexAfterPlay(recomputed.livePlays, playId))
@@ -1921,6 +2153,7 @@ export default function RecordGamePage({
     setLivePitchingEntry(recomputed.livePitchingEntry)
     setRunnerOutHistory([])
     setRunnerRbiHistory([])
+    setRunnerRunHistory([])
 
     if (editingLiveEventId === playId && nextCursor) {
       const pitchTime = getActionTimeFromId(playId)
@@ -1981,6 +2214,7 @@ export default function RecordGamePage({
       setSelectedBase(null)
       setRunnerOutHistory([])
       setRunnerRbiHistory([])
+      setRunnerRunHistory([])
       setReplacedLineupIds({})
       setAwayScore(0)
       setHomeScore(0)
@@ -2021,6 +2255,7 @@ export default function RecordGamePage({
     setSelectedBase(null)
     setRunnerOutHistory([])
     setRunnerRbiHistory([])
+    setRunnerRunHistory([])
     setReplacedLineupIds({})
     setAwayScore(0)
     setHomeScore(0)
@@ -2407,21 +2642,29 @@ export default function RecordGamePage({
                     )}
                   </div>
 
-                  <div className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[230px]">
+                  <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[360px]">
                     <div className="grid grid-cols-2 gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleUndoLiveAction("batting")}
-                        disabled={livePlays.length === 0 && runnerOutHistory.length === 0 && runnerRbiHistory.length === 0}
-                        className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs font-semibold text-gray-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
+                        disabled={livePlays.length === 0 && runnerOutHistory.length === 0 && runnerRbiHistory.length === 0 && runnerRunHistory.length === 0}
+                        className="min-w-14 rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs font-semibold text-gray-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Undo
                       </button>
                       <button
                         type="button"
+                        onClick={handleRunnerRun}
+                        disabled={!selectedBase || !bases[selectedBase]}
+                        className="min-w-14 rounded-lg bg-orange-100 px-2 py-2 text-xs font-semibold text-orange-900 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-white"
+                      >
+                        Run
+                      </button>
+                      <button
+                        type="button"
                         onClick={handleRunnerRbi}
                         disabled={!selectedBase || !bases[selectedBase] || livePlays.length === 0}
-                        className="rounded-lg bg-green-900 px-3 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="min-w-14 rounded-lg bg-green-900 px-2 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300"
                       >
                         RBI
                       </button>
@@ -2429,10 +2672,47 @@ export default function RecordGamePage({
                         type="button"
                         onClick={handleRunnerOut}
                         disabled={!selectedBase || !bases[selectedBase]}
-                        className="rounded-lg bg-gray-900 px-3 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300"
+                        className="min-w-14 rounded-lg bg-gray-900 px-2 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300"
                       >
                         Out
                       </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-1.5">
+                      {[
+                        {
+                          label: "1B",
+                          active: bases.first,
+                          onClick: () => setBases((prev) => ({ ...prev, first: !prev.first })),
+                        },
+                        {
+                          label: "2B",
+                          active: bases.second,
+                          onClick: () => setBases((prev) => ({ ...prev, second: !prev.second })),
+                        },
+                        {
+                          label: "3B",
+                          active: bases.third,
+                          onClick: () => setBases((prev) => ({ ...prev, third: !prev.third })),
+                        },
+                        {
+                          label: "Clear",
+                          active: false,
+                          onClick: () => setBases(emptyBases),
+                        },
+                      ].map((item) => (
+                        <button
+                          key={item.label}
+                          type="button"
+                          onClick={item.onClick}
+                          className={`min-w-14 rounded-lg px-2 py-2 text-xs font-semibold shadow-sm ${
+                            item.active
+                              ? "bg-green-900 text-white"
+                              : "bg-white text-gray-600"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
                     </div>
                     <BaseDiamond
                       bases={bases}
@@ -2456,37 +2736,6 @@ export default function RecordGamePage({
                     <p className="font-semibold uppercase text-gray-500">Hits</p>
                     <p className="mt-1 text-lg font-bold">{currentInningHits}</p>
                   </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-                  <button
-                    type="button"
-                    onClick={() => setBases((prev) => ({ ...prev, first: !prev.first }))}
-                    className={`rounded-full px-2.5 py-1 font-semibold ${bases.first ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-500"}`}
-                  >
-                    1B
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBases((prev) => ({ ...prev, second: !prev.second }))}
-                    className={`rounded-full px-2.5 py-1 font-semibold ${bases.second ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-500"}`}
-                  >
-                    2B
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBases((prev) => ({ ...prev, third: !prev.third }))}
-                    className={`rounded-full px-2.5 py-1 font-semibold ${bases.third ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-500"}`}
-                  >
-                    3B
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setBases(emptyBases)}
-                    className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-500"
-                  >
-                    Clear Bases
-                  </button>
                 </div>
 
                 <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
@@ -3128,12 +3377,26 @@ export default function RecordGamePage({
                 <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
                   <div className="flex items-center justify-between gap-3">
                     <h2 className="text-base font-bold text-gray-900">Players</h2>
-                    <span className="rounded-full bg-[#f7f8f3] px-2.5 py-1 text-xs font-bold text-gray-500">
-                      {editGameEntries.length}
-                    </span>
+                    <div className="flex rounded-full border border-gray-200 bg-[#f7f8f3] p-1">
+                      {(["batting", "pitching"] as const).map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setEditGameTab(tab)}
+                          className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition ${
+                            editGameTab === tab
+                              ? "bg-green-900 text-white shadow-sm"
+                              : "text-gray-500 hover:text-green-900"
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-3 sm:flex-row">
+                  {editGameTab === "batting" ? (
+                    <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-3 sm:flex-row">
                     <select
                       value={selectedEditAddPlayerId}
                       onChange={(event) => setEditAddPlayerId(event.target.value)}
@@ -3158,114 +3421,224 @@ export default function RecordGamePage({
                     >
                       Add Player
                     </button>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    {editGameEntries.map((entry) => {
-                      const player = allPlayers.find((item) => item.id === entry.playerId)
-                      const isEditingPlayer = selectedEditGameEntry?.playerId === entry.playerId
-                      const playerEvents = livePlays.filter((play) => play.playerId === entry.playerId)
-
-                      return (
-                        <div
-                          key={entry.playerId}
-                          onMouseEnter={() => setHoveredEditPlayerId(entry.playerId)}
-                          onFocus={() => setHoveredEditPlayerId(entry.playerId)}
-                          className={`rounded-xl border px-3 py-3 transition ${
-                            isEditingPlayer
-                              ? "border-green-900 bg-green-50"
-                              : "border-gray-200 bg-white"
-                          }`}
-                        >
-                          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-semibold text-gray-900">
-                                {player ? getPlayerLabel(player) : `Player ${entry.playerId}`}
-                              </p>
-                              <p className="mt-1 text-xs text-gray-500">
-                                {player?.position ?? entry.gamePositions.join(" / ")} · AB {entry.AB} · H {entry.H} · RBI {entry.RBI}
-                              </p>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  setSelectedEditPlayerId(
-                                    isEditingPlayer ? "" : entry.playerId
-                                  )
-                                }
-                                className={`rounded-lg px-3 py-2 text-sm font-semibold ${
-                                  isEditingPlayer
-                                    ? "bg-green-900 text-white"
-                                    : "border border-gray-200 text-gray-700 hover:bg-[#f7f8f3]"
-                                }`}
-                              >
-                                {isEditingPlayer ? "Close" : "Edit"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveEditGameEntry(entry.playerId)}
-                                className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
-                              >
-                                Remove
-                              </button>
-                            </div>
-                          </div>
-
-                          {isEditingPlayer && (
-                            <div className="mt-4">
-                              <BattingStatFields
-                                entry={entry}
-                                onEntryChange={(nextEntry) =>
-                                  handleUpdateEditGameEntry(entry.playerId, nextEntry)
-                                }
-                              />
-                            </div>
-                          )}
-
-                          {isEditingPlayer && playerEvents.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-1.5">
-                              {playerEvents.map((play) => (
-                                <span
-                                  key={play.id}
-                                  className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-600"
-                                >
-                                  {play.half} {play.inning} · {play.result}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {editGameEntries.length === 0 && (
-                    <div className="mt-3 rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">
-                      No players in this game.
+                    </div>
+                  ) : (
+                    <div className="mt-4 flex flex-col gap-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-3 sm:flex-row">
+                      <select
+                        value={selectedEditAddPitcherId}
+                        onChange={(event) => setEditAddPitcherId(event.target.value)}
+                        disabled={editAvailablePitchers.length === 0}
+                        className="min-w-0 flex-1 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400"
+                      >
+                        {editAvailablePitchers.length === 0 ? (
+                          <option value="">All pitchers are in this game</option>
+                        ) : (
+                          editAvailablePitchers.map((player) => (
+                            <option key={player.id} value={player.id}>
+                              {getPlayerLabel(player)} {player.position}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleAddEditGamePitchingEntry}
+                        disabled={editAvailablePitchers.length === 0}
+                        className="rounded-lg bg-green-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+                      >
+                        Add Pitcher
+                      </button>
                     </div>
                   )}
 
-                  {hoveredEditPlayerEvents.length > 0 && (
-                    <div className="mt-4 rounded-xl bg-[#f7f8f3] p-3">
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Game Mode Hits</p>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {hoveredEditPlayerEvents.map((play) => (
-                          <span
-                            key={play.id}
-                            className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-600"
-                          >
-                            {play.half} {play.inning} · {play.result}
-                            {play.rbi > 0 ? ` · RBI ${play.rbi}` : ""}
-                          </span>
-                        ))}
+                  {editGameTab === "batting" ? (
+                    <>
+                      <div className="mt-3 space-y-2">
+                        {editGameEntries.map((entry) => {
+                          const player = allPlayers.find((item) => item.id === entry.playerId)
+                          const isEditingPlayer = selectedEditGameEntry?.playerId === entry.playerId
+                          const playerEvents = livePlays.filter((play) => play.playerId === entry.playerId)
+
+                          return (
+                            <div
+                              key={entry.playerId}
+                              onMouseEnter={() => setHoveredEditPlayerId(entry.playerId)}
+                              onFocus={() => setHoveredEditPlayerId(entry.playerId)}
+                              className={`rounded-xl border px-3 py-3 transition ${
+                                isEditingPlayer
+                                  ? "border-green-900 bg-green-50"
+                                  : "border-gray-200 bg-white"
+                              }`}
+                            >
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-gray-900">
+                                    {player ? getPlayerLabel(player) : `Player ${entry.playerId}`}
+                                  </p>
+                                  <p className="mt-1 text-xs text-gray-500">
+                                    {player?.position ?? entry.gamePositions.join(" / ")} · AB {entry.AB} · H {entry.H} · RBI {entry.RBI}
+                                  </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setSelectedEditPlayerId(
+                                        isEditingPlayer ? "" : entry.playerId
+                                      )
+                                    }
+                                    className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+                                      isEditingPlayer
+                                        ? "bg-green-900 text-white"
+                                        : "border border-gray-200 text-gray-700 hover:bg-[#f7f8f3]"
+                                    }`}
+                                  >
+                                    {isEditingPlayer ? "Close" : "Edit"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveEditGameEntry(entry.playerId)}
+                                    className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isEditingPlayer && (
+                                <div className="mt-4">
+                                  <BattingStatFields
+                                    entry={entry}
+                                    onEntryChange={(nextEntry) =>
+                                      handleUpdateEditGameEntry(entry.playerId, nextEntry)
+                                    }
+                                  />
+                                </div>
+                              )}
+
+                              {isEditingPlayer && playerEvents.length > 0 && (
+                                <div className="mt-3 flex flex-wrap gap-1.5">
+                                  {playerEvents.map((play) => (
+                                    <span
+                                      key={play.id}
+                                      className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-600"
+                                    >
+                                      {play.half} {play.inning} · {play.result}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
                       </div>
-                    </div>
+
+                      {editGameEntries.length === 0 && (
+                        <div className="mt-3 rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">
+                          No players in this game.
+                        </div>
+                      )}
+
+                      {hoveredEditPlayerEvents.length > 0 && (
+                        <div className="mt-4 rounded-xl bg-[#f7f8f3] p-3">
+                          <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Game Mode Hits</p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            {hoveredEditPlayerEvents.map((play) => (
+                              <span
+                                key={play.id}
+                                className="rounded-full bg-white px-2 py-0.5 text-xs font-semibold text-gray-600"
+                              >
+                                {play.half} {play.inning} · {play.result}
+                                {play.rbi > 0 ? ` · RBI ${play.rbi}` : ""}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="mt-3 space-y-2">
+                        {editGamePitchingEntries.map((entry) => {
+                          const player = allPlayers.find((item) => item.id === entry.playerId)
+                          const isEditingPitcher = selectedEditPitchingEntry?.playerId === entry.playerId
+
+                          return (
+                            <div
+                              key={entry.playerId}
+                              className={`rounded-xl border px-3 py-3 transition ${
+                                isEditingPitcher
+                                  ? "border-green-900 bg-green-50"
+                                  : "border-gray-200 bg-white"
+                              }`}
+                            >
+                              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-gray-900">
+                                    {player ? getPlayerLabel(player) : `Player ${entry.playerId}`}
+                                  </p>
+                                  <p className="mt-1 text-xs text-gray-500">
+                                    {player?.position ?? "P"} · IP {formatLiveInnings(entry.inningsPitchedOuts)} · ER {entry.earnedRuns} · SO {entry.strikeouts}
+                                  </p>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setSelectedEditPitcherId(
+                                        isEditingPitcher ? "" : entry.playerId
+                                      )
+                                    }
+                                    className={`rounded-lg px-3 py-2 text-sm font-semibold ${
+                                      isEditingPitcher
+                                        ? "bg-green-900 text-white"
+                                        : "border border-gray-200 text-gray-700 hover:bg-[#f7f8f3]"
+                                    }`}
+                                  >
+                                    {isEditingPitcher ? "Close" : "Edit"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveEditGamePitchingEntry(entry.playerId)}
+                                    className="rounded-lg bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+
+                              {isEditingPitcher && (
+                                <div className="mt-4">
+                                  <PitchingStatFields
+                                    entry={entry}
+                                    onEntryChange={(nextEntry) =>
+                                      handleUpdateEditGamePitchingEntry(entry.playerId, nextEntry)
+                                    }
+                                  />
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+
+                      {editGamePitchingEntries.length === 0 && (
+                        <div className="mt-3 rounded-lg border border-dashed border-gray-200 px-4 py-8 text-center text-sm text-gray-500">
+                          No pitching entries in this game.
+                        </div>
+                      )}
+                    </>
                   )}
 
                   {hasInvalidEditGameStats && (
                     <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
                       Check the stat lines: hits cannot be greater than at-bats, and extra-base hits cannot be greater than hits.
+                    </p>
+                  )}
+
+                  {hasInvalidEditPitchingStats && (
+                    <p className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">
+                      Check pitching stats: earned runs cannot be greater than runs allowed.
                     </p>
                   )}
 
@@ -3283,8 +3656,9 @@ export default function RecordGamePage({
                       disabled={
                         isSaving ||
                         !isMetaComplete ||
-                        editGameEntries.length === 0 ||
-                        hasInvalidEditGameStats
+                        (editGameEntries.length === 0 && editGamePitchingEntries.length === 0) ||
+                        hasInvalidEditGameStats ||
+                        hasInvalidEditPitchingStats
                       }
                       className="rounded-lg bg-green-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
                     >
@@ -3310,6 +3684,7 @@ export default function RecordGamePage({
               emptyMessage="No saved games yet."
               showDescription={false}
               showStats={false}
+              previewLimit={0}
             />
           </aside>
         </div>
@@ -3317,14 +3692,14 @@ export default function RecordGamePage({
       <div
         className={`grid grid-cols-1 gap-4 sm:gap-6 ${
           showRosterPanel
-            ? "xl:grid-cols-[200px_1fr_360px]"
+            ? "xl:grid-cols-[280px_1fr_360px]"
             : "xl:grid-cols-[1fr_360px]"
         }`}
       >
 
         {/* ROSTER PANEL */}
         {showRosterPanel && (
-          <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 xl:sticky xl:top-6 xl:self-start">
+          <div className="h-fit overflow-visible rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 xl:sticky xl:top-6 xl:max-h-[calc(100vh-8rem)] xl:self-start xl:overflow-y-auto">
             <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
               Roster
             </p>
@@ -3336,19 +3711,19 @@ export default function RecordGamePage({
                     key={player.id}
                     type="button"
                     onClick={() => onSelectPlayer(player)}
-                    className={`w-full rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
+                    className={`flex w-full min-w-0 items-center rounded-lg px-3 py-2 text-left text-sm font-medium transition ${
                       isActive
                         ? "bg-green-900 text-white"
                         : "text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     {player.jerseyNumber != null ? (
-                      <span className={`mr-1.5 text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
+                      <span className={`mr-1.5 shrink-0 text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
                         #{player.jerseyNumber}
                       </span>
                     ) : null}
-                    {player.name}
-                    <span className={`ml-1.5 text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
+                    <span className="min-w-0 flex-1 truncate">{player.name}</span>
+                    <span className={`ml-1.5 shrink-0 text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
                       {player.position}
                     </span>
                   </button>

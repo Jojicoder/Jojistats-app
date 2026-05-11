@@ -23,9 +23,11 @@ import {
   updatePitchingStatEntry,
 } from "../api/api"
 import {
+  fetchGamesBySeason,
   fetchPitchingEntriesByPlayer,
   fetchSavedEntriesByPlayer,
 } from "../api/supabase-api"
+import type { GameRow } from "../api/supabase-api"
 import RecordGamePage from "./RecordGamePage"
 import MyStatsPage from "./MyStatsPage"
 import MyPitchingStatsPage from "./MyPitchingStatsPage"
@@ -42,6 +44,7 @@ type MainDashboardProps = {
   setEntriesByPlayer: Dispatch<SetStateAction<Record<string, BattingEntryData>>>
   savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
   pitchingEntriesByPlayer: Record<string, SavedPitchingGameEntry[]>
+  savedGames: GameRow[]
   mode: "batting" | "pitching"
   setSavedEntriesByPlayer: Dispatch<
     SetStateAction<Record<string, SavedBattingGameEntry[]>>
@@ -49,6 +52,7 @@ type MainDashboardProps = {
   setPitchingEntriesByPlayer: Dispatch<
     SetStateAction<Record<string, SavedPitchingGameEntry[]>>
   >
+  setSavedGames: Dispatch<SetStateAction<GameRow[]>>
   onGameModeChange?: (isGameMode: boolean) => void
 }
 
@@ -78,9 +82,11 @@ export default function MainDashboard({
   setEntriesByPlayer,
   savedEntriesByPlayer,
   pitchingEntriesByPlayer,
+  savedGames,
   mode,
   setSavedEntriesByPlayer,
   setPitchingEntriesByPlayer,
+  setSavedGames,
   onGameModeChange,
 }: MainDashboardProps) {
 
@@ -126,6 +132,13 @@ export default function MainDashboard({
   )
 
   const teamSavedEntries = Object.values(savedEntriesByPlayer)
+    .flat()
+    .filter(
+      (entry) =>
+        entry.teamId === activePlayer.teamId &&
+        entry.gameMeta.seasonYear === currentSeasonYear
+    )
+  const teamSavedPitchingEntries = Object.values(pitchingEntriesByPlayer)
     .flat()
     .filter(
       (entry) =>
@@ -215,6 +228,14 @@ export default function MainDashboard({
     setPitchingEntriesByPlayer(updated)
   }
 
+  const refreshSavedGames = async () => {
+    const updated = await fetchGamesBySeason(
+      Number(activePlayer.teamId),
+      currentSeasonYear
+    )
+    setSavedGames(updated)
+  }
+
   const handleSaveGame = async (
     nextGameMeta: DraftGameMeta,
     entries: PendingBattingEntry[],
@@ -231,6 +252,7 @@ export default function MainDashboard({
       }
 
       await refreshSavedEntries()
+      await refreshSavedGames()
       if (pitchingEntries.length > 0) {
         await refreshPitchingEntries()
       }
@@ -287,6 +309,7 @@ export default function MainDashboard({
       })
 
       await refreshPitchingEntries()
+      await refreshSavedGames()
       setPitchingEntry({
         inningsPitchedOuts: 0,
         hitsAllowed: 0,
@@ -364,6 +387,7 @@ export default function MainDashboard({
         }
       )
       await refreshPitchingEntries()
+      await refreshSavedGames()
       setEditingSavedPitchingEntry(null)
       setPitchingEntry(emptyPitchingEntry())
     } catch (error) {
@@ -383,6 +407,7 @@ export default function MainDashboard({
     try {
       await deletePitchingStatEntry(entry.statId, entry.gameId)
       await refreshPitchingEntries()
+      await refreshSavedGames()
       if (editingSavedPitchingEntry?.id === entry.id) {
         handleCancelEditSavedPitchingEntry()
       }
@@ -444,6 +469,7 @@ export default function MainDashboard({
       })
 
       await refreshSavedEntries()
+      await refreshSavedGames()
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
     } catch {
@@ -469,6 +495,7 @@ export default function MainDashboard({
       })
 
       await refreshSavedEntries()
+      await refreshSavedGames()
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
     } catch (error) {
@@ -479,13 +506,19 @@ export default function MainDashboard({
 
   const handleUpdateSavedGame = async (
     nextGameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[]
+    entries: PendingBattingEntry[],
+    pitchingEntries: PendingPitchingEntry[] = []
   ) => {
     if (!editingSavedEntry) return
 
     try {
-      await updateFullGame(editingSavedEntry.gameId, buildPayload(nextGameMeta, entries))
+      await updateFullGame(
+        editingSavedEntry.gameId,
+        buildPayload(nextGameMeta, entries, pitchingEntries)
+      )
       await refreshSavedEntries()
+      await refreshPitchingEntries()
+      await refreshSavedGames()
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
     } catch (error) {
@@ -505,6 +538,7 @@ export default function MainDashboard({
     try {
       await deleteBattingStatEntry(entry.statId, entry.gameId)
       await refreshSavedEntries()
+      await refreshSavedGames()
       if (editingSavedEntryId === entry.id) {
         setEditingSavedEntryId(null)
         setEditingSavedEntry(null)
@@ -525,6 +559,7 @@ export default function MainDashboard({
       await deleteGame(editingSavedEntry.gameId)
       await refreshSavedEntries()
       await refreshPitchingEntries()
+      await refreshSavedGames()
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
     } catch (err) {
@@ -556,6 +591,8 @@ export default function MainDashboard({
       savedEntries={savedEntries}
       savedPitchingEntries={savedPitchingEntries}
       teamSavedEntries={teamSavedEntries}
+      teamSavedPitchingEntries={teamSavedPitchingEntries}
+      savedGames={savedGames}
       onGameMetaChange={setGameMeta}
       onEntryChange={handleEntryChange}
       onSaveGame={handleSaveGame}

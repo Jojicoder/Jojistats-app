@@ -231,7 +231,7 @@ export default function GameMetaFields({
               placeholder="0"
               className="rounded-xl border border-gray-200 bg-[#f7f8f3] px-3 py-3 sm:py-2 outline-none focus:border-green-700 focus:bg-white"
             />
-            <p className="text-xs text-gray-400">相手エラーによる得点</p>
+            <p className="text-xs text-gray-400">Runs scored on opponent errors</p>
           </div>
         </div>
       )}

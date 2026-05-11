@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import type { Player, SavedBattingGameEntry, SavedPitchingGameEntry, Team } from "../types"
+import { calcBattingMetrics, calcPitchingMetrics, fmtRate, fmtDecimal, fmtIp } from "../utils/metrics"
 
 type ManagerMode = "batting" | "pitching"
 type LineupStyle = "balanced" | "obp" | "power" | "contact"
@@ -11,68 +12,6 @@ type Props = {
   pitchingEntriesByPlayer: Record<string, SavedPitchingGameEntry[]>
 }
 
-function getBattingMetrics(entries: SavedBattingGameEntry[]) {
-  const totals = entries.reduce(
-    (acc, entry) => {
-      acc.games += 1
-      acc.ab += entry.statLine.AB
-      acc.h += entry.statLine.H
-      acc.doubles += entry.statLine.doubles
-      acc.triples += entry.statLine.triples
-      acc.hr += entry.statLine.HR
-      acc.rbi += entry.statLine.RBI
-      acc.bb += entry.statLine.BB
-      acc.hbp += entry.statLine.HBP ?? 0
-      acc.sf += entry.statLine.SF ?? 0
-      acc.so += entry.statLine.SO
-      return acc
-    },
-    { games: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0, sf: 0, so: 0 }
-  )
-
-  const singles = Math.max(totals.h - totals.doubles - totals.triples - totals.hr, 0)
-  const totalBases = singles + totals.doubles * 2 + totals.triples * 3 + totals.hr * 4
-  const pa = totals.ab + totals.bb + totals.hbp + totals.sf
-  const avg = totals.ab > 0 ? totals.h / totals.ab : 0
-  const obp = pa > 0 ? (totals.h + totals.bb + totals.hbp) / pa : 0
-  const slg = totals.ab > 0 ? totalBases / totals.ab : 0
-
-  return { ...totals, avg, obp, ops: obp + slg }
-}
-
-function formatRate(value: number) {
-  return value.toFixed(3).replace("0.", ".")
-}
-
-function formatDecimal(value: number) {
-  return value.toFixed(2)
-}
-
-function formatInnings(outs: number) {
-  return `${Math.floor(outs / 3)}.${outs % 3}`
-}
-
-function getPitchingMetrics(entries: SavedPitchingGameEntry[]) {
-  const totals = entries.reduce(
-    (acc, entry) => {
-      acc.games += 1
-      acc.outs += entry.statLine.inningsPitchedOuts
-      acc.h += entry.statLine.hitsAllowed
-      acc.r += entry.statLine.runsAllowed
-      acc.er += entry.statLine.earnedRuns
-      acc.bb += entry.statLine.walks
-      acc.so += entry.statLine.strikeouts
-      acc.hr += entry.statLine.homeRunsAllowed
-      return acc
-    },
-    { games: 0, outs: 0, h: 0, r: 0, er: 0, bb: 0, so: 0, hr: 0 }
-  )
-  const innings = totals.outs / 3
-  const era = innings > 0 ? (totals.er * 9) / innings : 0
-  const whip = innings > 0 ? (totals.bb + totals.h) / innings : 0
-
-  return { ...totals, era, whip, ip: formatInnings(totals.outs) }
-}
 
 function getPlayerLabel(player: Player) {
   return player.jerseyNumber != null ? `#${player.jerseyNumber} ${player.name}` : player.name
@@ -87,7 +26,7 @@ function getPositionGroup(position: Player["position"]) {
 }
 
 function sortLineup(
-  summaries: Array<{ player: Player; metrics: ReturnType<typeof getBattingMetrics> }>,
+  summaries: Array<{ player: Player; metrics: ReturnType<typeof calcBattingMetrics> }>,
   style: LineupStyle
 ) {
   const active = summaries.filter((summary) => summary.metrics.ab > 0)
@@ -142,7 +81,7 @@ export default function TeamManagerDashboard({
     () =>
       players.map((player) => ({
         player,
-        metrics: getBattingMetrics(savedEntriesByPlayer[player.id] ?? []),
+        metrics: calcBattingMetrics(savedEntriesByPlayer[player.id] ?? []),
       })),
     [players, savedEntriesByPlayer]
   )
@@ -151,18 +90,18 @@ export default function TeamManagerDashboard({
     () =>
       players.map((player) => ({
         player,
-        metrics: getPitchingMetrics(pitchingEntriesByPlayer[player.id] ?? []),
+        metrics: calcPitchingMetrics(pitchingEntriesByPlayer[player.id] ?? []),
       })),
     [players, pitchingEntriesByPlayer]
   )
 
   const teamBatting = useMemo(
-    () => getBattingMetrics(Object.values(savedEntriesByPlayer).flat()),
+    () => calcBattingMetrics(Object.values(savedEntriesByPlayer).flat()),
     [savedEntriesByPlayer]
   )
 
   const teamPitching = useMemo(
-    () => getPitchingMetrics(Object.values(pitchingEntriesByPlayer).flat()),
+    () => calcPitchingMetrics(Object.values(pitchingEntriesByPlayer).flat()),
     [pitchingEntriesByPlayer]
   )
 
@@ -238,7 +177,7 @@ export default function TeamManagerDashboard({
   )
 
   const renderLeaderValue = (
-    summary: { player: Player; metrics: ReturnType<typeof getBattingMetrics> } | undefined,
+    summary: { player: Player; metrics: ReturnType<typeof calcBattingMetrics> } | undefined,
     value: string
   ) => (summary ? `${summary.player.name} ${value}` : "No data")
 
@@ -280,9 +219,9 @@ export default function TeamManagerDashboard({
           <>
             {[
               { label: "Games", value: String(teamBatting.games), sub: "played", accent: true },
-              { label: "AVG", value: formatRate(teamBatting.avg), sub: "team batting" },
-              { label: "OBP", value: formatRate(teamBatting.obp), sub: "on-base" },
-              { label: "OPS", value: formatRate(teamBatting.ops), sub: "production" },
+              { label: "AVG", value: fmtRate(teamBatting.avg), sub: "team batting" },
+              { label: "OBP", value: fmtRate(teamBatting.obp), sub: "on-base" },
+              { label: "OPS", value: fmtRate(teamBatting.ops), sub: "production" },
               { label: "HR", value: String(teamBatting.hr), sub: "home runs" },
               { label: "RBI", value: String(teamBatting.rbi), sub: "runs batted in" },
             ].map(({ label, value, sub, accent }) => (
@@ -293,9 +232,9 @@ export default function TeamManagerDashboard({
           <>
             {[
               { label: "APP", value: String(teamPitching.games), sub: "appearances", accent: true },
-              { label: "ERA", value: formatDecimal(teamPitching.era), sub: "earned runs" },
-              { label: "WHIP", value: formatDecimal(teamPitching.whip), sub: "traffic" },
-              { label: "IP", value: teamPitching.ip, sub: "innings" },
+              { label: "ERA", value: fmtDecimal(teamPitching.era), sub: "earned runs" },
+              { label: "WHIP", value: fmtDecimal(teamPitching.whip), sub: "traffic" },
+              { label: "IP", value: fmtIp(teamPitching.outs), sub: "innings" },
               { label: "SO", value: String(teamPitching.so), sub: "strikeouts" },
               { label: "BB", value: String(teamPitching.bb), sub: "walks" },
             ].map(({ label, value, sub, accent }) => (
@@ -325,7 +264,7 @@ export default function TeamManagerDashboard({
             <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
               <h2 className="text-base font-bold text-gray-900">Team Leaders</h2>
               <div className="mt-4 space-y-3 text-sm">
-                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">AVG</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.avg, battingLeaders.avg ? formatRate(battingLeaders.avg.metrics.avg) : "")}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">AVG</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.avg, battingLeaders.avg ? fmtRate(battingLeaders.avg.metrics.avg) : "")}</span></p>
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">HR</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.hr, battingLeaders.hr ? String(battingLeaders.hr.metrics.hr) : "")}</span></p>
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">RBI</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.rbi, battingLeaders.rbi ? String(battingLeaders.rbi.metrics.rbi) : "")}</span></p>
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">Hits</span><span className="font-semibold text-gray-900">{renderLeaderValue(battingLeaders.hits, battingLeaders.hits ? String(battingLeaders.hits.metrics.h) : "")}</span></p>
@@ -341,7 +280,7 @@ export default function TeamManagerDashboard({
                   hotPlayers.map((summary) => (
                     <p key={summary.player.id} className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                       <span className="font-semibold text-gray-900">{summary.player.name}</span>
-                      <span className="text-xs font-bold text-green-900">OPS {formatRate(summary.metrics.ops)}</span>
+                      <span className="text-xs font-bold text-green-900">OPS {fmtRate(summary.metrics.ops)}</span>
                     </p>
                   ))
                 )}
@@ -388,7 +327,7 @@ export default function TeamManagerDashboard({
                     {index + 1}. {getPlayerLabel(summary.player)} <span className="text-gray-500">{summary.player.position}</span>
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
-                    AVG {formatRate(summary.metrics.avg)} · OBP {formatRate(summary.metrics.obp)} · OPS {formatRate(summary.metrics.ops)}
+                    AVG {fmtRate(summary.metrics.avg)} · OBP {fmtRate(summary.metrics.obp)} · OPS {fmtRate(summary.metrics.ops)}
                   </p>
                 </div>
               ))}
@@ -401,8 +340,8 @@ export default function TeamManagerDashboard({
             <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
               <h2 className="text-base font-bold text-gray-900">Pitching Leaders</h2>
               <div className="mt-4 space-y-3 text-sm">
-                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">ERA</span><span className="font-semibold text-gray-900">{pitchingLeaders.era ? `${pitchingLeaders.era.player.name} ${formatDecimal(pitchingLeaders.era.metrics.era)}` : "No data"}</span></p>
-                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">WHIP</span><span className="font-semibold text-gray-900">{pitchingLeaders.whip ? `${pitchingLeaders.whip.player.name} ${formatDecimal(pitchingLeaders.whip.metrics.whip)}` : "No data"}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">ERA</span><span className="font-semibold text-gray-900">{pitchingLeaders.era ? `${pitchingLeaders.era.player.name} ${fmtDecimal(pitchingLeaders.era.metrics.era)}` : "No data"}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">WHIP</span><span className="font-semibold text-gray-900">{pitchingLeaders.whip ? `${pitchingLeaders.whip.player.name} ${fmtDecimal(pitchingLeaders.whip.metrics.whip)}` : "No data"}</span></p>
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">SO</span><span className="font-semibold text-gray-900">{pitchingLeaders.so ? `${pitchingLeaders.so.player.name} ${pitchingLeaders.so.metrics.so}` : "No data"}</span></p>
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">IP</span><span className="font-semibold text-gray-900">{pitchingLeaders.ip ? `${pitchingLeaders.ip.player.name} ${pitchingLeaders.ip.metrics.ip}` : "No data"}</span></p>
               </div>
@@ -459,8 +398,8 @@ export default function TeamManagerDashboard({
                       <td className="py-3 pr-4 text-gray-600">{player.position}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.games}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.ip}</td>
-                      <td className="py-3 pr-4 font-bold text-green-900">{formatDecimal(metrics.era)}</td>
-                      <td className="py-3 pr-4 text-gray-600">{formatDecimal(metrics.whip)}</td>
+                      <td className="py-3 pr-4 font-bold text-green-900">{fmtDecimal(metrics.era)}</td>
+                      <td className="py-3 pr-4 text-gray-600">{fmtDecimal(metrics.whip)}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.h}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.er}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.bb}</td>

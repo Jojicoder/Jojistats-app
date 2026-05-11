@@ -12,6 +12,7 @@ type SavedEntriesListProps = {
   showHeader?: boolean
   showDescription?: boolean
   showStats?: boolean
+  previewLimit?: number
 }
 
 function formatGamePositions(gamePositions: string[]) {
@@ -45,10 +46,12 @@ export default function SavedEntriesList({
   showHeader = true,
   showDescription = true,
   showStats = true,
+  previewLimit = 3,
 }: SavedEntriesListProps) {
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const hasMoreThanPreview = savedEntries.length > 3
+  const showsAllByDefault = previewLimit <= 0
+  const hasMoreThanPreview = !showsAllByDefault && savedEntries.length > previewLimit
   const sortedEntries = useMemo(
     () =>
       savedEntries.slice().sort((a, b) => {
@@ -60,8 +63,11 @@ export default function SavedEntriesList({
   )
 
   const visibleEntries = useMemo(
-    () => (isExpanded ? sortedEntries : sortedEntries.slice(0, 3)),
-    [sortedEntries, isExpanded]
+    () =>
+      showsAllByDefault || isExpanded
+        ? sortedEntries
+        : sortedEntries.slice(0, previewLimit),
+    [isExpanded, previewLimit, showsAllByDefault, sortedEntries]
   )
 
   return (

@@ -11,6 +11,7 @@ import type { Dispatch, SetStateAction } from "react"
 import {
   fetchTeams,
   fetchPlayers,
+  fetchGamesBySeason,
   fetchSavedEntriesByPlayer,
   fetchPitchingEntriesByPlayer,
   fetchUserAccessRows,
@@ -28,7 +29,7 @@ import {
   archivePlayer,
 } from "../api/api"
 
-import type { PlayerRow, TeamRow } from "../api/supabase-api"
+import type { GameRow, PlayerRow, TeamRow } from "../api/supabase-api"
 import type {
   Player,
   Team,
@@ -131,6 +132,7 @@ export default function Layout({
 
   const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<Record<string, SavedBattingGameEntry[]>>({})
   const [pitchingEntriesByPlayer, setPitchingEntriesByPlayer] = useState<Record<string, SavedPitchingGameEntry[]>>({})
+  const [savedGames, setSavedGames] = useState<GameRow[]>([])
   const [userAccesses, setUserAccesses] = useState<UserAccess[]>([])
 
   const visibleTeams = teams.filter((t: Team) => !t.isArchived)
@@ -173,11 +175,31 @@ export default function Layout({
         await fetchPitchingEntriesByPlayer(Number(first.id), first.currentSeasonYear)
       )
 
+      setSavedGames(await fetchGamesBySeason(Number(first.id), first.currentSeasonYear))
+
       setUserAccesses((await fetchUserAccessRows()).map(mapUserAccessRow))
     }
 
     load()
   }, [])
+
+  useEffect(() => {
+    const loadActiveTeamData = async () => {
+      if (!activeTeam) return
+
+      const [battingEntries, pitchingEntries, games] = await Promise.all([
+        fetchSavedEntriesByPlayer(Number(activeTeam.id), activeTeam.currentSeasonYear),
+        fetchPitchingEntriesByPlayer(Number(activeTeam.id), activeTeam.currentSeasonYear),
+        fetchGamesBySeason(Number(activeTeam.id), activeTeam.currentSeasonYear),
+      ])
+
+      setSavedEntriesByPlayer(battingEntries)
+      setPitchingEntriesByPlayer(pitchingEntries)
+      setSavedGames(games)
+    }
+
+    loadActiveTeamData()
+  }, [activeTeam?.id, activeTeam?.currentSeasonYear])
 
   /* ---------------- TEAM ACTIONS ---------------- */
 
@@ -426,9 +448,11 @@ export default function Layout({
                 setEntriesByPlayer={setEntriesByPlayer}
                 savedEntriesByPlayer={savedEntriesByPlayer}
                 pitchingEntriesByPlayer={pitchingEntriesByPlayer}
+                savedGames={savedGames}
                 mode={mode}
                 setSavedEntriesByPlayer={setSavedEntriesByPlayer}
                 setPitchingEntriesByPlayer={setPitchingEntriesByPlayer}
+                setSavedGames={setSavedGames}
                 onGameModeChange={setIsGameMode}
               />
             ) : (
