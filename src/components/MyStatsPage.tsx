@@ -28,108 +28,58 @@ const statDescriptions: Record<string, string> = {
   HBP: "Hit By Pitch",
 }
 
-function getStatCardClass(label: string, value: string, gamesPlayed: number) {
-  const baseClass = "rounded-xl border p-3 shadow-sm sm:p-4"
+function getStatCardStyle(label: string, value: string, gamesPlayed: number) {
+  if (gamesPlayed === 0) return { bg: "bg-[#f7f8f3]", label: "text-gray-400", value: "text-green-950" }
 
-  const strongGood = `${baseClass} border-emerald-300 bg-emerald-100`
-  const good = `${baseClass} border-green-200 bg-green-50`
-  const neutral = `${baseClass} border-gray-200 bg-white`
-  const weak = `${baseClass} border-rose-200 bg-rose-50`
-  const bad = `${baseClass} border-red-200 bg-red-50`
-
-  if (gamesPlayed === 0) return neutral
-
-  if (label === "AVG") {
-    const numericValue = Number(value)
-    if (numericValue >= 0.33) return strongGood
-    if (numericValue >= 0.3) return good
-    if (numericValue >= 0.25) return neutral
-    if (numericValue >= 0.22) return weak
-    return bad
+  const levels: Record<string, { thresholds: number[]; styles: string[] }> = {
+    AVG:  { thresholds: [0.33, 0.3, 0.25, 0.22], styles: ["emerald", "green", "neutral", "rose", "red"] },
+    OBP:  { thresholds: [0.4,  0.37, 0.31, 0.28], styles: ["emerald", "green", "neutral", "rose", "red"] },
+    OPS:  { thresholds: [0.9,  0.8,  0.65, 0.55], styles: ["emerald", "green", "neutral", "rose", "red"] },
+    "BB/K": { thresholds: [1.0, 0.7, 0.4, 0.2],  styles: ["emerald", "green", "neutral", "rose", "red"] },
+    HR:   { thresholds: [4, 2],                   styles: ["emerald", "green", "neutral"] },
+    RBI:  { thresholds: [10, 7],                  styles: ["emerald", "green", "neutral"] },
   }
 
-  if (label === "OBP") {
-    const numericValue = Number(value)
-    if (numericValue >= 0.4) return strongGood
-    if (numericValue >= 0.37) return good
-    if (numericValue >= 0.31) return neutral
-    if (numericValue >= 0.28) return weak
-    return bad
+  const map: Record<string, { bg: string; label: string; value: string }> = {
+    emerald: { bg: "bg-emerald-50",  label: "text-emerald-700", value: "text-emerald-900" },
+    green:   { bg: "bg-green-50",    label: "text-green-700",   value: "text-green-900"   },
+    neutral: { bg: "bg-[#f7f8f3]",   label: "text-gray-400",    value: "text-green-950"   },
+    rose:    { bg: "bg-rose-50",      label: "text-rose-600",    value: "text-rose-900"    },
+    red:     { bg: "bg-red-50",       label: "text-red-600",     value: "text-red-900"     },
   }
 
-  if (label === "OPS") {
-    const numericValue = Number(value)
-    if (numericValue >= 0.9) return strongGood
-    if (numericValue >= 0.8) return good
-    if (numericValue >= 0.65) return neutral
-    if (numericValue >= 0.55) return weak
-    return bad
-  }
+  const cfg = levels[label]
+  if (!cfg) return map.neutral
 
-  if (label === "BB/K") {
-    if (value === "--") return neutral
+  if (label === "BB/K" && (value === "--" || Number.isNaN(Number(value)))) return map.neutral
 
-    const numericValue = Number(value)
-    if (Number.isNaN(numericValue)) return neutral
-    if (numericValue >= 1.0) return strongGood
-    if (numericValue >= 0.7) return good
-    if (numericValue >= 0.4) return neutral
-    if (numericValue >= 0.2) return weak
-    return bad
-  }
-
-  if (label === "HR") {
-    const numericValue = Number(value)
-    if (numericValue >= 4) return strongGood
-    if (numericValue >= 2) return good
-    return neutral
-  }
-
-  if (label === "RBI") {
-    const numericValue = Number(value)
-    if (numericValue >= 10) return strongGood
-    if (numericValue >= 7) return good
-    return neutral
-  }
-
-  return neutral
+  const num = Number(value)
+  const idx = cfg.thresholds.findIndex((t) => num >= t)
+  const styleName = idx === -1 ? cfg.styles[cfg.styles.length - 1] : cfg.styles[idx]
+  return map[styleName] ?? map.neutral
 }
 
-function formatRate(value: number) {
-  return value.toFixed(3).replace("0.", ".")
-}
-
-function formatRatio(value: number) {
-  return value.toFixed(2)
-}
+function formatRate(value: number) { return value.toFixed(3).replace("0.", ".") }
+function formatRatio(value: number) { return value.toFixed(2) }
 
 function buildBattingStats(entry: SavedBattingGameEntry): DisplayStat[] {
   const { statLine } = entry
-  const singles = Math.max(
-    statLine.H - statLine.doubles - statLine.triples - statLine.HR,
-    0
-  )
-  const totalBases =
-    singles + statLine.doubles * 2 + statLine.triples * 3 + statLine.HR * 4
+  const singles = Math.max(statLine.H - statLine.doubles - statLine.triples - statLine.HR, 0)
+  const totalBases = singles + statLine.doubles * 2 + statLine.triples * 3 + statLine.HR * 4
   const hbp = statLine.HBP ?? 0
   const sf = statLine.SF ?? 0
   const obpDenominator = statLine.AB + statLine.BB + hbp + sf
   const avg = statLine.AB > 0 ? statLine.H / statLine.AB : 0
-  const obp =
-    obpDenominator > 0
-      ? (statLine.H + statLine.BB + hbp) / obpDenominator
-      : 0
+  const obp = obpDenominator > 0 ? (statLine.H + statLine.BB + hbp) / obpDenominator : 0
   const slg = statLine.AB > 0 ? totalBases / statLine.AB : 0
-  const bbPerK =
-    statLine.SO > 0 ? formatRatio(statLine.BB / statLine.SO) : "--"
-
+  const bbPerK = statLine.SO > 0 ? formatRatio(statLine.BB / statLine.SO) : "--"
   return [
-    { label: "AVG", value: formatRate(avg) },
-    { label: "OBP", value: formatRate(obp) },
-    { label: "OPS", value: formatRate(obp + slg) },
+    { label: "AVG",  value: formatRate(avg) },
+    { label: "OBP",  value: formatRate(obp) },
+    { label: "OPS",  value: formatRate(obp + slg) },
     { label: "BB/K", value: bbPerK },
-    { label: "HR", value: String(statLine.HR) },
-    { label: "RBI", value: String(statLine.RBI) },
+    { label: "HR",   value: String(statLine.HR) },
+    { label: "RBI",  value: String(statLine.RBI) },
   ]
 }
 
@@ -142,6 +92,7 @@ export default function MyStatsPage({
   seasonYear,
 }: MyStatsPageProps) {
   const [selectedEntry, setSelectedEntry] = useState<SavedBattingGameEntry | null>(null)
+
   const displayedStats = useMemo(
     () => (selectedEntry ? buildBattingStats(selectedEntry) : calculatedStats),
     [calculatedStats, selectedEntry]
@@ -161,76 +112,62 @@ export default function MyStatsPage({
 
   return (
     <main className="w-full">
-      <div className="max-w-6xl space-y-4 sm:space-y-6">
-        <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-          <p className="text-sm font-medium text-green-900">My Stats</p>
+      <div className="max-w-6xl space-y-5">
 
-          <h1 className="mt-2 text-xl font-bold text-gray-900 sm:mt-3 sm:text-2xl">
+        {/* ── Player Header ── */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-widest text-green-700">My Stats</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
             {activePlayer.jerseyNumber != null
               ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
               : activePlayer.name}
           </h1>
+          <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
 
-          <p className="mt-2 text-sm text-gray-600 sm:mt-3 sm:text-base">{activePlayer.position}</p>
           {selectedEntry && (
-            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-green-100 bg-green-50 px-3 py-2">
+            <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2.5">
               <p className="text-sm font-semibold text-green-900">
                 Showing {selectedEntry.gameMeta.date} vs {selectedEntry.gameMeta.opponent}
               </p>
               <button
                 type="button"
                 onClick={() => setSelectedEntry(null)}
-                className="rounded-lg bg-white px-3 py-1.5 text-sm font-semibold text-gray-700 shadow-sm"
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-600 hover:bg-gray-50"
               >
                 Clear
               </button>
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-2 gap-3 sm:mt-5 sm:gap-4">
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4 sm:py-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Games Played
-              </p>
-              <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-                {displayedGamesPlayed}
-              </p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Games Played</p>
+              <p className="mt-2 text-2xl font-extrabold text-green-950">{displayedGamesPlayed}</p>
             </div>
-
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 sm:px-4 sm:py-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                Plate Apps
-              </p>
-              <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-                {totalPlateAppearances}
-              </p>
-              <p className="mt-1 text-xs text-gray-400">
-                PA = AB + BB + HBP + SF
-              </p>
+            <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Plate Apps</p>
+              <p className="mt-2 text-2xl font-extrabold text-green-950">{totalPlateAppearances}</p>
+              <p className="mt-0.5 text-xs text-gray-400">AB + BB + HBP + SF</p>
             </div>
           </div>
         </div>
 
-        <section className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-3">
-          {displayedStats.map((stat) => (
-            <div
-              key={stat.label}
-              className={getStatCardClass(stat.label, stat.value, displayedGamesPlayed)}
-            >
-              <div>
-                <p className="text-xs font-semibold text-gray-700">
+        {/* ── Stat Cards ── */}
+        <section className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+          {displayedStats.map((stat) => {
+            const style = getStatCardStyle(stat.label, stat.value, displayedGamesPlayed)
+            return (
+              <div key={stat.label} className={`rounded-2xl p-4 shadow-sm ${style.bg}`}>
+                <p className={`text-xs font-bold uppercase tracking-widest ${style.label}`}>
                   {stat.label}
                 </p>
-                <p className="text-[11px] text-gray-400">
-                  {statDescriptions[stat.label]}
+                <p className="mt-0.5 text-xs text-gray-400">{statDescriptions[stat.label]}</p>
+                <p className={`mt-3 text-3xl font-extrabold tracking-tight ${style.value}`}>
+                  {stat.value}
                 </p>
               </div>
-
-              <p className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">
-                {stat.value}
-              </p>
-            </div>
-          ))}
+            )
+          })}
         </section>
 
         <PerformanceTrendCard

@@ -61,13 +61,8 @@ function getPitchingMetrics(entries: SavedPitchingGameEntry[]) {
   return { ...t, ip, era, whip }
 }
 
-function fmtRate(v: number) {
-  return v.toFixed(3).replace("0.", ".")
-}
-
-function fmtIp(outs: number) {
-  return `${Math.floor(outs / 3)}.${outs % 3}`
-}
+function fmtRate(v: number) { return v.toFixed(3).replace("0.", ".") }
+function fmtIp(outs: number) { return `${Math.floor(outs / 3)}.${outs % 3}` }
 
 export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchingEntriesByPlayer }: Props) {
 
@@ -135,7 +130,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
 
   if (!team) {
     return (
-      <main className="w-full rounded-2xl bg-white p-6 text-sm text-gray-600 shadow-sm">
+      <main className="w-full rounded-2xl bg-white p-6 text-sm text-gray-500 shadow-sm">
         No team selected.
       </main>
     )
@@ -143,127 +138,132 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
 
   return (
     <main className="w-full">
-      <div className="space-y-4 sm:space-y-6">
+      <div className="space-y-5">
 
-        {/* Team header — full width */}
-        <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-          <p className="text-sm font-medium text-green-900">My Team</p>
-          <h1 className="mt-2 text-xl font-bold text-gray-900 sm:text-2xl">{team.name}</h1>
-          <p className="mt-1 text-sm text-gray-500">{team.currentSeasonYear} Season</p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            <StatPill label="Record" value={`${record.w}W – ${record.l}L${record.t > 0 ? ` – ${record.t}T` : ""}`} />
-            <StatPill label="Games" value={String(uniqueGames.length)} />
-            <StatPill label="Players" value={String(players.length)} />
+        {/* ── Team Header ── */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">My Team</p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">{team.name}</h1>
+            </div>
+            <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-bold text-green-900">
+              {team.currentSeasonYear} Season
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {/* Record — accent card */}
+            <div className="rounded-xl bg-green-800 p-4 text-white">
+              <p className="text-xs font-bold uppercase tracking-widest text-green-300">Record</p>
+              <p className="mt-2 text-2xl font-extrabold">
+                {record.w}–{record.l}{record.t > 0 ? `–${record.t}` : ""}
+              </p>
+              <p className="mt-0.5 text-xs text-green-400">{uniqueGames.length} games</p>
+            </div>
+            {/* Games */}
+            <div className="rounded-xl bg-[#f7f8f3] p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Games</p>
+              <p className="mt-2 text-2xl font-extrabold text-green-950">{uniqueGames.length}</p>
+            </div>
+            {/* Players */}
+            <div className="rounded-xl bg-[#f7f8f3] p-4">
+              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Players</p>
+              <p className="mt-2 text-2xl font-extrabold text-green-950">{players.length}</p>
+            </div>
           </div>
         </div>
 
-        {/* 2-column layout: main stats left, game results right */}
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:gap-6 sm:gap-6">
+        {/* ── Two-column layout ── */}
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
 
           {/* ── Left column ── */}
-          <div className="flex-1 min-w-0 space-y-4 sm:space-y-6">
+          <div className="min-w-0 flex-1 space-y-5">
 
             {/* Roster */}
-            <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-              <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Roster</h2>
+            <Card title="Roster">
               {sortedRoster.length === 0 ? (
-                <p className="mt-4 text-sm text-gray-500">No players on this team.</p>
+                <p className="mt-4 text-sm text-gray-400">No players on this team.</p>
               ) : (
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {sortedRoster.map((player) => (
-                    <div
-                      key={player.id}
-                      className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3"
-                    >
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-900 text-xs font-bold text-white">
-                        {player.jerseyNumber != null ? `#${player.jerseyNumber}` : "—"}
+                    <div key={player.id} className="flex items-center gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-200 bg-green-50 text-xs font-bold text-green-900">
+                        {player.jerseyNumber != null ? player.jerseyNumber : "—"}
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-gray-800">{player.name}</p>
-                        <p className="text-xs text-gray-500">{player.position}</p>
+                        <p className="text-xs text-gray-400">{player.position}</p>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
 
-            {/* Team batting */}
-            <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-              <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Team Batting</h2>
-              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4">
+            {/* Team Batting */}
+            <Card title="Team Batting">
+              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
                 {[
-                  { label: "AVG", value: teamBatting.ab > 0 ? fmtRate(teamBatting.avg) : "—" },
+                  { label: "AVG", value: teamBatting.ab > 0 ? fmtRate(teamBatting.avg) : "—", accent: true },
                   { label: "OBP", value: teamBatting.pa > 0 ? fmtRate(teamBatting.obp) : "—" },
                   { label: "OPS", value: teamBatting.pa > 0 ? fmtRate(teamBatting.ops) : "—" },
-                  { label: "HR", value: String(teamBatting.hr) },
+                  { label: "HR",  value: String(teamBatting.hr) },
                   { label: "RBI", value: String(teamBatting.rbi) },
-                ].map((s) => (
-                  <div key={s.label} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-center">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{s.label}</p>
-                    <p className="mt-1 text-xl font-bold text-gray-900">{s.value}</p>
-                  </div>
-                ))}
+                ].map((s) => <StatTile key={s.label} label={s.label} value={s.value} accent={s.accent} />)}
               </div>
-            </div>
+            </Card>
 
-            {/* Team pitching */}
+            {/* Team Pitching */}
             {teamPitching.games > 0 && (
-              <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-                <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Team Pitching</h2>
-                <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5 sm:gap-4">
+              <Card title="Team Pitching">
+                <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
                   {[
-                    { label: "ERA", value: teamPitching.outs > 0 ? teamPitching.era.toFixed(2) : "—" },
+                    { label: "ERA",  value: teamPitching.outs > 0 ? teamPitching.era.toFixed(2) : "—", accent: true },
                     { label: "WHIP", value: teamPitching.outs > 0 ? teamPitching.whip.toFixed(2) : "—" },
-                    { label: "IP", value: fmtIp(teamPitching.outs) },
-                    { label: "SO", value: String(teamPitching.so) },
-                    { label: "BB", value: String(teamPitching.bb) },
-                  ].map((s) => (
-                    <div key={s.label} className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-3 text-center">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{s.label}</p>
-                      <p className="mt-1 text-xl font-bold text-gray-900">{s.value}</p>
-                    </div>
-                  ))}
+                    { label: "IP",   value: fmtIp(teamPitching.outs) },
+                    { label: "SO",   value: String(teamPitching.so) },
+                    { label: "BB",   value: String(teamPitching.bb) },
+                  ].map((s) => <StatTile key={s.label} label={s.label} value={s.value} accent={s.accent} />)}
                 </div>
-              </div>
+              </Card>
             )}
 
-            {/* Batting leaderboard */}
-            <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-              <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Batting Leaderboard</h2>
+            {/* Batting Leaderboard */}
+            <Card title="Batting Leaderboard">
               <div className="mt-4 overflow-x-auto">
-                <table className="w-full min-w-105 text-sm">
+                <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-gray-200 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                      <th className="pb-3 pr-3 text-left">Player</th>
+                    <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wide text-gray-400">
+                      <th className="pb-3 pr-2 w-5 text-left">#</th>
+                      <th className="pb-3 pr-4 text-left">Player</th>
                       <th className="pb-3 px-2 text-center">G</th>
-                      <th className="pb-3 px-2 text-center">AVG</th>
+                      <th className="pb-3 px-2 text-center text-green-700">AVG</th>
                       <th className="pb-3 px-2 text-center">OBP</th>
                       <th className="pb-3 px-2 text-center">OPS</th>
                       <th className="pb-3 px-2 text-center">HR</th>
                       <th className="pb-3 px-2 text-center">RBI</th>
                     </tr>
                   </thead>
-                  <tbody>
-                    {playerBattingStats.map(({ player, metrics }) => (
-                      <tr key={player.id} className="border-b border-gray-100 last:border-0">
-                        <td className="py-3 pr-3">
-                          <span className="font-medium text-gray-900">
-                            {player.jerseyNumber != null ? `#${player.jerseyNumber} ` : ""}
+                  <tbody className="divide-y divide-gray-50">
+                    {playerBattingStats.map(({ player, metrics }, i) => (
+                      <tr key={player.id}>
+                        <td className="py-3 pr-2 text-xs text-gray-300">{i + 1}</td>
+                        <td className="py-3 pr-4">
+                          <span className="font-semibold text-gray-900">
+                            {player.jerseyNumber != null && (
+                              <span className="mr-1.5 text-xs text-gray-400">#{player.jerseyNumber}</span>
+                            )}
                             {player.name}
                           </span>
-                          <span className="ml-2 text-xs text-gray-400">{player.position}</span>
+                          <span className="ml-1.5 text-xs text-gray-400">{player.position}</span>
                         </td>
-                        <td className="px-2 py-3 text-center text-gray-600">{metrics.games}</td>
-                        <td className="px-2 py-3 text-center font-semibold text-gray-900">
+                        <td className="px-2 py-3 text-center text-gray-500">{metrics.games}</td>
+                        <td className="px-2 py-3 text-center font-bold text-green-900">
                           {metrics.ab > 0 ? fmtRate(metrics.avg) : "—"}
                         </td>
-                        <td className="px-2 py-3 text-center text-gray-600">
-                          {metrics.pa > 0 ? fmtRate(metrics.obp) : "—"}
-                        </td>
-                        <td className="px-2 py-3 text-center text-gray-600">
-                          {metrics.pa > 0 ? fmtRate(metrics.ops) : "—"}
-                        </td>
+                        <td className="px-2 py-3 text-center text-gray-600">{metrics.pa > 0 ? fmtRate(metrics.obp) : "—"}</td>
+                        <td className="px-2 py-3 text-center text-gray-600">{metrics.pa > 0 ? fmtRate(metrics.ops) : "—"}</td>
                         <td className="px-2 py-3 text-center text-gray-600">{metrics.hr}</td>
                         <td className="px-2 py-3 text-center text-gray-600">{metrics.rbi}</td>
                       </tr>
@@ -271,43 +271,44 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
                   </tbody>
                 </table>
               </div>
-            </div>
+            </Card>
 
-            {/* Pitching leaderboard */}
+            {/* Pitching Leaderboard */}
             {playerPitchingStats.length > 0 && (
-              <div className="rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-                <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Pitching Leaderboard</h2>
+              <Card title="Pitching Leaderboard">
                 <div className="mt-4 overflow-x-auto">
-                  <table className="w-full min-w-105 text-sm">
+                  <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200 text-xs font-semibold uppercase tracking-wide text-gray-500">
-                        <th className="pb-3 pr-3 text-left">Player</th>
+                      <tr className="border-b border-gray-100 text-xs font-bold uppercase tracking-wide text-gray-400">
+                        <th className="pb-3 pr-2 w-5 text-left">#</th>
+                        <th className="pb-3 pr-4 text-left">Player</th>
                         <th className="pb-3 px-2 text-center">G</th>
                         <th className="pb-3 px-2 text-center">IP</th>
-                        <th className="pb-3 px-2 text-center">ERA</th>
+                        <th className="pb-3 px-2 text-center text-green-700">ERA</th>
                         <th className="pb-3 px-2 text-center">WHIP</th>
                         <th className="pb-3 px-2 text-center">SO</th>
                         <th className="pb-3 px-2 text-center">BB</th>
                       </tr>
                     </thead>
-                    <tbody>
-                      {playerPitchingStats.map(({ player, metrics }) => (
-                        <tr key={player.id} className="border-b border-gray-100 last:border-0">
-                          <td className="py-3 pr-3">
-                            <span className="font-medium text-gray-900">
-                              {player.jerseyNumber != null ? `#${player.jerseyNumber} ` : ""}
+                    <tbody className="divide-y divide-gray-50">
+                      {playerPitchingStats.map(({ player, metrics }, i) => (
+                        <tr key={player.id}>
+                          <td className="py-3 pr-2 text-xs text-gray-300">{i + 1}</td>
+                          <td className="py-3 pr-4">
+                            <span className="font-semibold text-gray-900">
+                              {player.jerseyNumber != null && (
+                                <span className="mr-1.5 text-xs text-gray-400">#{player.jerseyNumber}</span>
+                              )}
                               {player.name}
                             </span>
-                            <span className="ml-2 text-xs text-gray-400">{player.position}</span>
+                            <span className="ml-1.5 text-xs text-gray-400">{player.position}</span>
                           </td>
-                          <td className="px-2 py-3 text-center text-gray-600">{metrics.games}</td>
+                          <td className="px-2 py-3 text-center text-gray-500">{metrics.games}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{fmtIp(metrics.outs)}</td>
-                          <td className="px-2 py-3 text-center font-semibold text-gray-900">
+                          <td className="px-2 py-3 text-center font-bold text-green-900">
                             {metrics.outs > 0 ? metrics.era.toFixed(2) : "—"}
                           </td>
-                          <td className="px-2 py-3 text-center text-gray-600">
-                            {metrics.outs > 0 ? metrics.whip.toFixed(2) : "—"}
-                          </td>
+                          <td className="px-2 py-3 text-center text-gray-600">{metrics.outs > 0 ? metrics.whip.toFixed(2) : "—"}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{metrics.so}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{metrics.bb}</td>
                         </tr>
@@ -315,18 +316,17 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
                     </tbody>
                   </table>
                 </div>
-              </div>
+              </Card>
             )}
-
           </div>
 
           {/* ── Right column: Game Results ── */}
-          <div className="shrink-0 lg:w-72 xl:w-80">
-            <div className="sticky top-4 rounded-xl bg-white p-4 shadow-sm sm:rounded-2xl sm:p-6">
-              <h2 className="text-base font-semibold text-gray-900 sm:text-lg">Game Results</h2>
-
+          <div className="shrink-0 lg:w-64 xl:w-72">
+            <div className="sticky top-4 rounded-2xl bg-white p-5 shadow-sm">
+              <h2 className="text-base font-bold text-gray-900">Game Results</h2>
+              <p className="mt-0.5 text-xs text-gray-400">{uniqueGames.length} games this season</p>
               {uniqueGames.length === 0 ? (
-                <p className="mt-4 text-sm text-gray-500">No games recorded yet.</p>
+                <p className="mt-4 text-sm text-gray-400">No games recorded yet.</p>
               ) : (
                 <div className="mt-4 space-y-2">
                   {uniqueGames.map(({ gameId, meta }) => (
@@ -343,49 +343,56 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
   )
 }
 
-/* ── サブコンポーネント ── */
+/* ── Sub-components ── */
 
-function StatPill({ label, value }: { label: string; value: string }) {
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-3">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</p>
-      <p className="mt-1 text-xl font-bold text-gray-900">{value}</p>
+    <div className="rounded-2xl bg-white p-5 shadow-sm">
+      <h2 className="text-base font-bold text-gray-900">{title}</h2>
+      {children}
+    </div>
+  )
+}
+
+function StatTile({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+  if (accent) {
+    return (
+      <div className="rounded-xl bg-green-800 p-3 text-center text-white">
+        <p className="text-xs font-bold uppercase tracking-widest text-green-300">{label}</p>
+        <p className="mt-1.5 text-xl font-extrabold">{value}</p>
+      </div>
+    )
+  }
+  return (
+    <div className="rounded-xl bg-[#f7f8f3] p-3 text-center">
+      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
+      <p className="mt-1.5 text-xl font-extrabold text-green-950">{value}</p>
     </div>
   )
 }
 
 function GameResultRow({ meta }: { meta: DraftGameMeta }) {
-  const resultColors: Record<string, string> = {
-    W: "bg-emerald-100 text-emerald-800",
-    L: "bg-red-100 text-red-700",
-    T: "bg-gray-100 text-gray-600",
+  const badge: Record<string, string> = {
+    W: "bg-green-100 text-green-800",
+    L: "bg-red-50 text-red-600",
+    T: "bg-gray-100 text-gray-500",
   }
-
+  const colorClass = meta.result ? (badge[meta.result] ?? "bg-gray-100 text-gray-400") : "bg-gray-100 text-gray-300"
   const hasScore = meta.teamScore != null && meta.opponentScore != null
-  const colorClass = meta.result ? resultColors[meta.result] ?? "bg-gray-100 text-gray-500" : "bg-gray-100 text-gray-400"
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 px-3 py-3">
-      {/* Result badge */}
-      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${colorClass}`}>
+    <div className="flex items-center gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
+      <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${colorClass}`}>
         {meta.result || "—"}
       </div>
-
-      {/* Info */}
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-gray-800">
-          vs {meta.opponent || "—"}
-        </p>
+        <p className="truncate text-sm font-semibold text-gray-800">vs {meta.opponent || "—"}</p>
         <p className="text-xs text-gray-400">{meta.date}</p>
       </div>
-
-      {/* Score */}
       {hasScore && (
-        <div className="shrink-0 text-right">
-          <p className="text-sm font-bold text-gray-900">
-            {meta.teamScore} – {meta.opponentScore}
-          </p>
-        </div>
+        <p className="shrink-0 font-mono text-sm font-bold text-gray-700">
+          {meta.teamScore}–{meta.opponentScore}
+        </p>
       )}
     </div>
   )

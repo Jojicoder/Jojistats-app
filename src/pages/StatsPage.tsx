@@ -149,6 +149,7 @@ export default function StatsPage() {
         { label: "My Stats", view: "stats" },
         { label: "Team Stats", view: "myteam" },
         { label: "Team Manager", href: "/manager" },
+        { label: "Archive", href: "/seasons" },
       ]
     }
     if (userRole === "recorder") {
@@ -156,11 +157,13 @@ export default function StatsPage() {
         { label: "My Stats", view: "stats" },
         { label: "My Team", view: "myteam" },
         { label: "Record Game", href: "/record-game" },
+        { label: "Archive", href: "/seasons" },
       ]
     }
     return [
       { label: "My Stats", view: "stats" },
       { label: "My Team", view: "myteam" },
+      { label: "Archive", href: "/seasons" },
     ]
   }, [userRole])
 

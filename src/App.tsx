@@ -8,6 +8,9 @@ import {
 } from "react-router-dom"
 
 import AdminPage from "./pages/AdminPage"
+import ForgotPasswordPage from "./pages/ForgotPasswordPage"
+import LandingPage from "./pages/LandingPage"
+import ResetPasswordPage from "./pages/ResetPasswordPage"
 import StatsPage from "./pages/StatsPage"
 import GameRecordPage from "./pages/GameRecordPage"
 import LoginPage from "./pages/LoginPage"
@@ -62,7 +65,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Navigate to="/stats" replace />} />
+        <Route path="/" element={<LandingPage />} />
 
         <Route path="/stats" element={<StatsPage />} />
         <Route path="/states" element={<Navigate to="/stats" replace />} />
@@ -94,6 +97,8 @@ export default function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         <Route path="*" element={<Navigate to="/stats" replace />} />
       </Routes>

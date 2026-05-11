@@ -32,7 +32,7 @@ export type UserAccessRow = {
   is_active: boolean | number | null
 }
 
-type GameRow = {
+export type GameRow = {
   id: number
   team_id: number
   game_date: string
@@ -284,6 +284,22 @@ export async function fetchPitchingEntriesByPlayer(
   })
 
   return grouped
+}
+
+export const fetchGamesBySeason = async (
+  teamId: number,
+  seasonYear: number
+): Promise<GameRow[]> => {
+  const { data, error } = await supabase
+    .from("games")
+    .select("*")
+    .eq("team_id", teamId)
+    .eq("season_year", seasonYear)
+    .order("game_date", { ascending: true })
+    .order("match_number", { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as GameRow[]
 }
 
 export const fetchSavedEntriesByPlayer = async (
