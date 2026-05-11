@@ -16,6 +16,8 @@ type MyStatsPageProps = {
   teamSavedEntries: SavedBattingGameEntry[]
   gamesPlayed: number
   seasonYear: number
+  mode?: "batting" | "pitching"
+  onModeChange?: (mode: "batting" | "pitching") => void
 }
 
 const statDescriptions: Record<string, string> = {
@@ -90,6 +92,8 @@ export default function MyStatsPage({
   teamSavedEntries,
   gamesPlayed,
   seasonYear,
+  mode = "batting",
+  onModeChange,
 }: MyStatsPageProps) {
   const [selectedEntry, setSelectedEntry] = useState<SavedBattingGameEntry | null>(null)
 
@@ -116,13 +120,29 @@ export default function MyStatsPage({
 
         {/* ── Player Header ── */}
         <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-green-700">My Stats</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
-            {activePlayer.jerseyNumber != null
-              ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
-              : activePlayer.name}
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">My Stats</p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
+                {activePlayer.jerseyNumber != null
+                  ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
+                  : activePlayer.name}
+              </h1>
+              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
+            </div>
+            {onModeChange && (
+              <div className="inline-flex shrink-0 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1">
+                <button type="button" onClick={() => onModeChange("batting")}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${mode === "batting" ? "bg-green-900 text-white shadow-sm" : "text-gray-600 hover:text-green-900"}`}>
+                  Batting
+                </button>
+                <button type="button" onClick={() => onModeChange("pitching")}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${mode === "pitching" ? "bg-green-900 text-white shadow-sm" : "text-gray-600 hover:text-green-900"}`}>
+                  Pitching
+                </button>
+              </div>
+            )}
+          </div>
 
           {selectedEntry && (
             <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2.5">
@@ -153,7 +173,7 @@ export default function MyStatsPage({
         </div>
 
         {/* ── Stat Cards ── */}
-        <section className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {displayedStats.map((stat) => {
             const style = getStatCardStyle(stat.label, stat.value, displayedGamesPlayed)
             return (

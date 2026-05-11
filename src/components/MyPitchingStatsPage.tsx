@@ -7,6 +7,8 @@ type Props = {
   activePlayer: Player
   entries: SavedPitchingGameEntry[]
   battingEntries?: SavedBattingGameEntry[]
+  mode?: "batting" | "pitching"
+  onModeChange?: (mode: "batting" | "pitching") => void
 }
 
 const statDescriptions: Record<string, string> = {
@@ -85,7 +87,7 @@ function formatIP(outs: number) {
   return rem === 0 ? `${whole}.0` : `${whole}.${rem}`
 }
 
-export default function MyPitchingStatsPage({ activePlayer, entries }: Props) {
+export default function MyPitchingStatsPage({ activePlayer, entries, mode = "pitching", onModeChange }: Props) {
   const [selectedEntry, setSelectedEntry] = useState<SavedPitchingGameEntry | null>(null)
   const displayedEntries = selectedEntry ? [selectedEntry] : entries
   const statLines = displayedEntries.map((e) => e.statLine)
@@ -98,13 +100,29 @@ export default function MyPitchingStatsPage({ activePlayer, entries }: Props) {
 
         {/* Player Header */}
         <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <p className="text-xs font-bold uppercase tracking-widest text-green-700">Pitching Stats</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
-            {activePlayer.jerseyNumber != null
-              ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
-              : activePlayer.name}
-          </h1>
-          <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">Pitching Stats</p>
+              <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
+                {activePlayer.jerseyNumber != null
+                  ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
+                  : activePlayer.name}
+              </h1>
+              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
+            </div>
+            {onModeChange && (
+              <div className="inline-flex shrink-0 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1">
+                <button type="button" onClick={() => onModeChange("batting")}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${mode === "batting" ? "bg-green-900 text-white shadow-sm" : "text-gray-600 hover:text-green-900"}`}>
+                  Batting
+                </button>
+                <button type="button" onClick={() => onModeChange("pitching")}
+                  className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${mode === "pitching" ? "bg-green-900 text-white shadow-sm" : "text-gray-600 hover:text-green-900"}`}>
+                  Pitching
+                </button>
+              </div>
+            )}
+          </div>
 
           {selectedEntry && (
             <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-green-200 bg-green-50 px-3 py-2.5">
@@ -134,7 +152,7 @@ export default function MyPitchingStatsPage({ activePlayer, entries }: Props) {
         </div>
 
         {/* Stat Cards */}
-        <section className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+        <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {(
             [
               { label: "ERA",  value: stats.era },

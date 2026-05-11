@@ -117,6 +117,7 @@ export default function Header({
 
   return (
     <header className="shrink-0 border-b border-gray-200 bg-white px-3 py-2 shadow-sm sm:px-5 sm:py-3">
+      <div className="mx-auto max-w-screen-2xl">
       <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
 
         {/* LEFT */}
@@ -232,6 +233,7 @@ export default function Header({
           )}
 
         </div>
+      </div>
       </div>
     </header>
   )

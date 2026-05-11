@@ -260,7 +260,7 @@ export default function TeamManagerDashboard({
 
       {managerMode === "batting" ? (
         <>
-          <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+          <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
             <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
               <h2 className="text-base font-bold text-gray-900">Team Leaders</h2>
               <div className="mt-4 space-y-3 text-sm">
@@ -336,14 +336,14 @@ export default function TeamManagerDashboard({
         </>
       ) : (
         <>
-          <section className="grid grid-cols-1 gap-5 xl:grid-cols-3">
+          <section className="grid grid-cols-1 gap-5 lg:grid-cols-2 xl:grid-cols-3">
             <div className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
               <h2 className="text-base font-bold text-gray-900">Pitching Leaders</h2>
               <div className="mt-4 space-y-3 text-sm">
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">ERA</span><span className="font-semibold text-gray-900">{pitchingLeaders.era ? `${pitchingLeaders.era.player.name} ${fmtDecimal(pitchingLeaders.era.metrics.era)}` : "No data"}</span></p>
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">WHIP</span><span className="font-semibold text-gray-900">{pitchingLeaders.whip ? `${pitchingLeaders.whip.player.name} ${fmtDecimal(pitchingLeaders.whip.metrics.whip)}` : "No data"}</span></p>
                 <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">SO</span><span className="font-semibold text-gray-900">{pitchingLeaders.so ? `${pitchingLeaders.so.player.name} ${pitchingLeaders.so.metrics.so}` : "No data"}</span></p>
-                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">IP</span><span className="font-semibold text-gray-900">{pitchingLeaders.ip ? `${pitchingLeaders.ip.player.name} ${pitchingLeaders.ip.metrics.ip}` : "No data"}</span></p>
+                <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5"><span className="text-xs font-bold uppercase tracking-widest text-gray-400">IP</span><span className="font-semibold text-gray-900">{pitchingLeaders.ip ? `${pitchingLeaders.ip.player.name} ${fmtIp(pitchingLeaders.ip.metrics.outs)}` : "No data"}</span></p>
               </div>
             </div>
 
@@ -397,7 +397,7 @@ export default function TeamManagerDashboard({
                       <td className="py-3 pr-4 font-semibold text-gray-900">{getPlayerLabel(player)}</td>
                       <td className="py-3 pr-4 text-gray-600">{player.position}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.games}</td>
-                      <td className="py-3 pr-4 text-gray-600">{metrics.ip}</td>
+                      <td className="py-3 pr-4 text-gray-600">{fmtIp(metrics.outs)}</td>
                       <td className="py-3 pr-4 font-bold text-green-900">{fmtDecimal(metrics.era)}</td>
                       <td className="py-3 pr-4 text-gray-600">{fmtDecimal(metrics.whip)}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.h}</td>

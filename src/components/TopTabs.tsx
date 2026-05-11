@@ -17,6 +17,7 @@ export default function TopTabs({ activeView, onChangeView, tabs }: TopTabsProps
 
   return (
     <nav className="shrink-0 border-b border-gray-200 bg-white px-3 py-2">
+      <div className="mx-auto max-w-screen-2xl">
       <div className="flex gap-1 overflow-x-auto rounded-xl bg-[#f7f8f3] p-1">
         {tabs.map((tab) => {
           if ("href" in tab) {
@@ -41,6 +42,7 @@ export default function TopTabs({ activeView, onChangeView, tabs }: TopTabsProps
             </button>
           )
         })}
+      </div>
       </div>
     </nav>
   )

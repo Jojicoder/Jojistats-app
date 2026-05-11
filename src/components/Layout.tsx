@@ -338,34 +338,9 @@ export default function Layout({
         ]}
       />
 
-      {activeView === "stats" && (
-        <div className="flex gap-2 px-4 pt-3">
-          <button
-            type="button"
-            onClick={() => setMode("batting")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              mode === "batting"
-                ? "bg-green-900 text-white shadow-sm"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            Batting
-          </button>
-          <button
-            type="button"
-            onClick={() => setMode("pitching")}
-            className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${
-              mode === "pitching"
-                ? "bg-green-900 text-white shadow-sm"
-                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
-            }`}
-          >
-            Pitching
-          </button>
-        </div>
-      )}
 
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:p-4">
+      <div className="flex flex-1 overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-3 p-3 lg:flex-row lg:p-4">
 
         {activeView === "myteam" ? (
           <MyTeamPage
@@ -450,6 +425,7 @@ export default function Layout({
                 pitchingEntriesByPlayer={pitchingEntriesByPlayer}
                 savedGames={savedGames}
                 mode={mode}
+                onModeChange={setMode}
                 setSavedEntriesByPlayer={setSavedEntriesByPlayer}
                 setPitchingEntriesByPlayer={setPitchingEntriesByPlayer}
                 setSavedGames={setSavedGames}
@@ -464,5 +440,6 @@ export default function Layout({
         )}
       </div>
     </div>
+  </div>
   )
 }

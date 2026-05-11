@@ -185,7 +185,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
               {sortedRoster.length === 0 ? (
                 <p className="mt-4 text-sm text-gray-400">No players on this team.</p>
               ) : (
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {sortedRoster.map((player) => (
                     <div key={player.id} className="flex items-center gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-200 bg-green-50 text-xs font-bold text-green-900">

@@ -46,6 +46,7 @@ type MainDashboardProps = {
   pitchingEntriesByPlayer: Record<string, SavedPitchingGameEntry[]>
   savedGames: GameRow[]
   mode: "batting" | "pitching"
+  onModeChange: (mode: "batting" | "pitching") => void
   setSavedEntriesByPlayer: Dispatch<
     SetStateAction<Record<string, SavedBattingGameEntry[]>>
   >
@@ -84,6 +85,7 @@ export default function MainDashboard({
   pitchingEntriesByPlayer,
   savedGames,
   mode,
+  onModeChange,
   setSavedEntriesByPlayer,
   setPitchingEntriesByPlayer,
   setSavedGames,
@@ -576,6 +578,8 @@ export default function MainDashboard({
         activePlayer={activePlayer}
         entries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
         battingEntries={savedEntries}
+        mode={mode}
+        onModeChange={onModeChange}
       />
     )
   }
@@ -631,8 +635,10 @@ export default function MainDashboard({
         savedEntries={savedEntries}
         pitchingEntries={savedPitchingEntries}
         teamSavedEntries={teamSavedEntries}
-      gamesPlayed={kpi.gamesPlayed}
-      seasonYear={gameMeta.seasonYear}
-    />
+        gamesPlayed={kpi.gamesPlayed}
+        seasonYear={gameMeta.seasonYear}
+        mode={mode}
+        onModeChange={onModeChange}
+      />
   )
 }
