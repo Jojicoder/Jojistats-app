@@ -11,10 +11,7 @@ import {
 } from "../api/supabase-api"
 import type { GameRow, PlayerRow, TeamRow } from "../api/supabase-api"
 import type { SavedBattingGameEntry } from "../types"
-
-function formatRate(v: number) {
-  return v.toFixed(3).replace(/^0/, "")
-}
+import { fmtRate } from "../utils/metrics"
 
 function formatDate(iso: string) {
   const [y, m, d] = iso.split("-")
@@ -285,7 +282,7 @@ export default function SeasonArchivePage() {
                       sub={record.t > 0 ? `${record.t} tie` : `${games.length} games`}
                       accent
                     />
-                    <SummaryCard label="Team AVG" value={formatRate(teamStats.avg)} sub="batting" />
+                    <SummaryCard label="Team AVG" value={fmtRate(teamStats.avg)} sub="batting" />
                     <SummaryCard label="Team HR" value={String(teamStats.hr)} sub="home runs" />
                     <SummaryCard label="Team RBI" value={String(teamStats.rbi)} sub="runs batted in" />
                   </section>
@@ -297,7 +294,7 @@ export default function SeasonArchivePage() {
                       <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
                         <LeaderCard stat="AVG"
                           name={leaders.avgLeader?.player.name ?? "—"}
-                          value={leaders.avgLeader ? formatRate(leaders.avgLeader.avg) : "—"} />
+                          value={leaders.avgLeader ? fmtRate(leaders.avgLeader.avg) : "—"} />
                         <LeaderCard stat="HR"  name={leaders.hrLeader.player.name}  value={String(leaders.hrLeader.hr)} />
                         <LeaderCard stat="RBI" name={leaders.rbiLeader.player.name} value={String(leaders.rbiLeader.rbi)} />
                         <LeaderCard stat="H"   name={leaders.hLeader.player.name}   value={String(leaders.hLeader.h)} />
@@ -392,7 +389,7 @@ export default function SeasonArchivePage() {
                                 <td className="py-3 pr-4 text-gray-500">{row.games}</td>
                                 <td className="py-3 pr-4 text-gray-500">{row.ab}</td>
                                 <td className="py-3 pr-4 text-gray-500">{row.h}</td>
-                                <td className="py-3 pr-4 font-bold text-green-900">{formatRate(row.avg)}</td>
+                                <td className="py-3 pr-4 font-bold text-green-900">{fmtRate(row.avg)}</td>
                                 <td className="py-3 pr-4 text-gray-500">{row.hr}</td>
                                 <td className="py-3 pr-4 text-gray-500">{row.rbi}</td>
                                 <td className="py-3 pr-4 text-gray-500">{row.bb}</td>

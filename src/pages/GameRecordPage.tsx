@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
 import {
@@ -21,6 +21,7 @@ import {
 } from "../api/api"
 
 import RecordGamePage from "../components/RecordGamePage"
+import { buildFullGamePayload } from "../utils/gamePayload"
 
 import type {
   Player,
@@ -181,16 +182,16 @@ export default function GameRecordPage() {
     try { return (JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]") as unknown[]).length } catch { return 0 }
   })
 
-  const applyTeamShell = (team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
+  const applyTeamShell = useCallback((team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
     setTeamName(team.name)
     setTeamId(team.id)
     setSeasonYear(team.current_season_year)
     setAllPlayers(mappedPlayers)
     setActivePlayer(firstPlayer)
     setGameMeta((prev) => ({ ...prev, seasonYear: team.current_season_year }))
-  }
+  }, [])
 
-  const loadProfileAvatar = (userId: string) => {
+  const loadProfileAvatar = useCallback((userId: string) => {
     withLoadTimeout(
       supabase
         .from("profiles")
@@ -201,9 +202,9 @@ export default function GameRecordPage() {
     )
       .then(({ data: profile }) => setAvatarUrl(profile?.avatar_url ?? ""))
       .catch((error) => console.error(error))
-  }
+  }, [])
 
-  const loadSeasonDataInBackground = (team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
+  const loadSeasonDataInBackground = useCallback((team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
     withLoadTimeout(
       Promise.all([
         fetchSavedEntriesByPlayer(team.id, team.current_season_year),
@@ -236,7 +237,23 @@ export default function GameRecordPage() {
         console.error(error)
         setSaveError(error instanceof Error ? error.message : "Saved game data could not be loaded.")
       })
-  }
+  }, [])
+
+  const loadTeam = useCallback(async (
+    team: TeamSnapshot,
+    preferredPlayerId?: string
+  ) => {
+    const playerRows = await withLoadTimeout(
+      fetchPlayers(team.id, team.current_season_year),
+      "Players load"
+    )
+    const mapped = playerRows.map(mapPlayer).filter((p) => !p.isArchived)
+    const first = getPreferredPlayer(mapped, preferredPlayerId)
+    if (!first) { setAccessError("No players found for this season."); return }
+
+    applyTeamShell(team, mapped, first)
+    loadSeasonDataInBackground(team, mapped, first)
+  }, [applyTeamShell, loadSeasonDataInBackground])
 
   useEffect(() => {
     const checkUser = async () => {
@@ -300,23 +317,7 @@ export default function GameRecordPage() {
     }
 
     checkUser()
-  }, [navigate])
-
-  const loadTeam = async (
-    team: TeamSnapshot,
-    preferredPlayerId?: string
-  ) => {
-    const playerRows = await withLoadTimeout(
-      fetchPlayers(team.id, team.current_season_year),
-      "Players load"
-    )
-    const mapped = playerRows.map(mapPlayer).filter((p) => !p.isArchived)
-    const first = getPreferredPlayer(mapped, preferredPlayerId)
-    if (!first) { setAccessError("No players found for this season."); return }
-
-    applyTeamShell(team, mapped, first)
-    loadSeasonDataInBackground(team, mapped, first)
-  }
+  }, [applyTeamShell, loadProfileAvatar, loadTeam, navigate])
 
   const flushOfflineQueue = async (currentTeamId: number, currentSeasonYear: number, currentPlayerId: string) => {
     let queue: { payload: Parameters<typeof createFullGame>[0] }[] = []
@@ -375,46 +376,7 @@ export default function GameRecordPage() {
 
     setSaveError("")
     try {
-      const payload = {
-        game: {
-          team_id: Number(activePlayer.teamId),
-          game_date: nextGameMeta.date,
-          opponent_name: nextGameMeta.opponent,
-          season_year: nextGameMeta.seasonYear,
-          match_number: nextGameMeta.matchNumber,
-          location: nextGameMeta.location?.trim() || null,
-          ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-          team_score: nextGameMeta.teamScore ?? null,
-          opponent_score: nextGameMeta.opponentScore ?? null,
-          result: nextGameMeta.result || null,
-        },
-        battingStats: entries.map((entry, index) => ({
-          player_id: Number(entry.playerId),
-          batting_order: index + 1,
-          game_positions: entry.gamePositions,
-          ab: entry.AB,
-          h: entry.H,
-          double_hits: entry.doubles,
-          triple_hits: entry.triples,
-          hr: entry.HR,
-          rbi: entry.RBI,
-          bb: entry.BB,
-          hbp: entry.HBP,
-          sf: entry.SF,
-          so: entry.SO,
-        })),
-        pitchingStats: pitchingEntries.map((entry) => ({
-          player_id: Number(entry.playerId),
-          innings_pitched_outs: entry.inningsPitchedOuts,
-          hits_allowed: entry.hitsAllowed,
-          runs_allowed: entry.runsAllowed,
-          earned_runs: entry.earnedRuns,
-          walks: entry.walks,
-          hbp: entry.hitBatters,
-          strikeouts: entry.strikeouts,
-          home_runs_allowed: entry.homeRunsAllowed,
-        })),
-      }
+      const payload = buildFullGamePayload(Number(activePlayer.teamId), nextGameMeta, entries, pitchingEntries)
 
       if (editingSavedEntryId) {
         const gameId = editingSavedEntry?.gameId ?? Number(editingSavedEntryId.replace("db-", ""))

@@ -31,6 +31,12 @@ import type { GameRow } from "../api/supabase-api"
 import RecordGamePage from "./RecordGamePage"
 import MyStatsPage from "./MyStatsPage"
 import MyPitchingStatsPage from "./MyPitchingStatsPage"
+import {
+  buildBattingStatPayload,
+  buildFullGamePayload,
+  buildGamePayload,
+  buildPitchingStatPayload,
+} from "../utils/gamePayload"
 
 type MainDashboardProps = {
   activePlayer: Player
@@ -206,6 +212,8 @@ export default function MainDashboard({
     }
   }, [
     activePlayer.id,
+    activePlayer.seasonYear,
+    activePlayer.teamId,
     gameMeta.date,
     gameMeta.opponent,
     gameMeta.matchNumber,
@@ -213,6 +221,7 @@ export default function MainDashboard({
     savedEntriesByPlayer,
     editingSavedPitchingEntry?.id,
     editingSavedEntryId,
+    setEntriesByPlayer,
   ])
 
   /* ---------------- HANDLERS ---------------- */
@@ -223,51 +232,6 @@ export default function MainDashboard({
       [activePlayer.id]: next,
     }))
   }
-
-  const buildPayload = (
-    nextGameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[],
-    pitchingEntries: PendingPitchingEntry[] = []
-  ) => ({
-    game: {
-      team_id: Number(activePlayer.teamId),
-      game_date: nextGameMeta.date,
-      opponent_name: nextGameMeta.opponent,
-      season_year: nextGameMeta.seasonYear,
-      match_number: nextGameMeta.matchNumber,
-      location: nextGameMeta.location?.trim() || null,
-      ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-      team_score: nextGameMeta.teamScore ?? null,
-      opponent_score: nextGameMeta.opponentScore ?? null,
-      result: nextGameMeta.result || null,
-    },
-    battingStats: entries.map((entry, index) => ({
-      player_id: Number(entry.playerId),
-      batting_order: index + 1,
-      game_positions: entry.gamePositions,
-      ab: entry.AB,
-      h: entry.H,
-      double_hits: entry.doubles,
-      triple_hits: entry.triples,
-      hr: entry.HR,
-      rbi: entry.RBI,
-      bb: entry.BB,
-      hbp: entry.HBP,
-      sf: entry.SF,
-      so: entry.SO,
-    })),
-    pitchingStats: pitchingEntries.map((entry) => ({
-      player_id: Number(entry.playerId),
-      innings_pitched_outs: entry.inningsPitchedOuts,
-      hits_allowed: entry.hitsAllowed,
-      runs_allowed: entry.runsAllowed,
-      earned_runs: entry.earnedRuns,
-      walks: entry.walks,
-      hbp: entry.hitBatters,
-      strikeouts: entry.strikeouts,
-      home_runs_allowed: entry.homeRunsAllowed,
-    })),
-  })
 
   const refreshSavedEntries = async () => {
     const updated = await fetchSavedEntriesByPlayer(
@@ -299,7 +263,7 @@ export default function MainDashboard({
     pitchingEntries: PendingPitchingEntry[] = []
   ) => {
     try {
-      const payload = buildPayload(nextGameMeta, entries, pitchingEntries)
+      const payload = buildFullGamePayload(Number(activePlayer.teamId), nextGameMeta, entries, pitchingEntries)
 
       if (editingSavedEntryId) {
         const gameId = editingSavedEntry?.gameId ?? Number(editingSavedEntryId.replace("db-", ""))
@@ -337,32 +301,9 @@ export default function MainDashboard({
 
     try {
       await createFullGame({
-        game: {
-          team_id: Number(activePlayer.teamId),
-          game_date: gameMeta.date,
-          opponent_name: gameMeta.opponent,
-          season_year: gameMeta.seasonYear,
-          match_number: gameMeta.matchNumber,
-          location: gameMeta.location?.trim() || null,
-          ...(gameMeta.memo !== undefined ? { memo: gameMeta.memo.trim() || null } : {}),
-          team_score: gameMeta.teamScore ?? null,
-          opponent_score: gameMeta.opponentScore ?? null,
-          result: gameMeta.result || null,
-        },
+        game: buildGamePayload(Number(activePlayer.teamId), gameMeta),
         battingStats: [],
-        pitchingStats: [
-          {
-            player_id: Number(pitcherId),
-            innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
-            hits_allowed: nextPitchingEntry.hitsAllowed,
-            runs_allowed: nextPitchingEntry.runsAllowed,
-            earned_runs: nextPitchingEntry.earnedRuns,
-            walks: nextPitchingEntry.walks,
-            hbp: nextPitchingEntry.hitBatters,
-            strikeouts: nextPitchingEntry.strikeouts,
-            home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
-          },
-        ],
+        pitchingStats: [buildPitchingStatPayload(pitcherId, nextPitchingEntry)],
       })
 
       await refreshPitchingEntries()
@@ -402,29 +343,8 @@ export default function MainDashboard({
         editingSavedPitchingEntry.statId,
         editingSavedPitchingEntry.gameId,
         {
-          game: {
-            team_id: Number(activePlayer.teamId),
-            game_date: nextGameMeta.date,
-            opponent_name: nextGameMeta.opponent,
-            season_year: nextGameMeta.seasonYear,
-            match_number: nextGameMeta.matchNumber,
-            location: nextGameMeta.location?.trim() || null,
-            ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-            team_score: nextGameMeta.teamScore ?? null,
-            opponent_score: nextGameMeta.opponentScore ?? null,
-            result: nextGameMeta.result || null,
-          },
-          pitchingStat: {
-            player_id: Number(editingSavedPitchingEntry.playerId),
-            innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
-            hits_allowed: nextPitchingEntry.hitsAllowed,
-            runs_allowed: nextPitchingEntry.runsAllowed,
-            earned_runs: nextPitchingEntry.earnedRuns,
-            walks: nextPitchingEntry.walks,
-            hbp: nextPitchingEntry.hitBatters,
-            strikeouts: nextPitchingEntry.strikeouts,
-            home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
-          },
+          game: buildGamePayload(Number(activePlayer.teamId), nextGameMeta),
+          pitchingStat: buildPitchingStatPayload(editingSavedPitchingEntry.playerId, nextPitchingEntry),
         }
       )
       await refreshPitchingEntries()
@@ -480,33 +400,13 @@ export default function MainDashboard({
 
     try {
       await updateBattingStatEntry(editingSavedEntry.statId, editingSavedEntry.gameId, {
-        game: {
-          team_id: Number(activePlayer.teamId),
-          game_date: nextGameMeta.date,
-          opponent_name: nextGameMeta.opponent,
-          season_year: nextGameMeta.seasonYear,
-          match_number: nextGameMeta.matchNumber,
-          location: nextGameMeta.location?.trim() || null,
-          ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-          team_score: nextGameMeta.teamScore ?? null,
-          opponent_score: nextGameMeta.opponentScore ?? null,
-          result: nextGameMeta.result || null,
-        },
-        battingStat: {
-          player_id: Number(editingSavedEntry.playerId),
-          batting_order: 1,
-          game_positions: editingSavedEntry.gamePositions,
-          ab: nextStatLine.AB,
-          h: nextStatLine.H,
-          double_hits: nextStatLine.doubles,
-          triple_hits: nextStatLine.triples,
-          hr: nextStatLine.HR,
-          rbi: nextStatLine.RBI,
-          bb: nextStatLine.BB,
-          hbp: nextStatLine.HBP,
-          sf: nextStatLine.SF,
-          so: nextStatLine.SO,
-        },
+        game: buildGamePayload(Number(activePlayer.teamId), nextGameMeta),
+        battingStat: buildBattingStatPayload(
+          editingSavedEntry.playerId,
+          editingSavedEntry.gamePositions,
+          nextStatLine,
+          1
+        ),
       })
 
       await refreshSavedEntries()
@@ -523,16 +423,7 @@ export default function MainDashboard({
 
     try {
       await updateGameInfo(editingSavedEntry.gameId, {
-        team_id: Number(activePlayer.teamId),
-        game_date: nextGameMeta.date,
-        opponent_name: nextGameMeta.opponent,
-        season_year: nextGameMeta.seasonYear,
-        match_number: nextGameMeta.matchNumber,
-        location: nextGameMeta.location?.trim() || null,
-        ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-        team_score: nextGameMeta.teamScore ?? null,
-        opponent_score: nextGameMeta.opponentScore ?? null,
-        result: nextGameMeta.result || null,
+        ...buildGamePayload(Number(activePlayer.teamId), nextGameMeta),
       })
 
       await refreshSavedEntries()
@@ -555,7 +446,7 @@ export default function MainDashboard({
     try {
       await updateFullGame(
         editingSavedEntry.gameId,
-        buildPayload(nextGameMeta, entries, pitchingEntries)
+        buildFullGamePayload(Number(activePlayer.teamId), nextGameMeta, entries, pitchingEntries)
       )
       await refreshSavedEntries()
       await refreshPitchingEntries()

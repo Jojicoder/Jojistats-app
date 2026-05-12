@@ -16,6 +16,12 @@ import {
   updatePitchingStatEntry,
 } from "../api/api"
 import RecordGamePage from "./RecordGamePage"
+import {
+  buildBattingStatPayload,
+  buildFullGamePayload,
+  buildGamePayload,
+  buildPitchingStatPayload,
+} from "../utils/gamePayload"
 import type {
   Player,
   DraftGameMeta,
@@ -46,6 +52,7 @@ type Props = {
   teamName: string
   teamId: number
   seasonYear: number
+  // Pre-loaded by the caller (e.g. StatsPage) to avoid duplicate API fetches
   initialSavedEntriesByPlayer?: Record<string, SavedBattingGameEntry[]>
   initialPitchingEntriesByPlayer?: Record<string, SavedPitchingGameEntry[]>
   showRosterPanel?: boolean
@@ -119,34 +126,7 @@ export default function RecordGameContainer({
     pitchingEntries: PendingPitchingEntry[] = []
   ) => {
     setSaveError("")
-    const payload = {
-      game: {
-        team_id: teamId,
-        game_date: nextGameMeta.date,
-        opponent_name: nextGameMeta.opponent,
-        season_year: nextGameMeta.seasonYear,
-        match_number: nextGameMeta.matchNumber,
-        location: nextGameMeta.location?.trim() || null,
-        ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-        team_score: nextGameMeta.teamScore ?? null,
-        opponent_score: nextGameMeta.opponentScore ?? null,
-        result: nextGameMeta.result || null,
-      },
-      battingStats: entries.map((entry, i) => ({
-        player_id: Number(entry.playerId),
-        batting_order: i + 1,
-        game_positions: entry.gamePositions,
-        ab: entry.AB, h: entry.H, double_hits: entry.doubles, triple_hits: entry.triples,
-        hr: entry.HR, rbi: entry.RBI, bb: entry.BB, hbp: entry.HBP, sf: entry.SF, so: entry.SO,
-      })),
-      pitchingStats: pitchingEntries.map((entry) => ({
-        player_id: Number(entry.playerId),
-        innings_pitched_outs: entry.inningsPitchedOuts, hits_allowed: entry.hitsAllowed,
-        runs_allowed: entry.runsAllowed, earned_runs: entry.earnedRuns,
-        walks: entry.walks, hbp: entry.hitBatters, strikeouts: entry.strikeouts,
-        home_runs_allowed: entry.homeRunsAllowed,
-      })),
-    }
+    const payload = buildFullGamePayload(teamId, nextGameMeta, entries, pitchingEntries)
 
     try {
       if (editingSavedEntryId) {
@@ -180,22 +160,13 @@ export default function RecordGameContainer({
     setSaveError("")
     try {
       await updateBattingStatEntry(editingSavedEntry.statId, editingSavedEntry.gameId, {
-        game: {
-          team_id: teamId,
-          game_date: nextGameMeta.date, opponent_name: nextGameMeta.opponent,
-          season_year: nextGameMeta.seasonYear, match_number: nextGameMeta.matchNumber,
-          location: nextGameMeta.location?.trim() || null,
-          ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-          team_score: nextGameMeta.teamScore ?? null, opponent_score: nextGameMeta.opponentScore ?? null,
-          result: nextGameMeta.result || null,
-        },
-        battingStat: {
-          player_id: Number(editingSavedEntry.playerId), batting_order: 1,
-          game_positions: editingSavedEntry.gamePositions,
-          ab: nextStatLine.AB, h: nextStatLine.H, double_hits: nextStatLine.doubles,
-          triple_hits: nextStatLine.triples, hr: nextStatLine.HR, rbi: nextStatLine.RBI,
-          bb: nextStatLine.BB, hbp: nextStatLine.HBP, sf: nextStatLine.SF, so: nextStatLine.SO,
-        },
+        game: buildGamePayload(teamId, nextGameMeta),
+        battingStat: buildBattingStatPayload(
+          editingSavedEntry.playerId,
+          editingSavedEntry.gamePositions,
+          nextStatLine,
+          1
+        ),
       })
       await refreshAll(nextGameMeta.seasonYear)
       setEditingSavedEntryId(null)
@@ -213,13 +184,7 @@ export default function RecordGameContainer({
     setSaveError("")
     try {
       await updateGameInfo(editingSavedEntry.gameId, {
-        team_id: teamId,
-        game_date: nextGameMeta.date, opponent_name: nextGameMeta.opponent,
-        season_year: nextGameMeta.seasonYear, match_number: nextGameMeta.matchNumber,
-        location: nextGameMeta.location?.trim() || null,
-        ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-        team_score: nextGameMeta.teamScore ?? null, opponent_score: nextGameMeta.opponentScore ?? null,
-        result: nextGameMeta.result || null,
+        ...buildGamePayload(teamId, nextGameMeta),
       })
       await refreshAll(nextGameMeta.seasonYear)
       setEditingSavedEntryId(null)
@@ -289,23 +254,8 @@ export default function RecordGameContainer({
     setSaveError("")
     try {
       await updatePitchingStatEntry(editingSavedPitchingEntry.statId, editingSavedPitchingEntry.gameId, {
-        game: {
-          team_id: teamId,
-          game_date: nextGameMeta.date, opponent_name: nextGameMeta.opponent,
-          season_year: nextGameMeta.seasonYear, match_number: nextGameMeta.matchNumber,
-          location: nextGameMeta.location?.trim() || null,
-          ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-          team_score: nextGameMeta.teamScore ?? null, opponent_score: nextGameMeta.opponentScore ?? null,
-          result: nextGameMeta.result || null,
-        },
-        pitchingStat: {
-          player_id: Number(editingSavedPitchingEntry.playerId),
-          innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
-          hits_allowed: nextPitchingEntry.hitsAllowed, runs_allowed: nextPitchingEntry.runsAllowed,
-          earned_runs: nextPitchingEntry.earnedRuns, walks: nextPitchingEntry.walks,
-          hbp: nextPitchingEntry.hitBatters, strikeouts: nextPitchingEntry.strikeouts,
-          home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
-        },
+        game: buildGamePayload(teamId, nextGameMeta),
+        pitchingStat: buildPitchingStatPayload(editingSavedPitchingEntry.playerId, nextPitchingEntry),
       })
       await refreshAll(nextGameMeta.seasonYear)
       setEditingSavedPitchingEntry(null)
@@ -344,24 +294,9 @@ export default function RecordGameContainer({
     pitcherId = activePlayer.id
   ) => {
     await createFullGame({
-      game: {
-        team_id: teamId,
-        game_date: gameMeta.date, opponent_name: gameMeta.opponent,
-        season_year: gameMeta.seasonYear, match_number: gameMeta.matchNumber,
-        location: gameMeta.location?.trim() || null,
-        ...(gameMeta.memo !== undefined ? { memo: gameMeta.memo.trim() || null } : {}),
-        team_score: gameMeta.teamScore ?? null, opponent_score: gameMeta.opponentScore ?? null,
-        result: gameMeta.result || null,
-      },
+      game: buildGamePayload(teamId, gameMeta),
       battingStats: [],
-      pitchingStats: [{
-        player_id: Number(pitcherId),
-        innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
-        hits_allowed: nextPitchingEntry.hitsAllowed, runs_allowed: nextPitchingEntry.runsAllowed,
-        earned_runs: nextPitchingEntry.earnedRuns, walks: nextPitchingEntry.walks,
-        hbp: nextPitchingEntry.hitBatters, strikeouts: nextPitchingEntry.strikeouts,
-        home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
-      }],
+      pitchingStats: [buildPitchingStatPayload(pitcherId, nextPitchingEntry)],
     })
     setPitchingEntry(emptyPitchingEntry)
     const { games } = await refreshAll(gameMeta.seasonYear)

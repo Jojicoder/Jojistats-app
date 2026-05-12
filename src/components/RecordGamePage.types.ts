@@ -91,6 +91,17 @@ export type BasesState = {
   third: boolean
 }
 
+export type LivePitchingStats = {
+  inningsPitchedOuts: number
+  hitsAllowed: number
+  runsAllowed: number
+  earnedRuns: number
+  walks: number
+  hitBatters: number
+  strikeouts: number
+  homeRunsAllowed: number
+}
+
 export type LivePlay = {
   id: string
   playerId: string

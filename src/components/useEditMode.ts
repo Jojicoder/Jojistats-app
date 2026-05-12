@@ -59,6 +59,7 @@ export function useEditMode({
     ? livePlays.filter((p) => p.playerId === hoveredEditPlayerId)
     : []
 
+  // Runs whenever a different saved game is selected for editing, not just on mount
   useEffect(() => {
     setEditGameEntries(
       gameEntriesForEditing.map((entry) => {
@@ -94,6 +95,7 @@ export function useEditMode({
     setEditAddPitcherId("")
   }, [allPlayers, pitchingEntriesForEditing])
 
+  // Clear stale dropdown selection if that player was just added to the game (no longer in available list)
   useEffect(() => {
     if (editAddPlayerId && !editAvailablePlayers.some((p) => p.id === editAddPlayerId)) {
       setEditAddPlayerId("")

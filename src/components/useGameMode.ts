@@ -3,7 +3,7 @@ import type { Player, DraftGameMeta } from "../types"
 import type {
   GameHalf, BaseName, BasesState, LiveGameTab,
   LivePlay, LivePitchPlay, LivePlayResult, LivePitchResult,
-  RunnerOutAction, RunnerRbiAction, RunnerRunAction, LiveInningSummary,
+  LiveInningSummary, LivePitchingStats,
   RecordGamePageProps,
 } from "./RecordGamePage.types"
 import {
@@ -11,20 +11,13 @@ import {
   getNextHalfInning, nextBasesForBatting, nextBasesForPitching,
   estimateRunsForBatting, estimateRbiForBatting,
   estimateRunsForPitching, estimateEarnedRunsForPitching,
-  buildPitchingEntryFromPlays, recomputeLiveGame,
-  aggregateLivePlays, aggregateLivePitchingPlays, getActionTimeFromId,
+  buildPitchingEntryFromPlays,
+  aggregateLivePlays, aggregateLivePitchingPlays,
 } from "./RecordGamePage.utils"
-
-type LivePitchingStats = {
-  inningsPitchedOuts: number
-  hitsAllowed: number
-  runsAllowed: number
-  earnedRuns: number
-  walks: number
-  hitBatters: number
-  strikeouts: number
-  homeRunsAllowed: number
-}
+import { useLiveLineup } from "./useLiveLineup"
+import { useLiveGameDraft } from "./useLiveGameDraft"
+import { useLivePlayEditor } from "./useLivePlayEditor"
+import { useRunnerControls } from "./useRunnerControls"
 
 const emptyPitchingStats: LivePitchingStats = {
   inningsPitchedOuts: 0, hitsAllowed: 0, runsAllowed: 0, earnedRuns: 0,
@@ -52,120 +45,146 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
   const [quickRbi, setQuickRbi] = useState(0)
   const [quickNote, setQuickNote] = useState("")
   const [quickPitchNote, setQuickPitchNote] = useState("")
-  const [runnerOutHistory, setRunnerOutHistory] = useState<RunnerOutAction[]>([])
-  const [runnerRbiHistory, setRunnerRbiHistory] = useState<RunnerRbiAction[]>([])
-  const [runnerRunHistory, setRunnerRunHistory] = useState<RunnerRunAction[]>([])
   const [livePlays, setLivePlays] = useState<LivePlay[]>([])
   const [livePitchPlays, setLivePitchPlays] = useState<LivePitchPlay[]>([])
   const [livePitchingEntry, setLivePitchingEntry] = useState<LivePitchingStats>(emptyPitchingStats)
   const [livePitcherId, setLivePitcherId] = useState(
     allPlayers.find((p) => p.position === "P")?.id ?? activePlayer.id
   )
-  const [lineupIds, setLineupIds] = useState<string[]>(() =>
-    allPlayers.slice(0, Math.min(allPlayers.length, 9)).map((p) => p.id)
-  )
-  const [currentBatterIndex, setCurrentBatterIndex] = useState(0)
-  const [pinhitters, setPinhitters] = useState<Record<number, string>>({})
-  const [replacedLineupIds, setReplacedLineupIds] = useState<Record<number, string>>({})
-  const [pendingRemoveIndex, setPendingRemoveIndex] = useState<number | null>(null)
   const [pendingSyncConfirm, setPendingSyncConfirm] = useState(false)
-  const [lastLocalSaveAt, setLastLocalSaveAt] = useState("")
   const [editingLiveEventId, setEditingLiveEventId] = useState<string | null>(null)
   const [expandedLiveInningKey, setExpandedLiveInningKey] = useState("")
-  const [dragLineupIndex, setDragLineupIndex] = useState<number | null>(null)
-  const [dragOverLineupIndex, setDragOverLineupIndex] = useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  const {
+    lineupIds,
+    setLineupIds,
+    lineupPlayers,
+    currentBatterIndex,
+    setCurrentBatterIndex,
+    pinhitters,
+    setPinhitters,
+    replacedLineupIds,
+    setReplacedLineupIds,
+    pendingRemoveIndex,
+    setPendingRemoveIndex,
+    dragLineupIndex,
+    setDragLineupIndex,
+    dragOverLineupIndex,
+    setDragOverLineupIndex,
+    handleLineupChange,
+    handleAddLineupSpot,
+    handleRemoveLineupSpot,
+    handleLineupDrop,
+  } = useLiveLineup({ allPlayers })
+
+  const {
+    runnerOutHistory,
+    setRunnerOutHistory,
+    runnerRbiHistory,
+    setRunnerRbiHistory,
+    runnerRunHistory,
+    setRunnerRunHistory,
+    clearRunnerHistory,
+    handleRunnerOut,
+    handleRunnerRbi,
+    handleRunnerRun,
+    undoLatestRunnerAction,
+  } = useRunnerControls({
+    liveInning,
+    setLiveInning,
+    liveHalf,
+    setLiveHalf,
+    liveOuts,
+    setLiveOuts,
+    bases,
+    setBases,
+    selectedBase,
+    setSelectedBase,
+    liveGameTab,
+    setLiveGameTab,
+    livePlays,
+    setLivePlays,
+    latestLivePitchPlayId: livePitchPlays[livePitchPlays.length - 1]?.id,
+    setAwayScore,
+    setHomeScore,
+  })
+
+  const {
+    handleDeleteLivePlay,
+    handleDeleteLivePitchPlay,
+    handleUpdateLivePlay,
+    handleUpdateLivePitchPlay,
+  } = useLivePlayEditor({
+    livePlays,
+    setLivePlays,
+    livePitchPlays,
+    setLivePitchPlays,
+    lineupLength: lineupPlayers.length,
+    setCurrentBatterIndex,
+    setLiveInning,
+    setLiveHalf,
+    setLiveOuts,
+    setBases,
+    setLiveGameTab,
+    setAwayScore,
+    setHomeScore,
+    setLivePitchingEntry,
+    editingLiveEventId,
+    setEditingLiveEventId,
+    setExpandedLiveInningKey,
+    clearRunnerHistory,
+  })
+
+  const { lastLocalSaveAt, clearLocalDraft } = useLiveGameDraft({
+    localDraftKey,
+    lineupIds,
+    setLineupIds,
+    currentBatterIndex,
+    setCurrentBatterIndex,
+    liveInning,
+    setLiveInning,
+    liveHalf,
+    setLiveHalf,
+    liveOuts,
+    setLiveOuts,
+    bases,
+    setBases,
+    awayScore,
+    setAwayScore,
+    homeScore,
+    setHomeScore,
+    quickPitchNote,
+    setQuickPitchNote,
+    selectedBase,
+    setSelectedBase,
+    runnerOutHistory,
+    setRunnerOutHistory,
+    runnerRbiHistory,
+    setRunnerRbiHistory,
+    runnerRunHistory,
+    setRunnerRunHistory,
+    replacedLineupIds,
+    setReplacedLineupIds,
+    livePlays,
+    setLivePlays,
+    livePitcherId,
+    setLivePitcherId,
+    livePitchingEntry,
+    setLivePitchingEntry,
+    livePitchPlays,
+    setLivePitchPlays,
+  })
 
   /* ---------------- EFFECTS ---------------- */
 
-  useEffect(() => {
-    setLineupIds((prev) => {
-      const validIds = new Set(allPlayers.map((p) => p.id))
-      const next = prev.filter((id) => validIds.has(id))
-      const missing = allPlayers
-        .map((p) => p.id)
-        .filter((id) => !next.includes(id))
-        .slice(0, Math.max(9 - next.length, 0))
-      return [...next, ...missing].slice(0, Math.min(allPlayers.length, 9))
-    })
-  }, [allPlayers])
-
-  useEffect(() => {
-    const savedDraft = window.localStorage.getItem(localDraftKey)
-    if (!savedDraft) return
-    try {
-      const draft = JSON.parse(savedDraft) as {
-        lineupIds?: string[]
-        currentBatterIndex?: number
-        liveInning?: number
-        liveHalf?: GameHalf
-        liveOuts?: number
-        bases?: BasesState
-        awayScore?: number
-        homeScore?: number
-        quickPitchNote?: string
-        selectedBase?: BaseName | null
-        runnerOutHistory?: RunnerOutAction[]
-        runnerRbiHistory?: RunnerRbiAction[]
-        runnerRunHistory?: RunnerRunAction[]
-        replacedLineupIds?: Record<number, string>
-        livePlays?: LivePlay[]
-        livePitcherId?: string
-        livePitchingEntry?: LivePitchingStats
-        livePitchPlays?: LivePitchPlay[]
-      }
-      if (draft.lineupIds?.length) setLineupIds(draft.lineupIds)
-      if (typeof draft.currentBatterIndex === "number") setCurrentBatterIndex(draft.currentBatterIndex)
-      if (typeof draft.liveInning === "number") setLiveInning(draft.liveInning)
-      if (draft.liveHalf === "Top" || draft.liveHalf === "Bottom") setLiveHalf(draft.liveHalf)
-      if (typeof draft.liveOuts === "number") setLiveOuts(draft.liveOuts)
-      if (draft.bases) setBases(draft.bases)
-      if (typeof draft.awayScore === "number") setAwayScore(draft.awayScore)
-      if (typeof draft.homeScore === "number") setHomeScore(draft.homeScore)
-      if (typeof draft.quickPitchNote === "string") setQuickPitchNote(draft.quickPitchNote)
-      if (draft.selectedBase === "first" || draft.selectedBase === "second" || draft.selectedBase === "third")
-        setSelectedBase(draft.selectedBase)
-      if (Array.isArray(draft.runnerOutHistory)) setRunnerOutHistory(draft.runnerOutHistory)
-      if (Array.isArray(draft.runnerRbiHistory)) setRunnerRbiHistory(draft.runnerRbiHistory)
-      if (Array.isArray(draft.runnerRunHistory)) setRunnerRunHistory(draft.runnerRunHistory)
-      if (draft.replacedLineupIds) setReplacedLineupIds(draft.replacedLineupIds)
-      if (Array.isArray(draft.livePlays)) setLivePlays(draft.livePlays)
-      if (draft.livePitcherId) setLivePitcherId(draft.livePitcherId)
-      if (draft.livePitchingEntry)
-        setLivePitchingEntry({ ...draft.livePitchingEntry, hitBatters: draft.livePitchingEntry.hitBatters ?? 0 })
-      if (Array.isArray(draft.livePitchPlays)) setLivePitchPlays(draft.livePitchPlays)
-    } catch (error) {
-      console.error(error)
-    }
-  }, [localDraftKey])
-
-  useEffect(() => {
-    const draft = {
-      lineupIds, currentBatterIndex, liveInning, liveHalf, liveOuts, bases,
-      awayScore, homeScore, quickPitchNote, selectedBase,
-      runnerOutHistory, runnerRbiHistory, runnerRunHistory,
-      replacedLineupIds, livePlays, livePitcherId, livePitchingEntry, livePitchPlays,
-    }
-    window.localStorage.setItem(localDraftKey, JSON.stringify(draft))
-    setLastLocalSaveAt(
-      new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit", second: "2-digit" })
-    )
-  }, [
-    awayScore, bases, currentBatterIndex, homeScore, lineupIds, liveHalf, liveInning, liveOuts,
-    livePitcherId, livePitchingEntry, livePitchPlays, livePlays, localDraftKey,
-    quickPitchNote, runnerOutHistory, runnerRbiHistory, runnerRunHistory, replacedLineupIds, selectedBase,
-  ])
-
+  // Only set once so the user's manually expanded inning isn't overridden when the inning advances
   useEffect(() => {
     const key = `${liveInning}-${liveHalf}`
     if (!expandedLiveInningKey) setExpandedLiveInningKey(key)
   }, [liveInning, liveHalf, expandedLiveInningKey])
 
   /* ---------------- DERIVED ---------------- */
-
-  const lineupPlayers = lineupIds
-    .map((id) => allPlayers.find((p) => p.id === id))
-    .filter((p): p is Player => Boolean(p))
 
   const currentBatterSlotIndex = currentBatterIndex % Math.max(lineupPlayers.length, 1)
   const phPlayerId = pinhitters[currentBatterSlotIndex]
@@ -193,6 +212,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
 
   const currentFrameBattingPlays = livePlays.filter((p) => p.inning === liveInning && p.half === liveHalf)
   const currentFramePitchingPlays = livePitchPlays.filter((p) => p.inning === liveInning && p.half === liveHalf)
+  // Once any play is recorded in a half-inning, the mode locks for that frame to prevent mixed batting/pitching data
   const currentFrameLocksRecordMode: LiveGameTab | null =
     currentFrameBattingPlays.length > 0 ? "batting"
     : currentFramePitchingPlays.length > 0 ? "pitching"
@@ -218,47 +238,6 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
       return a.half === b.half ? 0 : a.half === "Top" ? -1 : 1
     })
   }, [liveHalf, liveInning, livePitchPlays, livePlays])
-
-  /* ---------------- LINEUP HANDLERS ---------------- */
-
-  const handleLineupChange = (index: number, playerId: string) => {
-    setLineupIds((prev) => prev.map((id, i) => (i === index ? playerId : id)))
-    setReplacedLineupIds((prev) => { const next = { ...prev }; delete next[index]; return next })
-  }
-
-  const handleAddLineupSpot = () => {
-    const next = allPlayers.find((p) => !lineupIds.includes(p.id))
-    if (!next) return
-    setLineupIds((prev) => [...prev, next.id])
-  }
-
-  const handleRemoveLineupSpot = (index: number) => {
-    setLineupIds((prev) => (prev.length <= 1 ? prev : prev.filter((_, i) => i !== index)))
-    setReplacedLineupIds((prev) => {
-      const next: Record<number, string> = {}
-      Object.entries(prev).forEach(([key, value]) => {
-        const i = Number(key)
-        if (i < index) next[i] = value
-        if (i > index) next[i - 1] = value
-      })
-      return next
-    })
-    setCurrentBatterIndex((prev) => Math.max(Math.min(prev, lineupIds.length - 2), 0))
-  }
-
-  const handleLineupDrop = (toIndex: number) => {
-    if (dragLineupIndex === null || dragLineupIndex === toIndex) {
-      setDragLineupIndex(null); setDragOverLineupIndex(null); return
-    }
-    setLineupIds((prev) => {
-      const next = [...prev]
-      const [moved] = next.splice(dragLineupIndex, 1)
-      next.splice(toIndex, 0, moved)
-      return next
-    })
-    setDragLineupIndex(null)
-    setDragOverLineupIndex(null)
-  }
 
   /* ---------------- GAME STATE ADVANCE ---------------- */
 
@@ -286,112 +265,8 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
     setLiveGameTab(next)
   }
 
-  const handleRunnerOut = () => {
-    if (!selectedBase || !bases[selectedBase]) return
-    setRunnerOutHistory((prev) => [
-      ...prev,
-      { id: `${Date.now()}-runner-out`, inning: liveInning, half: liveHalf, outsBefore: liveOuts, basesBefore: bases, tabBefore: liveGameTab },
-    ])
-    const nextBases = { ...bases, [selectedBase]: false }
-    const nextOuts = liveOuts + 1
-    setSelectedBase(null)
-    if (nextOuts < 3) { setBases(nextBases); setLiveOuts(nextOuts); return }
-    const next = getNextHalfInning(liveInning, liveHalf)
-    setLiveOuts(0); setBases(emptyBases)
-    setLiveGameTab(liveGameTab === "batting" ? "pitching" : "batting")
-    setLiveHalf(next.half); setLiveInning(next.inning)
-  }
-
-  const handleRunnerRbi = () => {
-    if (!selectedBase || !bases[selectedBase]) return
-    const lastPlay = livePlays[livePlays.length - 1]
-    if (!lastPlay) return
-    setRunnerRbiHistory((prev) => [
-      ...prev,
-      { id: `${Date.now()}-runner-rbi`, half: liveHalf, basesBefore: bases, playBefore: lastPlay },
-    ])
-    setBases((prev) => ({ ...prev, [selectedBase]: false }))
-    setSelectedBase(null)
-    setLivePlays((prev) =>
-      prev.map((p) =>
-        p.id === lastPlay.id
-          ? { ...p, rbi: p.rbi + 1, runs: p.runs + 1, statLine: { ...p.statLine, RBI: p.statLine.RBI + 1 } }
-          : p
-      )
-    )
-    if (liveHalf === "Top") setAwayScore((prev) => prev + 1)
-    else setHomeScore((prev) => prev + 1)
-  }
-
-  const handleRunnerRun = () => {
-    if (!selectedBase || !bases[selectedBase]) return
-    setRunnerRunHistory((prev) => [
-      ...prev,
-      { id: `${Date.now()}-runner-run`, half: liveHalf, basesBefore: bases },
-    ])
-    setBases((prev) => ({ ...prev, [selectedBase]: false }))
-    setSelectedBase(null)
-    if (liveHalf === "Top") setAwayScore((prev) => prev + 1)
-    else setHomeScore((prev) => prev + 1)
-  }
-
-  const undoRunnerOut = () => {
-    const last = runnerOutHistory[runnerOutHistory.length - 1]
-    if (!last) return false
-    setRunnerOutHistory((prev) => prev.slice(0, -1))
-    setLiveInning(last.inning); setLiveHalf(last.half); setLiveOuts(last.outsBefore)
-    setBases(last.basesBefore); setLiveGameTab(last.tabBefore)
-    return true
-  }
-
-  const undoRunnerRbi = () => {
-    const last = runnerRbiHistory[runnerRbiHistory.length - 1]
-    if (!last?.playBefore) return false
-    setRunnerRbiHistory((prev) => prev.slice(0, -1))
-    setBases(last.basesBefore)
-    setLivePlays((prev) => prev.map((p) => (p.id === last.playBefore.id ? last.playBefore : p)))
-    if (last.half === "Top") setAwayScore((prev) => Math.max(prev - 1, 0))
-    else setHomeScore((prev) => Math.max(prev - 1, 0))
-    return true
-  }
-
-  const undoRunnerRun = () => {
-    const last = runnerRunHistory[runnerRunHistory.length - 1]
-    if (!last) return false
-    setRunnerRunHistory((prev) => prev.slice(0, -1))
-    setBases(last.basesBefore)
-    if (last.half === "Top") setAwayScore((prev) => Math.max(prev - 1, 0))
-    else setHomeScore((prev) => Math.max(prev - 1, 0))
-    return true
-  }
-
-  const getActionTime = (id: string | undefined) => {
-    if (!id) return 0
-    const t = Number(id.split("-")[0])
-    return Number.isFinite(t) ? t : 0
-  }
-
   const handleUndoLiveAction = (tab: LiveGameTab) => {
-    const lastOut = runnerOutHistory[runnerOutHistory.length - 1]
-    const lastRbi = tab === "batting" ? runnerRbiHistory[runnerRbiHistory.length - 1] : undefined
-    const lastRun = tab === "batting" ? runnerRunHistory[runnerRunHistory.length - 1] : undefined
-    const lastPlay = tab === "batting" ? livePlays[livePlays.length - 1] : livePitchPlays[livePitchPlays.length - 1]
-
-    if (
-      lastRun &&
-      getActionTime(lastRun.id) > getActionTime(lastRbi?.id) &&
-      getActionTime(lastRun.id) > getActionTime(lastOut?.id) &&
-      getActionTime(lastRun.id) > getActionTime(lastPlay?.id)
-    ) { undoRunnerRun(); return }
-
-    if (
-      lastRbi &&
-      getActionTime(lastRbi.id) > getActionTime(lastOut?.id) &&
-      getActionTime(lastRbi.id) > getActionTime(lastPlay?.id)
-    ) { undoRunnerRbi(); return }
-
-    if (lastOut && getActionTime(lastOut.id) > getActionTime(lastPlay?.id)) { undoRunnerOut(); return }
-
+    if (undoLatestRunnerAction(tab)) return
     if (tab === "batting") handleUndoLivePlay()
     else handleUndoLivePitch()
   }
@@ -514,92 +389,12 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
     setLivePitcherId(play.pitcherId)
   }
 
-  /* ---------------- EDIT / DELETE PLAY ---------------- */
-
-  const getBatterIndexAfterPlay = (plays: LivePlay[], playId?: string) => {
-    if (lineupPlayers.length === 0) return 0
-    if (!playId) return plays.length % lineupPlayers.length
-    const idx = plays.findIndex((p) => p.id === playId)
-    return idx < 0 ? plays.length % lineupPlayers.length : (idx + 1) % lineupPlayers.length
-  }
-
-  const applyRecomputed = (r: ReturnType<typeof recomputeLiveGame>) => {
-    setLivePlays(r.livePlays); setLivePitchPlays(r.livePitchPlays)
-    setAwayScore(r.awayScore); setHomeScore(r.homeScore)
-    setLivePitchingEntry(r.livePitchingEntry)
-    setRunnerOutHistory([]); setRunnerRbiHistory([]); setRunnerRunHistory([])
-    setCurrentBatterIndex(getBatterIndexAfterPlay(r.livePlays))
-    setLiveInning(r.liveInning); setLiveHalf(r.liveHalf)
-    setLiveOuts(r.liveOuts); setBases(r.bases)
-    setExpandedLiveInningKey(`${r.liveInning}-${r.liveHalf}`)
-  }
-
-  const handleDeleteLivePlay = (playId: string) => {
-    const next = livePlays.filter((p) => p.id !== playId)
-    if (editingLiveEventId === playId) setEditingLiveEventId(null)
-    applyRecomputed(recomputeLiveGame(next, livePitchPlays))
-  }
-
-  const handleDeleteLivePitchPlay = (playId: string) => {
-    const next = livePitchPlays.filter((p) => p.id !== playId)
-    if (editingLiveEventId === playId) setEditingLiveEventId(null)
-    applyRecomputed(recomputeLiveGame(livePlays, next))
-  }
-
-  const handleUpdateLivePlay = (playId: string, nextResult: LivePlayResult, nextRbi: number, nextNote: string) => {
-    const play = livePlays.find((p) => p.id === playId)
-    if (!play) return
-    const edited = livePlays.map((p) =>
-      p.id === playId ? { ...p, result: nextResult, rbi: Math.max(0, nextRbi), note: nextNote } : p
-    )
-    const r = recomputeLiveGame(edited, livePitchPlays)
-    const cursor = r.stateAfterEvent.get(playId)
-    setLivePlays(r.livePlays); setLivePitchPlays(r.livePitchPlays)
-    setAwayScore(r.awayScore); setHomeScore(r.homeScore)
-    setLivePitchingEntry(r.livePitchingEntry)
-    setRunnerOutHistory([]); setRunnerRbiHistory([]); setRunnerRunHistory([])
-    if (editingLiveEventId === playId && cursor) {
-      setCurrentBatterIndex(getBatterIndexAfterPlay(r.livePlays, playId))
-      setLiveInning(cursor.inning); setLiveHalf(cursor.half); setLiveOuts(cursor.outs); setBases(cursor.bases)
-      setLiveGameTab(cursor.inning !== play.inning || cursor.half !== play.half ? "pitching" : "batting")
-      setExpandedLiveInningKey(`${cursor.inning}-${cursor.half}`)
-      return
-    }
-    setCurrentBatterIndex(getBatterIndexAfterPlay(r.livePlays))
-    setLiveInning(r.liveInning); setLiveHalf(r.liveHalf); setLiveOuts(r.liveOuts); setBases(r.bases)
-    setExpandedLiveInningKey(`${r.liveInning}-${r.liveHalf}`)
-  }
-
-  const handleUpdateLivePitchPlay = (playId: string, nextResult: LivePitchResult, nextNote: string) => {
-    const play = livePitchPlays.find((p) => p.id === playId)
-    if (!play) return
-    const edited = livePitchPlays.map((p) => (p.id === playId ? { ...p, result: nextResult, note: nextNote } : p))
-    const r = recomputeLiveGame(livePlays, edited)
-    const cursor = r.stateAfterEvent.get(playId)
-    setLivePlays(r.livePlays); setLivePitchPlays(r.livePitchPlays)
-    setAwayScore(r.awayScore); setHomeScore(r.homeScore)
-    setLivePitchingEntry(r.livePitchingEntry)
-    setRunnerOutHistory([]); setRunnerRbiHistory([]); setRunnerRunHistory([])
-    if (editingLiveEventId === playId && cursor) {
-      const pitchTime = getActionTimeFromId(playId)
-      const battingBeforePitch = r.livePlays.filter((p) => getActionTimeFromId(p.id) < pitchTime)
-      setCurrentBatterIndex(getBatterIndexAfterPlay(battingBeforePitch))
-      setLiveInning(cursor.inning); setLiveHalf(cursor.half); setLiveOuts(cursor.outs); setBases(cursor.bases)
-      setLiveGameTab(cursor.inning !== play.inning || cursor.half !== play.half ? "batting" : "pitching")
-      setExpandedLiveInningKey(`${cursor.inning}-${cursor.half}`)
-      return
-    }
-    setCurrentBatterIndex(getBatterIndexAfterPlay(r.livePlays))
-    setLiveInning(r.liveInning); setLiveHalf(r.liveHalf); setLiveOuts(r.liveOuts); setBases(r.bases)
-    setExpandedLiveInningKey(`${r.liveInning}-${r.liveHalf}`)
-  }
-
   /* ---------------- SYNC / RESET ---------------- */
 
   const resetLiveState = () => {
     setLivePlays([]); setCurrentBatterIndex(0); setLiveInning(1); setLiveHalf("Top"); setLiveOuts(0)
     setBases(emptyBases); setSelectedBase(null)
-    setRunnerOutHistory([]); setRunnerRbiHistory([]); setRunnerRunHistory([])
+    clearRunnerHistory()
     setReplacedLineupIds({}); setAwayScore(0); setHomeScore(0)
     setLivePitchPlays([]); setQuickPitchNote(""); setLivePitchingEntry(emptyPitchingStats)
   }
@@ -620,7 +415,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
         aggregateLivePitchingPlays(livePitchPlays, allPlayers)
       )
       resetLiveState()
-      window.localStorage.removeItem(localDraftKey)
+      clearLocalDraft()
     } catch { /* error surfaced via saveError prop */ }
     finally { setIsSaving(false) }
   }
@@ -629,7 +424,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
     if ((livePlays.length > 0 || livePitchPlays.length > 0) && !window.confirm("Clear this local game draft?")) return
     resetLiveState()
     setQuickRbi(0)
-    window.localStorage.removeItem(localDraftKey)
+    clearLocalDraft()
   }
 
   return {

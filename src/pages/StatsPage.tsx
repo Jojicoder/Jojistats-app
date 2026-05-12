@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router-dom"
 import Header from "../components/Header"
 import Sidebar from "../components/Sidebar"
@@ -100,6 +100,7 @@ export default function StatsPage() {
   const [view, setView] = useState<"stats" | "myteam" | "record" | "setup">("stats")
   const [setupSeasonYear, setSetupSeasonYear] = useState(new Date().getFullYear())
   const [setupActivePlayerId, setSetupActivePlayerId] = useState("")
+  const lastSetupTeamIdRef = useRef("")
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
@@ -125,8 +126,10 @@ export default function StatsPage() {
   }, [players, activePlayerId])
 
   useEffect(() => {
-    if (activeTeam) setSetupSeasonYear(activeTeam.currentSeasonYear)
-  }, [activeTeam?.id])
+    if (!activeTeam || lastSetupTeamIdRef.current === activeTeam.id) return
+    lastSetupTeamIdRef.current = activeTeam.id
+    setSetupSeasonYear(activeTeam.currentSeasonYear)
+  }, [activeTeam])
 
   /* -------------------- stats -------------------- */
 

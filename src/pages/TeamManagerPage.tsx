@@ -10,6 +10,7 @@ import {
   fetchUserAccessByEmail,
 } from "../api/supabase-api"
 import type { Player, SavedBattingGameEntry, SavedPitchingGameEntry, Team } from "../types"
+import { calcBattingMetrics, calcPitchingMetrics, fmtRate, fmtDecimal, fmtIp } from "../utils/metrics"
 
 type ManagerMode = "batting" | "pitching"
 type LineupStyle = "balanced" | "obp" | "power" | "contact"
@@ -34,85 +35,6 @@ function mapPlayer(row: {
   }
 }
 
-function getTotals(entries: SavedBattingGameEntry[]) {
-  return entries.reduce(
-    (acc, entry) => {
-      acc.games += 1
-      acc.ab += entry.statLine.AB
-      acc.h += entry.statLine.H
-      acc.doubles += entry.statLine.doubles
-      acc.triples += entry.statLine.triples
-      acc.hr += entry.statLine.HR
-      acc.rbi += entry.statLine.RBI
-      acc.bb += entry.statLine.BB
-      acc.hbp += entry.statLine.HBP ?? 0
-      acc.sf += entry.statLine.SF ?? 0
-      acc.so += entry.statLine.SO
-      return acc
-    },
-    { games: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0, sf: 0, so: 0 }
-  )
-}
-
-function getMetrics(entries: SavedBattingGameEntry[]) {
-  const totals = getTotals(entries)
-  const singles = Math.max(totals.h - totals.doubles - totals.triples - totals.hr, 0)
-  const totalBases = singles + totals.doubles * 2 + totals.triples * 3 + totals.hr * 4
-  const pa = totals.ab + totals.bb + totals.hbp + totals.sf
-  const avg = totals.ab > 0 ? totals.h / totals.ab : 0
-  const obp = pa > 0 ? (totals.h + totals.bb + totals.hbp) / pa : 0
-  const slg = totals.ab > 0 ? totalBases / totals.ab : 0
-
-  return {
-    ...totals,
-    avg,
-    obp,
-    slg,
-    ops: obp + slg,
-  }
-}
-
-function formatRate(value: number) {
-  return value.toFixed(3).replace("0.", ".")
-}
-
-function formatDecimal(value: number) {
-  return value.toFixed(2)
-}
-
-function formatInnings(outs: number) {
-  const innings = Math.floor(outs / 3)
-  const remainder = outs % 3
-  return `${innings}.${remainder}`
-}
-
-function getPitchingMetrics(entries: SavedPitchingGameEntry[]) {
-  const totals = entries.reduce(
-    (acc, entry) => {
-      acc.games += 1
-      acc.outs += entry.statLine.inningsPitchedOuts
-      acc.h += entry.statLine.hitsAllowed
-      acc.r += entry.statLine.runsAllowed
-      acc.er += entry.statLine.earnedRuns
-      acc.bb += entry.statLine.walks
-      acc.so += entry.statLine.strikeouts
-      acc.hr += entry.statLine.homeRunsAllowed
-      return acc
-    },
-    { games: 0, outs: 0, h: 0, r: 0, er: 0, bb: 0, so: 0, hr: 0 }
-  )
-
-  const innings = totals.outs / 3
-  const era = innings > 0 ? (totals.er * 9) / innings : 0
-  const whip = innings > 0 ? (totals.bb + totals.h) / innings : 0
-
-  return {
-    ...totals,
-    era,
-    whip,
-    ip: formatInnings(totals.outs),
-  }
-}
 
 function getPlayerLabel(player: Player) {
   return player.jerseyNumber != null
@@ -129,7 +51,7 @@ function getPositionGroup(position: Player["position"]) {
 }
 
 function sortLineup(
-  summaries: Array<{ player: Player; metrics: ReturnType<typeof getMetrics> }>,
+  summaries: Array<{ player: Player; metrics: ReturnType<typeof calcBattingMetrics> }>,
   style: LineupStyle
 ) {
   const active = summaries.filter((summary) => summary.metrics.ab > 0)
@@ -291,12 +213,12 @@ export default function TeamManagerPage() {
   }, [navigate])
 
   const teamTotals = useMemo(
-    () => getMetrics(Object.values(entriesByPlayer).flat()),
+    () => calcBattingMetrics(Object.values(entriesByPlayer).flat()),
     [entriesByPlayer]
   )
 
   const teamPitchingTotals = useMemo(
-    () => getPitchingMetrics(Object.values(pitchingEntriesByPlayer).flat()),
+    () => calcPitchingMetrics(Object.values(pitchingEntriesByPlayer).flat()),
     [pitchingEntriesByPlayer]
   )
 
@@ -304,7 +226,7 @@ export default function TeamManagerPage() {
     () =>
       players.map((player) => ({
         player,
-        metrics: getMetrics(entriesByPlayer[player.id] ?? []),
+        metrics: calcBattingMetrics(entriesByPlayer[player.id] ?? []),
       })),
     [entriesByPlayer, players]
   )
@@ -313,7 +235,7 @@ export default function TeamManagerPage() {
     () =>
       players.map((player) => ({
         player,
-        metrics: getPitchingMetrics(pitchingEntriesByPlayer[player.id] ?? []),
+        metrics: calcPitchingMetrics(pitchingEntriesByPlayer[player.id] ?? []),
       })),
     [pitchingEntriesByPlayer, players]
   )
@@ -498,9 +420,9 @@ export default function TeamManagerPage() {
                 <>
                   {[
                     { label: "Games", value: String(teamTotals.games), sub: "played", accent: true },
-                    { label: "AVG", value: formatRate(teamTotals.avg), sub: "team batting" },
-                    { label: "OBP", value: formatRate(teamTotals.obp), sub: "on-base" },
-                    { label: "OPS", value: formatRate(teamTotals.ops), sub: "production" },
+                    { label: "AVG", value: fmtRate(teamTotals.avg), sub: "team batting" },
+                    { label: "OBP", value: fmtRate(teamTotals.obp), sub: "on-base" },
+                    { label: "OPS", value: fmtRate(teamTotals.ops), sub: "production" },
                     { label: "HR", value: String(teamTotals.hr), sub: "home runs" },
                     { label: "RBI", value: String(teamTotals.rbi), sub: "runs batted in" },
                   ].map(({ label, value, sub, accent }) => (
@@ -511,9 +433,9 @@ export default function TeamManagerPage() {
                 <>
                   {[
                     { label: "APP", value: String(teamPitchingTotals.games), sub: "appearances", accent: true },
-                    { label: "ERA", value: formatDecimal(teamPitchingTotals.era), sub: "earned runs" },
-                    { label: "WHIP", value: formatDecimal(teamPitchingTotals.whip), sub: "traffic" },
-                    { label: "IP", value: teamPitchingTotals.ip, sub: "innings" },
+                    { label: "ERA", value: fmtDecimal(teamPitchingTotals.era), sub: "earned runs" },
+                    { label: "WHIP", value: fmtDecimal(teamPitchingTotals.whip), sub: "traffic" },
+                    { label: "IP", value: fmtIp(teamPitchingTotals.outs), sub: "innings" },
                     { label: "SO", value: String(teamPitchingTotals.so), sub: "strikeouts" },
                     { label: "BB", value: String(teamPitchingTotals.bb), sub: "walks" },
                   ].map(({ label, value, sub, accent }) => (
@@ -544,7 +466,7 @@ export default function TeamManagerPage() {
                   <MgrCard title="Team Leaders">
                     <div className="mt-4 space-y-2">
                       {[
-                        { label: "AVG",  text: leaders.byAvg  ? leaders.byAvg.player.name  : "", val: leaders.byAvg  ? formatRate(leaders.byAvg.metrics.avg)  : "—" },
+                        { label: "AVG",  text: leaders.byAvg  ? leaders.byAvg.player.name  : "", val: leaders.byAvg  ? fmtRate(leaders.byAvg.metrics.avg)  : "—" },
                         { label: "HR",   text: leaders.byHr   ? leaders.byHr.player.name   : "", val: leaders.byHr   ? String(leaders.byHr.metrics.hr)         : "—" },
                         { label: "RBI",  text: leaders.byRbi  ? leaders.byRbi.player.name  : "", val: leaders.byRbi  ? String(leaders.byRbi.metrics.rbi)        : "—" },
                         { label: "Hits", text: leaders.byHits ? leaders.byHits.player.name : "", val: leaders.byHits ? String(leaders.byHits.metrics.h)         : "—" },
@@ -568,7 +490,7 @@ export default function TeamManagerPage() {
                         hotPlayers.map((summary) => (
                           <div key={summary.player.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                             <p className="text-sm font-semibold text-gray-900">{summary.player.name}</p>
-                            <p className="text-xs font-bold text-green-900">OPS {formatRate(summary.metrics.ops)}</p>
+                            <p className="text-xs font-bold text-green-900">OPS {fmtRate(summary.metrics.ops)}</p>
                           </div>
                         ))
                       )}
@@ -583,7 +505,7 @@ export default function TeamManagerPage() {
                         coldPlayers.map((summary) => (
                           <div key={summary.player.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                             <p className="text-sm font-semibold text-gray-900">{summary.player.name}</p>
-                            <p className="text-xs font-bold text-green-900">AVG {formatRate(summary.metrics.avg)}</p>
+                            <p className="text-xs font-bold text-green-900">AVG {fmtRate(summary.metrics.avg)}</p>
                           </div>
                         ))
                       )}
@@ -633,7 +555,7 @@ export default function TeamManagerPage() {
                           <span className="text-xs text-gray-400">{summary.player.position}</span>
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                          AVG {formatRate(summary.metrics.avg)} · OBP {formatRate(summary.metrics.obp)} · OPS {formatRate(summary.metrics.ops)}
+                          AVG {fmtRate(summary.metrics.avg)} · OBP {fmtRate(summary.metrics.obp)} · OPS {fmtRate(summary.metrics.ops)}
                         </p>
                       </div>
                     ))}
@@ -659,7 +581,7 @@ export default function TeamManagerPage() {
                       </thead>
                       <tbody className="divide-y divide-gray-50">
                         {players.map((player) => {
-                          const totals = getMetrics(entriesByPlayer[player.id] ?? [])
+                          const totals = calcBattingMetrics(entriesByPlayer[player.id] ?? [])
                           return (
                             <tr key={player.id}>
                               <td className="py-3 pr-4 font-semibold text-gray-900">
@@ -672,7 +594,7 @@ export default function TeamManagerPage() {
                               <td className="px-2 py-3 text-center text-gray-500">{totals.games}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.ab}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.h}</td>
-                              <td className="px-2 py-3 text-center font-bold text-green-900">{formatRate(totals.avg)}</td>
+                              <td className="px-2 py-3 text-center font-bold text-green-900">{fmtRate(totals.avg)}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.hr}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.rbi}</td>
                             </tr>
@@ -690,10 +612,10 @@ export default function TeamManagerPage() {
                   <MgrCard title="Pitching Leaders">
                     <div className="mt-4 space-y-2">
                       {[
-                        { label: "ERA",  text: pitchingLeaders.byEra  ? pitchingLeaders.byEra.player.name  : "", val: pitchingLeaders.byEra  ? formatDecimal(pitchingLeaders.byEra.metrics.era)    : "—" },
-                        { label: "WHIP", text: pitchingLeaders.byWhip ? pitchingLeaders.byWhip.player.name : "", val: pitchingLeaders.byWhip ? formatDecimal(pitchingLeaders.byWhip.metrics.whip)  : "—" },
+                        { label: "ERA",  text: pitchingLeaders.byEra  ? pitchingLeaders.byEra.player.name  : "", val: pitchingLeaders.byEra  ? fmtDecimal(pitchingLeaders.byEra.metrics.era)    : "—" },
+                        { label: "WHIP", text: pitchingLeaders.byWhip ? pitchingLeaders.byWhip.player.name : "", val: pitchingLeaders.byWhip ? fmtDecimal(pitchingLeaders.byWhip.metrics.whip)  : "—" },
                         { label: "SO",   text: pitchingLeaders.bySo   ? pitchingLeaders.bySo.player.name   : "", val: pitchingLeaders.bySo   ? String(pitchingLeaders.bySo.metrics.so)              : "—" },
-                        { label: "IP",   text: pitchingLeaders.byIp   ? pitchingLeaders.byIp.player.name   : "", val: pitchingLeaders.byIp   ? pitchingLeaders.byIp.metrics.ip                      : "—" },
+                        { label: "IP",   text: pitchingLeaders.byIp   ? pitchingLeaders.byIp.player.name   : "", val: pitchingLeaders.byIp   ? fmtIp(pitchingLeaders.byIp.metrics.outs)              : "—" },
                       ].map(({ label, text, val }) => (
                         <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                           <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
@@ -719,7 +641,7 @@ export default function TeamManagerPage() {
                               <span className="text-xs text-gray-400">{summary.player.position}</span>
                             </p>
                             <p className="mt-1 text-xs text-gray-400">
-                              IP {summary.metrics.ip} · ERA {formatDecimal(summary.metrics.era)} · SO {summary.metrics.so}
+                              IP {fmtIp(summary.metrics.outs)} · ERA {fmtDecimal(summary.metrics.era)} · SO {summary.metrics.so}
                             </p>
                           </div>
                         ))
@@ -801,9 +723,9 @@ export default function TeamManagerPage() {
                             </td>
                             <td className="px-2 py-3 text-center text-gray-500">{player.position}</td>
                             <td className="px-2 py-3 text-center text-gray-500">{totals.games}</td>
-                            <td className="px-2 py-3 text-center text-gray-500">{totals.ip}</td>
-                            <td className="px-2 py-3 text-center font-bold text-green-900">{formatDecimal(totals.era)}</td>
-                            <td className="px-2 py-3 text-center text-gray-500">{formatDecimal(totals.whip)}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{fmtIp(totals.outs)}</td>
+                            <td className="px-2 py-3 text-center font-bold text-green-900">{fmtDecimal(totals.era)}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{fmtDecimal(totals.whip)}</td>
                             <td className="px-2 py-3 text-center text-gray-500">{totals.h}</td>
                             <td className="px-2 py-3 text-center text-gray-500">{totals.er}</td>
                             <td className="px-2 py-3 text-center text-gray-500">{totals.bb}</td>

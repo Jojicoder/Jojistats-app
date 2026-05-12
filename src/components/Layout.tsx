@@ -181,7 +181,7 @@ export default function Layout({
     }
 
     load()
-  }, [])
+  }, [setActivePlayerId, setActiveTeamId, setPlayers, setTeams])
 
   useEffect(() => {
     const loadActiveTeamData = async () => {
@@ -199,7 +199,7 @@ export default function Layout({
     }
 
     loadActiveTeamData()
-  }, [activeTeam?.id, activeTeam?.currentSeasonYear])
+  }, [activeTeam])
 
   /* ---------------- TEAM ACTIONS ---------------- */
 

@@ -4,15 +4,12 @@ import type {
   BattingEntryData,
   TrendPoint,
 } from "../types"
+import { fmtRate } from "../utils/metrics"
 
 type UseGameStatsReturn = {
   totals: BattingEntryData
   kpi: BattingCalculatedKPI
   avgTrend: TrendPoint[]
-}
-
-function formatRate(value: number): string {
-  return value.toFixed(3).replace("0.", ".")
 }
 
 export function useGameStats(
@@ -46,11 +43,11 @@ export function useGameStats(
     const numericSlg = totals.AB > 0 ? totalBases / totals.AB : 0
 
     const kpi: BattingCalculatedKPI = {
-      avg: totals.AB > 0 ? formatRate(totals.H / totals.AB) : ".000",
-      obp: formatRate(numericObp),
-      slg: formatRate(numericSlg),
-      ops: formatRate(numericObp + numericSlg),
-      iso: formatRate(numericSlg - (totals.AB > 0 ? totals.H / totals.AB : 0)),
+      avg: totals.AB > 0 ? fmtRate(totals.H / totals.AB) : ".000",
+      obp: fmtRate(numericObp),
+      slg: fmtRate(numericSlg),
+      ops: fmtRate(numericObp + numericSlg),
+      iso: fmtRate(numericSlg - (totals.AB > 0 ? totals.H / totals.AB : 0)),
       bbPerK: totals.SO > 0 ? (totals.BB / totals.SO).toFixed(2) : "--",
       hr: totals.HR,
       rbi: totals.RBI,
@@ -60,7 +57,7 @@ export function useGameStats(
 
     const avgTrend: TrendPoint[] = savedEntries.map((entry, index) => ({
       game: `G${index + 1}`,
-      value: entry.AB > 0 ? formatRate(entry.H / entry.AB) : ".000",
+      value: entry.AB > 0 ? fmtRate(entry.H / entry.AB) : ".000",
     }))
 
     return { totals, kpi, avgTrend }

@@ -16,6 +16,7 @@ import type {
 } from "../types"
 import PerformanceTrendCard from "../components/PerformanceTrendCard"
 import PitchingTrendChart from "../components/PitchingTrendChart"
+import { calcBattingMetrics, calcPitchingMetrics, fmtRate, fmtDecimal, fmtIp } from "../utils/metrics"
 
 type ProfileGoals = {
   avgGoal: string
@@ -70,46 +71,6 @@ function sortEntries(entries: SavedBattingGameEntry[]) {
   })
 }
 
-function getMetrics(entries: SavedBattingGameEntry[]) {
-  const totals = entries.reduce(
-    (acc, entry) => {
-      acc.games += 1
-      acc.ab += entry.statLine.AB
-      acc.h += entry.statLine.H
-      acc.doubles += entry.statLine.doubles
-      acc.triples += entry.statLine.triples
-      acc.hr += entry.statLine.HR
-      acc.rbi += entry.statLine.RBI
-      acc.bb += entry.statLine.BB
-      acc.hbp += entry.statLine.HBP ?? 0
-      acc.sf += entry.statLine.SF ?? 0
-      acc.so += entry.statLine.SO
-      return acc
-    },
-    { games: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0, sf: 0, so: 0 }
-  )
-
-  const singles = Math.max(totals.h - totals.doubles - totals.triples - totals.hr, 0)
-  const totalBases = singles + totals.doubles * 2 + totals.triples * 3 + totals.hr * 4
-  const pa = totals.ab + totals.bb + totals.hbp + totals.sf
-  const avg = totals.ab > 0 ? totals.h / totals.ab : 0
-  const obp = pa > 0 ? (totals.h + totals.bb + totals.hbp) / pa : 0
-  const slg = totals.ab > 0 ? totalBases / totals.ab : 0
-  const bbPerK =
-    totals.so === 0
-      ? "--"
-      : totals.so > 0
-        ? (totals.bb / totals.so).toFixed(2)
-        : "--"
-
-  return {
-    ...totals,
-    avg,
-    obp,
-    ops: obp + slg,
-    bbPerK,
-  }
-}
 
 function sortPitchingEntries(entries: SavedPitchingGameEntry[]) {
   return [...entries].sort((a, b) => {
@@ -120,47 +81,6 @@ function sortPitchingEntries(entries: SavedPitchingGameEntry[]) {
   })
 }
 
-function formatInnings(outs: number) {
-  const innings = Math.floor(outs / 3)
-  const remainder = outs % 3
-  return `${innings}.${remainder}`
-}
-
-function getPitchingMetrics(entries: SavedPitchingGameEntry[]) {
-  const totals = entries.reduce(
-    (acc, entry) => {
-      acc.games += 1
-      acc.outs += entry.statLine.inningsPitchedOuts
-      acc.h += entry.statLine.hitsAllowed
-      acc.r += entry.statLine.runsAllowed
-      acc.er += entry.statLine.earnedRuns
-      acc.bb += entry.statLine.walks
-      acc.so += entry.statLine.strikeouts
-      acc.hr += entry.statLine.homeRunsAllowed
-      return acc
-    },
-    { games: 0, outs: 0, h: 0, r: 0, er: 0, bb: 0, so: 0, hr: 0 }
-  )
-
-  const innings = totals.outs / 3
-  const era = innings > 0 ? (totals.er * 9) / innings : 0
-  const whip = innings > 0 ? (totals.bb + totals.h) / innings : 0
-
-  return {
-    ...totals,
-    era,
-    whip,
-    ip: formatInnings(totals.outs),
-  }
-}
-
-function formatDecimal(value: number) {
-  return value.toFixed(2)
-}
-
-function formatRate(value: number) {
-  return value.toFixed(3).replace("0.", ".")
-}
 
 function formatDate(date: string) {
   const nextDate = new Date(`${date}T00:00:00`)
@@ -279,19 +199,19 @@ export default function PlayerPage() {
     load()
   }, [navigate])
 
-  const metrics = useMemo(() => getMetrics(entries), [entries])
+  const metrics = useMemo(() => calcBattingMetrics(entries), [entries])
   const pitchingMetrics = useMemo(
-    () => getPitchingMetrics(pitchingEntries),
+    () => calcPitchingMetrics(pitchingEntries),
     [pitchingEntries]
   )
   const lastFiveEntries = useMemo(() => entries.slice(-5), [entries])
-  const recentMetrics = useMemo(() => getMetrics(lastFiveEntries), [lastFiveEntries])
+  const recentMetrics = useMemo(() => calcBattingMetrics(lastFiveEntries), [lastFiveEntries])
   const lastThreePitchingEntries = useMemo(
     () => pitchingEntries.slice(-3),
     [pitchingEntries]
   )
   const recentPitchingMetrics = useMemo(
-    () => getPitchingMetrics(lastThreePitchingEntries),
+    () => calcPitchingMetrics(lastThreePitchingEntries),
     [lastThreePitchingEntries]
   )
   const bestGame = useMemo(
@@ -338,11 +258,13 @@ export default function PlayerPage() {
     }
   }
 
+  const bbPerK = metrics.so > 0 ? (metrics.bb / metrics.so).toFixed(2) : "--"
+
   const statCards = [
-    { label: "AVG", value: formatRate(metrics.avg) },
-    { label: "OBP", value: formatRate(metrics.obp) },
-    { label: "OPS", value: formatRate(metrics.ops) },
-    { label: "BB/K", value: metrics.bbPerK },
+    { label: "AVG", value: fmtRate(metrics.avg) },
+    { label: "OBP", value: fmtRate(metrics.obp) },
+    { label: "OPS", value: fmtRate(metrics.ops) },
+    { label: "BB/K", value: bbPerK },
     { label: "H", value: String(metrics.h) },
     { label: "HR", value: String(metrics.hr) },
     { label: "RBI", value: String(metrics.rbi) },
@@ -351,9 +273,9 @@ export default function PlayerPage() {
   ]
 
   const pitchingStatCards = [
-    { label: "ERA", value: formatDecimal(pitchingMetrics.era) },
-    { label: "WHIP", value: formatDecimal(pitchingMetrics.whip) },
-    { label: "IP", value: pitchingMetrics.ip },
+    { label: "ERA", value: fmtDecimal(pitchingMetrics.era) },
+    { label: "WHIP", value: fmtDecimal(pitchingMetrics.whip) },
+    { label: "IP", value: fmtIp(pitchingMetrics.outs) },
     { label: "SO", value: String(pitchingMetrics.so) },
     { label: "BB", value: String(pitchingMetrics.bb) },
     { label: "H", value: String(pitchingMetrics.h) },
@@ -573,7 +495,7 @@ export default function PlayerPage() {
                       <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                         <span className="text-xs font-bold uppercase tracking-widest text-gray-400">AVG Goal</span>
                         <span className="text-sm font-semibold text-gray-900">
-                          {goals.avgGoal} → {formatRate(metrics.avg)}
+                          {goals.avgGoal} → {fmtRate(metrics.avg)}
                         </span>
                       </p>
                       <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
@@ -596,7 +518,7 @@ export default function PlayerPage() {
               <div className="rounded-2xl bg-white p-5 shadow-sm">
                 <h2 className="text-base font-bold text-gray-900">Recent Form</h2>
                 <p className="mt-4 text-sm text-gray-500">
-                  Last 5 Games: AVG {formatRate(recentMetrics.avg)} · H{" "}
+                  Last 5 Games: AVG {fmtRate(recentMetrics.avg)} · H{" "}
                   {recentMetrics.h} · RBI {recentMetrics.rbi} · SO{" "}
                   {recentMetrics.so}
                 </p>
@@ -801,7 +723,7 @@ export default function PlayerPage() {
                           <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">ERA Goal</span>
                             <span className="text-sm font-semibold text-gray-900">
-                              under {goals.eraGoal} → {formatDecimal(pitchingMetrics.era)}
+                              under {goals.eraGoal} → {fmtDecimal(pitchingMetrics.era)}
                             </span>
                           </p>
                           <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
@@ -813,7 +735,7 @@ export default function PlayerPage() {
                           <p className="flex justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                             <span className="text-xs font-bold uppercase tracking-widest text-gray-400">WHIP Goal</span>
                             <span className="text-sm font-semibold text-gray-900">
-                              under {goals.whipGoal} → {formatDecimal(pitchingMetrics.whip)}
+                              under {goals.whipGoal} → {fmtDecimal(pitchingMetrics.whip)}
                             </span>
                           </p>
                         </>
@@ -825,10 +747,10 @@ export default function PlayerPage() {
                     <h2 className="text-base font-bold text-gray-900">Recent Pitching Form</h2>
                     <p className="mt-4 text-sm text-gray-500">
                       Last 3 Appearances: ERA{" "}
-                      {formatDecimal(recentPitchingMetrics.era)} · IP{" "}
-                      {recentPitchingMetrics.ip} · SO {recentPitchingMetrics.so} · BB{" "}
+                      {fmtDecimal(recentPitchingMetrics.era)} · IP{" "}
+                      {fmtIp(recentPitchingMetrics.outs)} · SO {recentPitchingMetrics.so} · BB{" "}
                       {recentPitchingMetrics.bb} · WHIP{" "}
-                      {formatDecimal(recentPitchingMetrics.whip)}
+                      {fmtDecimal(recentPitchingMetrics.whip)}
                     </p>
                   </div>
                 </section>
@@ -904,7 +826,7 @@ export default function PlayerPage() {
                               {entry.gameMeta.opponent}
                             </td>
                             <td className="py-3 pr-4 text-gray-600">
-                              {formatInnings(entry.statLine.inningsPitchedOuts)}
+                              {fmtIp(entry.statLine.inningsPitchedOuts)}
                             </td>
                             <td className="py-3 pr-4 text-gray-600">
                               {entry.statLine.hitsAllowed}

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import type {
   Player,
   SavedBattingGameEntry,
@@ -40,11 +40,11 @@ export default function Sidebar({
   pitchingEntriesByPlayer = {},
   mode = "batting",
 }: SidebarProps) {
-  const [sortBy, setSortBy] = useState<SidebarSortKey>("jersey")
-
-  useEffect(() => {
-    if (mode === "pitching") setSortBy("games")
-  }, [mode])
+  const [sortByByMode, setSortByByMode] = useState<Record<"batting" | "pitching", SidebarSortKey>>({
+    batting: "jersey",
+    pitching: "games",
+  })
+  const sortBy = sortByByMode[mode]
 
   const playerMetrics = useMemo(() => {
     const map: Record<string, {
@@ -139,7 +139,12 @@ export default function Sidebar({
           <label className="hidden text-xs font-bold uppercase tracking-widest text-gray-400 lg:block">Sort by</label>
           <select
             value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SidebarSortKey)}
+            onChange={(e) =>
+              setSortByByMode((prev) => ({
+                ...prev,
+                [mode]: e.target.value as SidebarSortKey,
+              }))
+            }
             className="min-w-0 max-w-36 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 lg:mt-1 lg:w-full lg:max-w-none lg:px-3 lg:py-2"
           >
             <option value="jersey">Jersey Number</option>

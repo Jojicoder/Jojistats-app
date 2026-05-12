@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import type { SavedBattingGameEntry } from "../types"
+import { fmtRate } from "../utils/metrics"
 
 type PerformanceTrendCardProps = {
   playerEntries: SavedBattingGameEntry[]
@@ -48,9 +49,6 @@ const chartPadding = {
   left: 48,
 }
 
-function formatRate(value: number): string {
-  return value.toFixed(3).replace("0.", ".")
-}
 
 function formatGameLabel(date: string) {
   const [, month, day] = date.split("-")
@@ -122,10 +120,10 @@ function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
   const numericOps = numericObp + numericSlg
 
   return {
-    avg: formatRate(numericAvg),
-    obp: formatRate(numericObp),
-    slg: formatRate(numericSlg),
-    ops: formatRate(numericOps),
+    avg: fmtRate(numericAvg),
+    obp: fmtRate(numericObp),
+    slg: fmtRate(numericSlg),
+    ops: fmtRate(numericOps),
     numericAvg,
     numericObp,
     numericSlg,
@@ -340,9 +338,6 @@ function buildPolyline(
     .join(" ")
 }
 
-function formatTick(value: number) {
-  return value.toFixed(3).replace("0.", ".")
-}
 
 function clampTooltipY(topY: number) {
   return Math.max(chartPadding.top + 4, topY)
@@ -578,7 +573,7 @@ export default function PerformanceTrendCard({
                         textAnchor="end"
                         className="fill-gray-500 text-[11px]"
                       >
-                        {formatTick(tick)}
+                        {fmtRate(tick)}
                       </text>
                     </g>
                   )
@@ -679,7 +674,7 @@ export default function PerformanceTrendCard({
                                 textAnchor="middle"
                                 className="fill-white text-[11px]"
                               >
-                                {`Player ${formatTick(values.player)}`}
+                                {`Player ${fmtRate(values.player)}`}
                               </text>
                               <text
                                 x={position.x}
@@ -687,7 +682,7 @@ export default function PerformanceTrendCard({
                                 textAnchor="middle"
                                 className="fill-white text-[11px]"
                               >
-                                {`Team ${formatTick(values.team)}`}
+                                {`Team ${fmtRate(values.team)}`}
                               </text>
                             </>
                           )

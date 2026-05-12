@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { lazy, Suspense, useEffect, useState } from "react"
 import {
   BrowserRouter,
   Navigate,
@@ -7,21 +7,26 @@ import {
   useLocation,
 } from "react-router-dom"
 
-import AdminPage from "./pages/AdminPage"
-import ForgotPasswordPage from "./pages/ForgotPasswordPage"
-import LandingPage from "./pages/LandingPage"
-import ResetPasswordPage from "./pages/ResetPasswordPage"
-import StatsPage from "./pages/StatsPage"
-import GameRecordPage from "./pages/GameRecordPage"
-import LoginPage from "./pages/LoginPage"
-import SignupPage from "./pages/SignupPage"
-import ProfilePage from "./pages/ProfilePage"
-import TeamManagerPage from "./pages/TeamManagerPage"
-import PlayerPage from "./pages/PlayerPage"
-import SeasonArchivePage from "./pages/SeasonArchivePage"
 import { supabase } from "./api/supabase-client"
 
 import type { Player, Team } from "./types"
+
+const AdminPage = lazy(() => import("./pages/AdminPage"))
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"))
+const LandingPage = lazy(() => import("./pages/LandingPage"))
+const ResetPasswordPage = lazy(() => import("./pages/ResetPasswordPage"))
+const StatsPage = lazy(() => import("./pages/StatsPage"))
+const GameRecordPage = lazy(() => import("./pages/GameRecordPage"))
+const LoginPage = lazy(() => import("./pages/LoginPage"))
+const SignupPage = lazy(() => import("./pages/SignupPage"))
+const ProfilePage = lazy(() => import("./pages/ProfilePage"))
+const TeamManagerPage = lazy(() => import("./pages/TeamManagerPage"))
+const PlayerPage = lazy(() => import("./pages/PlayerPage"))
+const SeasonArchivePage = lazy(() => import("./pages/SeasonArchivePage"))
+
+function PageFallback() {
+  return <div className="p-6 text-gray-600">Loading...</div>
+}
 
 function AdminGuard({ children }: { children: React.ReactNode }) {
   const location = useLocation()
@@ -64,44 +69,46 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
+      <Suspense fallback={<PageFallback />}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
 
-        <Route path="/stats" element={<StatsPage />} />
-        <Route path="/states" element={<Navigate to="/stats" replace />} />
+          <Route path="/stats" element={<StatsPage />} />
+          <Route path="/states" element={<Navigate to="/stats" replace />} />
 
-        <Route path="/record-game" element={<GameRecordPage />} />
+          <Route path="/record-game" element={<GameRecordPage />} />
 
-        <Route path="/manager" element={<TeamManagerPage />} />
-        <Route path="/player" element={<PlayerPage />} />
-        <Route path="/seasons" element={<SeasonArchivePage />} />
+          <Route path="/manager" element={<TeamManagerPage />} />
+          <Route path="/player" element={<PlayerPage />} />
+          <Route path="/seasons" element={<SeasonArchivePage />} />
 
-        <Route
-          path="/admin"
-          element={
-            <AdminGuard>
-              <AdminPage
-                teams={teams}
-                setTeams={setTeams}
-                players={players}
-                setPlayers={setPlayers}
-                activeTeamId={activeTeamId}
-                setActiveTeamId={setActiveTeamId}
-                activePlayerId={activePlayerId}
-                setActivePlayerId={setActivePlayerId}
-              />
-            </AdminGuard>
-          }
-        />
+          <Route
+            path="/admin"
+            element={
+              <AdminGuard>
+                <AdminPage
+                  teams={teams}
+                  setTeams={setTeams}
+                  players={players}
+                  setPlayers={setPlayers}
+                  activeTeamId={activeTeamId}
+                  setActiveTeamId={setActiveTeamId}
+                  activePlayerId={activePlayerId}
+                  setActivePlayerId={setActivePlayerId}
+                />
+              </AdminGuard>
+            }
+          />
 
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-        <Route path="*" element={<Navigate to="/stats" replace />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/stats" replace />} />
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

@@ -5,6 +5,7 @@ import type {
   SavedPitchingGameEntry,
 } from "../types"
 import { useMemo, useState } from "react"
+import { fmtRate } from "../utils/metrics"
 import SavedEntriesList from "./SavedEntriesList"
 import PerformanceTrendCard from "./PerformanceTrendCard"
 
@@ -61,7 +62,6 @@ function getStatCardStyle(label: string, value: string, gamesPlayed: number) {
   return map[styleName] ?? map.neutral
 }
 
-function formatRate(value: number) { return value.toFixed(3).replace("0.", ".") }
 function formatRatio(value: number) { return value.toFixed(2) }
 
 function buildBattingStats(entry: SavedBattingGameEntry): DisplayStat[] {
@@ -76,9 +76,9 @@ function buildBattingStats(entry: SavedBattingGameEntry): DisplayStat[] {
   const slg = statLine.AB > 0 ? totalBases / statLine.AB : 0
   const bbPerK = statLine.SO > 0 ? formatRatio(statLine.BB / statLine.SO) : "--"
   return [
-    { label: "AVG",  value: formatRate(avg) },
-    { label: "OBP",  value: formatRate(obp) },
-    { label: "OPS",  value: formatRate(obp + slg) },
+    { label: "AVG",  value: fmtRate(avg) },
+    { label: "OBP",  value: fmtRate(obp) },
+    { label: "OPS",  value: fmtRate(obp + slg) },
     { label: "BB/K", value: bbPerK },
     { label: "HR",   value: String(statLine.HR) },
     { label: "RBI",  value: String(statLine.RBI) },

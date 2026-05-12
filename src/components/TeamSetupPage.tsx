@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react"
 import type { Team, Player, SavedBattingGameEntry } from "../types"
+import { fmtRate } from "../utils/metrics"
 import PlayerForm from "./PlayerForm"
 
 type RosterSortKey =
@@ -100,9 +101,6 @@ function getPlayerMetrics(entries: SavedBattingGameEntry[]) {
   }
 }
 
-function formatRate(value: number) {
-  return value.toFixed(3).replace("0.", ".")
-}
 
 export default function TeamSetupPage({
   teams,
@@ -444,11 +442,11 @@ export default function TeamSetupPage({
 
                               <p className="mt-1 text-xs text-gray-400">
                                 {player.position} · G {metrics.games} · PA{" "}
-                                {metrics.pa} · AVG {formatRate(metrics.avg)}
+                                {metrics.pa} · AVG {fmtRate(metrics.avg)}
                               </p>
 
                               <p className="mt-1 text-xs text-gray-400">
-                                OPS {formatRate(metrics.ops)} · HR {metrics.hr} ·
+                                OPS {fmtRate(metrics.ops)} · HR {metrics.hr} ·
                                 RBI {metrics.rbi}
                               </p>
                             </div>
