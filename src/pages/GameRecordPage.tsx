@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
+import { withAvatarCacheBust } from "../utils/avatar"
 import {
   fetchGamesBySeason,
   fetchPlayers,
@@ -200,7 +201,7 @@ export default function GameRecordPage() {
         .maybeSingle(),
       "Profile load"
     )
-      .then(({ data: profile }) => setAvatarUrl(profile?.avatar_url ?? ""))
+      .then(({ data: profile }) => setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : ""))
       .catch((error) => console.error(error))
   }, [])
 

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
+import { publishAvatarUpdated, withAvatarCacheBust } from "../utils/avatar"
 
 const positionOptions = [
   "P",
@@ -66,7 +67,7 @@ export default function ProfilePage() {
         if (error) throw new Error(error.message)
 
         setName(profile?.name ?? data.user.user_metadata?.name ?? "")
-        setAvatarUrl(profile?.avatar_url ?? "")
+        setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : "")
         setTeamName(profile?.team_name ?? data.user.user_metadata?.team_name ?? "")
         setPrimaryPosition(profile?.primary_position ?? "")
         setJerseyNumber(
@@ -112,8 +113,10 @@ export default function ProfilePage() {
     }
 
     const { data } = supabase.storage.from("avatars").getPublicUrl(filePath)
+    const nextAvatarUrl = withAvatarCacheBust(data.publicUrl)
 
-    setAvatarUrl(data.publicUrl)
+    setAvatarUrl(nextAvatarUrl)
+    publishAvatarUpdated(nextAvatarUrl)
 
     const fallbackName = name.trim() || email.split("@")[0] || "User"
 
@@ -121,7 +124,7 @@ export default function ProfilePage() {
       id: userId,
       email,
       name: fallbackName,
-      avatar_url: data.publicUrl,
+      avatar_url: nextAvatarUrl,
       updated_at: new Date().toISOString(),
     })
 

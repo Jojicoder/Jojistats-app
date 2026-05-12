@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "../api/supabase-client"
 import { fetchUserAccessByEmail } from "../api/supabase-api"
 import type { UserAccess } from "../types"
+import { subscribeAvatarUpdated, withAvatarCacheBust } from "../utils/avatar"
 
 type HeaderProps = {
   teamName: string
@@ -59,7 +60,7 @@ export default function Header({
           .eq("id", data.user.id)
           .maybeSingle()
 
-        setAvatarUrl(profile?.avatar_url ?? null)
+        setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : null)
         if (email === "admin@jojistats.com") {
           setAccessRole("admin")
         } else if (email) {
@@ -87,7 +88,7 @@ export default function Header({
             .eq("id", session.user.id)
             .maybeSingle()
 
-          setAvatarUrl(profile?.avatar_url ?? null)
+          setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : null)
           if (email === "admin@jojistats.com") {
             setAccessRole("admin")
           } else if (email) {
@@ -105,6 +106,8 @@ export default function Header({
       listener.subscription.unsubscribe()
     }
   }, [isLoggedInProp])
+
+  useEffect(() => subscribeAvatarUpdated(setAvatarUrl), [])
 
   /* ---------------- LOGOUT ---------------- */
 

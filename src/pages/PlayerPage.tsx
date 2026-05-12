@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
+import { withAvatarCacheBust } from "../utils/avatar"
 import {
   fetchPitchingEntriesByPlayer,
   fetchSavedEntriesByPlayer,
@@ -127,7 +128,7 @@ export default function PlayerPage() {
           .maybeSingle()
 
         setGoals({
-          avatarUrl: profile?.avatar_url ?? "",
+          avatarUrl: profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : "",
           seasonGoal: profile?.season_goal ?? defaultGoals.seasonGoal,
           avgGoal: profile?.avg_goal ?? defaultGoals.avgGoal,
           hrGoal: profile?.hr_goal == null ? defaultGoals.hrGoal : String(profile.hr_goal),

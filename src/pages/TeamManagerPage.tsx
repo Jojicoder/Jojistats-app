@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
+import { withAvatarCacheBust } from "../utils/avatar"
 import {
   fetchPlayers,
   fetchPlayersByTeam,
@@ -133,7 +134,7 @@ export default function TeamManagerPage() {
           .select("avatar_url")
           .eq("id", data.user.id)
           .maybeSingle()
-        setAvatarUrl(profile?.avatar_url ?? "")
+        setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : "")
 
         if (email === "admin@jojistats.com") {
           navigate("/admin", { replace: true })
