@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
-import { withAvatarCacheBust } from "../utils/avatar"
+import { withAvatarCacheBust, subscribeAvatarUpdated } from "../utils/avatar"
 import {
   fetchPitchingEntriesByPlayer,
   fetchSavedEntriesByPlayer,
@@ -199,6 +199,8 @@ export default function PlayerPage() {
 
     load()
   }, [navigate])
+
+  useEffect(() => subscribeAvatarUpdated((url) => setGoals((prev) => ({ ...prev, avatarUrl: url }))), [])
 
   const metrics = useMemo(() => calcBattingMetrics(entries), [entries])
   const pitchingMetrics = useMemo(
