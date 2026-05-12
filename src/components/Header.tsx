@@ -34,7 +34,10 @@ export default function Header({
   const navigate = useNavigate()
 
   const [authIsLoggedIn, setAuthIsLoggedIn] = useState(false)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
+    const v = window.localStorage.getItem("jojistats-avatar-url")
+    return v
+  })
   const [accessRole, setAccessRole] = useState<UserAccess["role"] | null>(null)
 
   const isLoggedIn = isLoggedInProp ?? authIsLoggedIn
@@ -42,18 +45,13 @@ export default function Header({
   /* ---------------- AUTH ---------------- */
 
   useEffect(() => {
-    if (isLoggedInProp !== undefined) {
-      return
-    }
-
-    const loadUser = async () => {
+    const loadSessionProfile = async () => {
       const { data } = await supabase.auth.getUser()
 
       if (data.user) {
         setAuthIsLoggedIn(true)
         const email = data.user.email?.trim().toLowerCase()
 
-        // Apply cached avatar immediately so navigating back to this page doesn't flash the old image
         const cachedUrl = window.localStorage.getItem("jojistats-avatar-url")
         if (cachedUrl) setAvatarUrl(cachedUrl)
 
@@ -63,7 +61,11 @@ export default function Header({
           .eq("id", data.user.id)
           .maybeSingle()
 
-        setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : cachedUrl || null)
+        const finalUrl = profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : cachedUrl || null
+        if (finalUrl) {
+          window.localStorage.setItem("jojistats-avatar-url", finalUrl)
+        }
+        setAvatarUrl(finalUrl)
         if (email === "admin@jojistats.com") {
           setAccessRole("admin")
         } else if (email) {
@@ -77,7 +79,11 @@ export default function Header({
       }
     }
 
-    loadUser()
+    loadSessionProfile()
+
+    if (isLoggedInProp !== undefined) {
+      return
+    }
 
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (_event, session) => {

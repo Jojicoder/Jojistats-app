@@ -115,8 +115,13 @@ export default function ProfilePage() {
     const { data } = supabase.storage.from("avatars").getPublicUrl(filePath)
     const nextAvatarUrl = withAvatarCacheBust(data.publicUrl)
 
+    console.log("[ProfilePage] publicUrl:", data.publicUrl)
+    console.log("[ProfilePage] nextAvatarUrl:", nextAvatarUrl)
+
     setAvatarUrl(nextAvatarUrl)
     publishAvatarUpdated(nextAvatarUrl)
+
+    console.log("[ProfilePage] localStorage after publish:", window.localStorage.getItem("jojistats-avatar-url"))
 
     const fallbackName = name.trim() || email.split("@")[0] || "User"
 

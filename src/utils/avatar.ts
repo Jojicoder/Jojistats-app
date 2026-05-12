@@ -2,8 +2,16 @@ export const AVATAR_UPDATED_EVENT = "jojistats-avatar-updated"
 
 export function withAvatarCacheBust(url: string | null | undefined, version = Date.now()) {
   if (!url) return ""
-  const separator = url.includes("?") ? "&" : "?"
-  return `${url}${separator}v=${version}`
+  try {
+    const nextUrl = new URL(url)
+    nextUrl.searchParams.set("v", String(version))
+    return nextUrl.toString()
+  } catch {
+    const [baseUrl, queryString = ""] = url.split("?")
+    const params = new URLSearchParams(queryString)
+    params.set("v", String(version))
+    return `${baseUrl}?${params.toString()}`
+  }
 }
 
 export function publishAvatarUpdated(avatarUrl: string) {
