@@ -53,14 +53,17 @@ export default function Header({
         setAuthIsLoggedIn(true)
         const email = data.user.email?.trim().toLowerCase()
 
-        
+        // Apply cached avatar immediately so navigating back to this page doesn't flash the old image
+        const cachedUrl = window.localStorage.getItem("jojistats-avatar-url")
+        if (cachedUrl) setAvatarUrl(cachedUrl)
+
         const { data: profile } = await supabase
           .from("profiles")
           .select("avatar_url")
           .eq("id", data.user.id)
           .maybeSingle()
 
-        setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : null)
+        setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : cachedUrl || null)
         if (email === "admin@jojistats.com") {
           setAccessRole("admin")
         } else if (email) {
@@ -82,13 +85,16 @@ export default function Header({
 
         if (session?.user) {
           const email = session.user.email?.trim().toLowerCase()
+          const cachedUrl = window.localStorage.getItem("jojistats-avatar-url")
+          if (cachedUrl) setAvatarUrl(cachedUrl)
+
           const { data: profile } = await supabase
             .from("profiles")
             .select("avatar_url")
             .eq("id", session.user.id)
             .maybeSingle()
 
-          setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : null)
+          setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : cachedUrl || null)
           if (email === "admin@jojistats.com") {
             setAccessRole("admin")
           } else if (email) {
