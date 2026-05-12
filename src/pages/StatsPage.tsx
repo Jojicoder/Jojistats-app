@@ -19,6 +19,9 @@ import { supabase } from "../api/supabase-client"
 
 import MyStatsPage from "../components/MyStatsPage"
 import MyPitchingStatsPage from "../components/MyPitchingStatsPage"
+import RecordGameContainer from "../components/RecordGameContainer"
+import TeamSetupPage from "../components/TeamSetupPage"
+import { createPlayer, updatePlayer, archivePlayer } from "../api/api"
 
 import { useGameStats } from "../hooks/useGameStats"
 
@@ -69,6 +72,11 @@ async function loadTeamEntries(teamId: string, seasonYear: number) {
   return { batting, pitching }
 }
 
+async function loadVisiblePlayers(teamId: string | number, seasonYear: number) {
+  const rows = await fetchPlayers(Number(teamId), seasonYear)
+  return sortPlayersByJersey(rows.map(mapPlayerRow).filter((p) => !p.isArchived))
+}
+
 /* -------------------- main -------------------- */
 
 export default function StatsPage() {
@@ -89,7 +97,9 @@ export default function StatsPage() {
   const [mode, setMode] = useState<"batting" | "pitching">("batting")
   const [isRestrictedUser, setIsRestrictedUser] = useState(false)
   const [userRole, setUserRole] = useState<"player" | "recorder" | "manager" | "admin" | null>(null)
-  const [view, setView] = useState<"stats" | "myteam">("stats")
+  const [view, setView] = useState<"stats" | "myteam" | "record" | "setup">("stats")
+  const [setupSeasonYear, setSetupSeasonYear] = useState(new Date().getFullYear())
+  const [setupActivePlayerId, setSetupActivePlayerId] = useState("")
 
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
@@ -113,6 +123,10 @@ export default function StatsPage() {
       setActivePlayerId(players[0].id)
     }
   }, [players, activePlayerId])
+
+  useEffect(() => {
+    if (activeTeam) setSetupSeasonYear(activeTeam.currentSeasonYear)
+  }, [activeTeam?.id])
 
   /* -------------------- stats -------------------- */
 
@@ -148,6 +162,8 @@ export default function StatsPage() {
       return [
         { label: "My Stats", view: "stats" },
         { label: "Team Stats", view: "myteam" },
+        { label: "Record Game", view: "record" },
+        { label: "Team Setup", view: "setup" },
         { label: "Team Manager", href: "/manager" },
         { label: "Archive", href: "/seasons" },
       ]
@@ -156,7 +172,7 @@ export default function StatsPage() {
       return [
         { label: "My Stats", view: "stats" },
         { label: "My Team", view: "myteam" },
-        { label: "Record Game", href: "/record-game" },
+        { label: "Record Game", view: "record" },
         { label: "Archive", href: "/seasons" },
       ]
     }
@@ -358,23 +374,42 @@ export default function StatsPage() {
     }
   }
 
-  /* -------------------- リフレッシュ -------------------- */
+  /* -------------------- Team Setup -------------------- */
 
-  const handleRefresh = async () => {
+  const handleSetupChangeSeason = async (year: number) => {
     if (!activeTeam) return
-    try {
-      setIsLoading(true)
-      const { batting, pitching } = await loadTeamEntries(
-        activeTeam.id,
-        activeTeam.currentSeasonYear
-      )
-      setSavedEntriesByPlayer(batting)
-      setPitchingEntriesByPlayer(pitching)
-    } catch (error) {
-      console.error(error)
-    } finally {
-      setIsLoading(false)
-    }
+    setSetupSeasonYear(year)
+    setPlayers(await loadVisiblePlayers(activeTeamId, year))
+  }
+
+  const handleSetupAddPlayer = async (player: Player) => {
+    await createPlayer({
+      team_id: Number(player.teamId),
+      name: player.name,
+      jersey_number: player.jerseyNumber ?? null,
+      position: player.position,
+      season_year: player.seasonYear,
+      is_archived: player.isArchived ? 1 : 0,
+    })
+    setPlayers(await loadVisiblePlayers(player.teamId, player.seasonYear))
+  }
+
+  const handleSetupUpdatePlayer = async (player: Player) => {
+    await updatePlayer(Number(player.id), {
+      team_id: Number(player.teamId),
+      name: player.name,
+      jersey_number: player.jerseyNumber ?? null,
+      position: player.position,
+      season_year: player.seasonYear,
+      is_archived: player.isArchived ? 1 : 0,
+    })
+    setPlayers(await loadVisiblePlayers(player.teamId, player.seasonYear))
+  }
+
+  const handleSetupDeletePlayer = async (playerId: string) => {
+    if (!activeTeam) return
+    await archivePlayer(Number(playerId))
+    setPlayers(await loadVisiblePlayers(activeTeamId, setupSeasonYear))
   }
 
   /* -------------------- UI -------------------- */
@@ -392,50 +427,45 @@ export default function StatsPage() {
 
       <TopTabs
         activeView={view}
-        onChangeView={(v) => setView(v as "stats" | "myteam")}
+        onChangeView={(v) => setView(v as "stats" | "myteam" | "record" | "setup")}
         tabs={tabs}
       />
 
-      {view === "stats" && (
-        <div className="flex w-full gap-2 px-3 pt-3 sm:w-auto sm:px-4">
-          <button
-            onClick={() => setMode("batting")}
-            className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
-              mode === "batting"
-                ? "bg-green-900 text-white shadow-sm"
-                : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            Batting
-          </button>
-
-          <button
-            onClick={() => setMode("pitching")}
-            className={`min-w-0 flex-1 truncate rounded-lg px-3 py-2 text-sm font-semibold transition sm:flex-none sm:px-4 ${
-              mode === "pitching"
-                ? "bg-green-900 text-white shadow-sm"
-                : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
-            }`}
-          >
-            Pitching
-          </button>
-
-          <button
-            onClick={handleRefresh}
-            disabled={isLoading}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 disabled:opacity-40"
-            aria-label="Refresh stats"
-          >
-            ↻
-          </button>
-        </div>
-      )}
-
-      <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-3 lg:flex-row lg:p-4">
+      <div className="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col items-stretch gap-3 overflow-y-auto p-3 lg:flex-row lg:items-start lg:p-4">
         {isLoading ? (
           <div>Loading...</div>
         ) : errorMessage ? (
           <div className="text-red-600">{errorMessage}</div>
+        ) : view === "record" && activePlayer && activeTeam ? (
+          <RecordGameContainer
+            initialPlayer={activePlayer}
+            allPlayers={players}
+            teamName={activeTeam.name}
+            teamId={Number(activeTeamId)}
+            seasonYear={activeTeam.currentSeasonYear}
+            initialSavedEntriesByPlayer={savedEntriesByPlayer}
+            initialPitchingEntriesByPlayer={pitchingEntriesByPlayer}
+          />
+        ) : view === "setup" && activeTeam ? (
+          <TeamSetupPage
+            teams={teams}
+            activeTeamId={activeTeamId}
+            setActiveTeamId={() => {}}
+            teamName={activeTeam.name}
+            seasonYear={setupSeasonYear}
+            players={players}
+            activePlayerId={setupActivePlayerId || activePlayerId}
+            setActivePlayerId={setSetupActivePlayerId}
+            savedEntriesByPlayer={savedEntriesByPlayer}
+            onAddTeam={() => {}}
+            onUpdateTeamName={() => {}}
+            onArchiveTeam={() => {}}
+            onAddPlayer={handleSetupAddPlayer}
+            onUpdatePlayer={handleSetupUpdatePlayer}
+            onDeletePlayer={handleSetupDeletePlayer}
+            onChangeSeason={handleSetupChangeSeason}
+            hideTeamManagement={true}
+          />
         ) : view === "myteam" ? (
           <MyTeamPage
             team={activeTeam}
@@ -454,7 +484,7 @@ export default function StatsPage() {
               mode={mode}
             />
 
-            <div className="flex-1">
+            <div className="min-w-0 flex-1">
               {mode === "batting" ? (
                 <MyStatsPage
                   activePlayer={activePlayer}
@@ -464,12 +494,16 @@ export default function StatsPage() {
                   teamSavedEntries={allTeamEntries}
                   gamesPlayed={kpi.gamesPlayed}
                   seasonYear={activeTeam?.currentSeasonYear ?? 0}
+                  mode={mode}
+                  onModeChange={setMode}
                 />
               ) : (
                 <MyPitchingStatsPage
                   activePlayer={activePlayer}
                   entries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
                   battingEntries={savedEntries}
+                  mode={mode}
+                  onModeChange={setMode}
                 />
               )}
             </div>

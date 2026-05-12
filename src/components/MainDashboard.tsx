@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Dispatch, SetStateAction } from "react"
 import type {
   Player,
@@ -160,6 +160,61 @@ export default function MainDashboard({
     { label: "RBI", value: String(kpi.rbi) },
   ]
 
+  /* ---------------- AUTO-POPULATE STANDARD FORM ---------------- */
+
+  useEffect(() => {
+    const date = gameMeta.date
+    const opponent = gameMeta.opponent.trim()
+    if (!date || !opponent) return
+
+    // Pitching: if a saved entry matches current game context, pre-load it
+    const pitchingMatch = (pitchingEntriesByPlayer[activePlayer.id] ?? []).find(
+      (e) =>
+        e.teamId === activePlayer.teamId &&
+        e.gameMeta.seasonYear === activePlayer.seasonYear &&
+        e.gameMeta.date === date &&
+        e.gameMeta.opponent.trim() === opponent &&
+        e.gameMeta.matchNumber === gameMeta.matchNumber
+    )
+    if (pitchingMatch) {
+      if (editingSavedPitchingEntry?.id !== pitchingMatch.id) {
+        setPitchingEntry(pitchingMatch.statLine)
+        setEditingSavedPitchingEntry(pitchingMatch)
+      }
+    } else {
+      // No pitching record for this player/game — always clear so "P" isn't leaked to other players
+      setEditingSavedPitchingEntry(null)
+      setPitchingEntry({
+        inningsPitchedOuts: 0, hitsAllowed: 0, runsAllowed: 0, earnedRuns: 0,
+        walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0,
+      })
+    }
+
+    // Batting: if a saved entry matches current game context, pre-load it
+    const battingMatch = (savedEntriesByPlayer[activePlayer.id] ?? []).find(
+      (e) =>
+        e.teamId === activePlayer.teamId &&
+        e.gameMeta.seasonYear === activePlayer.seasonYear &&
+        e.gameMeta.date === date &&
+        e.gameMeta.opponent.trim() === opponent &&
+        e.gameMeta.matchNumber === gameMeta.matchNumber
+    )
+    if (battingMatch && editingSavedEntryId !== battingMatch.id) {
+      setEntriesByPlayer((prev) => ({ ...prev, [activePlayer.id]: battingMatch.statLine }))
+      setEditingSavedEntry(battingMatch)
+      setEditingSavedEntryId(battingMatch.id)
+    }
+  }, [
+    activePlayer.id,
+    gameMeta.date,
+    gameMeta.opponent,
+    gameMeta.matchNumber,
+    pitchingEntriesByPlayer,
+    savedEntriesByPlayer,
+    editingSavedPitchingEntry?.id,
+    editingSavedEntryId,
+  ])
+
   /* ---------------- HANDLERS ---------------- */
 
   const handleEntryChange = (next: BattingEntryData) => {
@@ -312,22 +367,6 @@ export default function MainDashboard({
 
       await refreshPitchingEntries()
       await refreshSavedGames()
-      setPitchingEntry({
-        inningsPitchedOuts: 0,
-        hitsAllowed: 0,
-        runsAllowed: 0,
-        earnedRuns: 0,
-        walks: 0,
-        hitBatters: 0,
-        strikeouts: 0,
-        homeRunsAllowed: 0,
-      })
-      setGameMeta((prev) => ({
-        ...prev,
-        opponent: "",
-        matchNumber: prev.matchNumber + 1,
-        date: new Date().toISOString().split("T")[0],
-      }))
     } catch (error) {
       console.error(error)
       window.alert("Pitching save failed")
@@ -605,6 +644,7 @@ export default function MainDashboard({
       isEditingSavedEntry={editingSavedEntryId !== null}
       isEditingSavedPitchingEntry={editingSavedPitchingEntry !== null}
       editingSavedEntryId={editingSavedEntryId}
+      editingGamePositions={editingSavedEntry?.gamePositions}
       onStartEditSavedEntry={handleStartEditSavedEntry}
       onUpdateSavedEntry={handleUpdateSavedEntry}
       onUpdateSavedGame={handleUpdateSavedGame}

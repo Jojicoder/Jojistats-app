@@ -30,6 +30,7 @@ type TeamSetupPageProps = {
   onUpdatePlayer: (player: Player) => void
   onDeletePlayer: (playerId: string) => void
   savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
+  hideTeamManagement?: boolean
 }
 
 const currentYear = new Date().getFullYear()
@@ -120,6 +121,7 @@ export default function TeamSetupPage({
   onAddPlayer,
   onUpdatePlayer,
   onDeletePlayer,
+  hideTeamManagement = false,
 }: TeamSetupPageProps) {
   const [editingTeamName, setEditingTeamName] = useState("")
   const [isEditingTeam, setIsEditingTeam] = useState(false)
@@ -187,7 +189,8 @@ export default function TeamSetupPage({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+        <div className={`grid grid-cols-1 gap-6 ${hideTeamManagement ? "xl:grid-cols-2" : "xl:grid-cols-3"}`}>
+          {!hideTeamManagement && (
           <section className="space-y-6">
             <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">
               <h2 className="text-base font-bold text-gray-900">Add Team</h2>
@@ -324,6 +327,7 @@ export default function TeamSetupPage({
               )}
             </div>
           </section>
+          )}
 
           <section className="space-y-6">
             <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-6">

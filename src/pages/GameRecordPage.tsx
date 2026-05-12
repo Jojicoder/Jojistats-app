@@ -36,6 +36,46 @@ import type { GameRow } from "../api/supabase-api"
 
 const OFFLINE_CACHE_KEY = "jojistats-game-cache"
 const OFFLINE_QUEUE_KEY = "jojistats-game-queue"
+const LOAD_TIMEOUT_MS = 15000
+
+type TeamSnapshot = {
+  id: number
+  name: string
+  current_season_year: number
+}
+
+type OfflineRecordCache = {
+  team: TeamSnapshot
+  players: Player[]
+  savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
+  preferredPlayerId?: string
+}
+
+function withLoadTimeout<T>(promise: PromiseLike<T>, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timeoutId = window.setTimeout(
+      () => reject(new Error(`${label} timed out. Please check your connection and try again.`)),
+      LOAD_TIMEOUT_MS
+    )
+
+    Promise.resolve(promise)
+      .then(resolve)
+      .catch(reject)
+      .finally(() => window.clearTimeout(timeoutId))
+  })
+}
+
+function readOfflineCache(): OfflineRecordCache | null {
+  try {
+    return JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) ?? "null") as OfflineRecordCache | null
+  } catch {
+    return null
+  }
+}
+
+function getPreferredPlayer(players: Player[], preferredPlayerId?: string) {
+  return (preferredPlayerId && players.find((p) => p.id === preferredPlayerId)) || players[0] || null
+}
 
 const emptyBattingEntry: BattingEntryData = {
   AB: 0,
@@ -141,38 +181,83 @@ export default function GameRecordPage() {
     try { return (JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]") as unknown[]).length } catch { return 0 }
   })
 
+  const applyTeamShell = (team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
+    setTeamName(team.name)
+    setTeamId(team.id)
+    setSeasonYear(team.current_season_year)
+    setAllPlayers(mappedPlayers)
+    setActivePlayer(firstPlayer)
+    setGameMeta((prev) => ({ ...prev, seasonYear: team.current_season_year }))
+  }
+
+  const loadProfileAvatar = (userId: string) => {
+    withLoadTimeout(
+      supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", userId)
+        .maybeSingle(),
+      "Profile load"
+    )
+      .then(({ data: profile }) => setAvatarUrl(profile?.avatar_url ?? ""))
+      .catch((error) => console.error(error))
+  }
+
+  const loadSeasonDataInBackground = (team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
+    withLoadTimeout(
+      Promise.all([
+        fetchSavedEntriesByPlayer(team.id, team.current_season_year),
+        fetchPitchingEntriesByPlayer(team.id, team.current_season_year),
+        fetchGamesBySeason(team.id, team.current_season_year),
+      ]),
+      "Game data load"
+    )
+      .then(([entries, pitchingEntries, games]) => {
+        setSavedEntriesByPlayer(entries)
+        setPitchingEntriesByPlayer(pitchingEntries)
+        setSavedEntries(entries[firstPlayer.id] ?? [])
+        setSeasonGames(games)
+        setGameMeta((prev) => ({
+          ...prev,
+          seasonYear: team.current_season_year,
+          matchNumber: getNextMatchNumber(games),
+        }))
+
+        try {
+          localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify({
+            team,
+            players: mappedPlayers,
+            savedEntriesByPlayer: entries,
+            preferredPlayerId: firstPlayer.id,
+          }))
+        } catch { /* storage full - skip */ }
+      })
+      .catch((error) => {
+        console.error(error)
+        setSaveError(error instanceof Error ? error.message : "Saved game data could not be loaded.")
+      })
+  }
+
   useEffect(() => {
     const checkUser = async () => {
       try {
         if (!navigator.onLine) {
           const { data: sessionData } = await supabase.auth.getSession()
           if (!sessionData.session) { navigate("/login", { replace: true }); return }
-          let cached: null | {
-            team: { id: number; name: string; current_season_year: number }
-            players: Player[]
-            savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
-            preferredPlayerId?: string
-          } = null
-          try { cached = JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) ?? "null") } catch { /* ignore */ }
+          const cached = readOfflineCache()
           if (!cached) {
             setAccessError("You're offline and no local cache was found. Please launch the app online first.")
             return
           }
-          const preferred = cached.preferredPlayerId
-          const first = (preferred && cached.players.find((p) => p.id === preferred)) ?? cached.players[0]
+          const first = getPreferredPlayer(cached.players, cached.preferredPlayerId)
           if (!first) { setAccessError("No player data found in cache."); return }
-          setTeamName(cached.team.name)
-          setTeamId(cached.team.id)
-          setSeasonYear(cached.team.current_season_year)
-          setAllPlayers(cached.players)
-          setActivePlayer(first)
-          setGameMeta((prev) => ({ ...prev, seasonYear: cached!.team.current_season_year }))
+          applyTeamShell(cached.team, cached.players, first)
           setSavedEntriesByPlayer(cached.savedEntriesByPlayer)
           setSavedEntries(cached.savedEntriesByPlayer[first.id] ?? [])
           return
         }
 
-        const { data } = await supabase.auth.getUser()
+        const { data } = await withLoadTimeout(supabase.auth.getUser(), "Auth check")
 
         if (!data.user) {
           navigate("/login", { replace: true })
@@ -192,20 +277,15 @@ export default function GameRecordPage() {
           return
         }
 
-        const { data: profile } = await supabase
-          .from("profiles")
-          .select("avatar_url")
-          .eq("id", data.user.id)
-          .maybeSingle()
-        setAvatarUrl(profile?.avatar_url ?? "")
+        loadProfileAvatar(data.user.id)
 
-        const access = await fetchUserAccessByEmail(email)
-        if (!access || access.role !== "recorder") {
+        const access = await withLoadTimeout(fetchUserAccessByEmail(email), "User access load")
+        if (!access || (access.role !== "recorder" && access.role !== "manager")) {
           setAccessError("No GameRecord access has been assigned.")
           return
         }
 
-        const team = await fetchTeamById(access.team_id)
+        const team = await withLoadTimeout(fetchTeamById(access.team_id), "Team load")
         await loadTeam(team, String(access.player_id))
       } catch (error) {
         console.error(error)
@@ -223,44 +303,19 @@ export default function GameRecordPage() {
   }, [navigate])
 
   const loadTeam = async (
-    team: { id: number; name: string; current_season_year: number },
+    team: TeamSnapshot,
     preferredPlayerId?: string
   ) => {
-    const playerRows = await fetchPlayers(team.id, team.current_season_year)
+    const playerRows = await withLoadTimeout(
+      fetchPlayers(team.id, team.current_season_year),
+      "Players load"
+    )
     const mapped = playerRows.map(mapPlayer).filter((p) => !p.isArchived)
-    const first = (preferredPlayerId && mapped.find((p) => p.id === preferredPlayerId)) ?? mapped[0]
+    const first = getPreferredPlayer(mapped, preferredPlayerId)
     if (!first) { setAccessError("No players found for this season."); return }
 
-    setTeamName(team.name)
-    setTeamId(team.id)
-    setSeasonYear(team.current_season_year)
-    setAllPlayers(mapped)
-    setActivePlayer(first)
-    setGameMeta((prev) => ({ ...prev, seasonYear: team.current_season_year }))
-
-    const [entries, pitchingEntries, games] = await Promise.all([
-      fetchSavedEntriesByPlayer(team.id, team.current_season_year),
-      fetchPitchingEntriesByPlayer(team.id, team.current_season_year),
-      fetchGamesBySeason(team.id, team.current_season_year),
-    ])
-    setSavedEntriesByPlayer(entries)
-    setPitchingEntriesByPlayer(pitchingEntries)
-    setSavedEntries(entries[first.id] ?? [])
-    setSeasonGames(games)
-    setGameMeta((prev) => ({
-      ...prev,
-      seasonYear: team.current_season_year,
-      matchNumber: getNextMatchNumber(games),
-    }))
-
-    try {
-      localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify({
-        team,
-        players: mapped,
-        savedEntriesByPlayer: entries,
-        preferredPlayerId: first.id,
-      }))
-    } catch { /* storage full — skip */ }
+    applyTeamShell(team, mapped, first)
+    loadSeasonDataInBackground(team, mapped, first)
   }
 
   const flushOfflineQueue = async (currentTeamId: number, currentSeasonYear: number, currentPlayerId: string) => {

@@ -115,8 +115,8 @@ export default function MyStatsPage({
   )
 
   return (
-    <main className="w-full">
-      <div className="max-w-6xl space-y-5">
+    <main className="min-w-0 w-full">
+      <div className="w-full max-w-6xl space-y-5">
 
         {/* ── Player Header ── */}
         <div className="rounded-2xl bg-white p-5 shadow-sm">

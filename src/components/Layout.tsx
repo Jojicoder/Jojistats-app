@@ -341,7 +341,6 @@ export default function Layout({
 
       <div className="flex flex-1 overflow-y-auto">
       <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-3 p-3 lg:flex-row lg:p-4">
-
         {activeView === "myteam" ? (
           <MyTeamPage
             team={activeTeam}

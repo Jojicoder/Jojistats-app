@@ -103,26 +103,26 @@ export default function LandingPage() {
 
       <main>
         {/* ── Hero ── */}
-        <section className="relative overflow-hidden border-b border-slate-200 px-5 py-20 sm:py-28">
+        <section className="relative overflow-hidden border-b border-slate-200 px-5 py-10 sm:py-20 lg:py-28">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_60%_-10%,rgba(20,83,45,0.08),transparent)]"
           />
-          <div className="mx-auto grid max-w-6xl items-center gap-14 lg:grid-cols-[1fr_480px]">
+          <div className="mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_480px] lg:gap-14">
             <div>
               <span className="inline-block rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-bold uppercase tracking-widest text-green-800">
                 Baseball Stats App
               </span>
-              <h1 className="mt-4 max-w-2xl text-4xl font-extrabold leading-[1.1] tracking-tight text-green-950 sm:text-5xl lg:text-6xl">
+              <h1 className="mt-4 max-w-2xl text-3xl font-extrabold leading-[1.1] tracking-tight text-green-950 sm:text-5xl lg:text-6xl">
                 Make baseball stats management{" "}
                 <span className="text-green-700">easier.</span>
               </h1>
 
-              <p className="mt-6 max-w-xl text-lg leading-8 text-slate-500 sm:text-xl">
+              <p className="mt-4 max-w-xl text-base leading-7 text-slate-500 sm:mt-6 sm:text-xl sm:leading-8">
                 Record games, manage players, and visualize team performance — all in one app built for coaches.
               </p>
 
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-7 flex flex-col gap-3 sm:mt-9 sm:flex-row">
                 <Link
                   to="/signup"
                   className="rounded-lg bg-green-900 px-7 py-3.5 text-center text-sm font-bold text-white shadow transition-colors hover:bg-green-800"
@@ -140,8 +140,8 @@ export default function LandingPage() {
               <p className="mt-5 text-xs text-slate-400">No credit card required · Set up in under 5 minutes</p>
             </div>
 
-            {/* Dashboard preview card */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-200/80">
+            {/* Dashboard preview card — hidden on mobile, shown lg+ */}
+            <div className="hidden lg:block rounded-2xl border border-slate-200 bg-white p-5 shadow-2xl shadow-slate-200/80">
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-green-700">
@@ -211,7 +211,7 @@ export default function LandingPage() {
         </section>
 
         {/* ── Pain Point ── */}
-        <section className="border-b border-slate-200 bg-white px-5 py-16">
+        <section className="border-b border-slate-200 bg-white px-5 py-10 sm:py-16">
           <div className="mx-auto max-w-3xl text-center">
             <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-full bg-amber-50 text-amber-600 ring-1 ring-amber-200">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
@@ -219,10 +219,10 @@ export default function LandingPage() {
                 <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
               </svg>
             </div>
-            <h2 className="text-3xl font-extrabold tracking-tight text-green-950">
+            <h2 className="text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
               Still managing stats on paper?
             </h2>
-            <p className="mt-4 text-lg leading-8 text-slate-500">
+            <p className="mt-4 text-base leading-7 text-slate-500 sm:text-lg sm:leading-8">
               Paper score sheets are useful, but calculating season stats and comparing player performance takes hours.
               With JojiStats, your game records automatically become team stats — no spreadsheets needed.
             </p>
@@ -230,26 +230,26 @@ export default function LandingPage() {
         </section>
 
         {/* ── Features ── */}
-        <section id="features" className="border-b border-slate-200 px-5 py-20">
+        <section id="features" className="border-b border-slate-200 px-5 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <div className="text-center">
               <p className="text-xs font-bold uppercase tracking-widest text-green-700">Features</p>
-              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
                 Everything your team needs
               </h2>
             </div>
 
-            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:mt-10 sm:gap-5 lg:grid-cols-4">
               {features.map((f) => (
                 <div
                   key={f.label}
-                  className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+                  className="group rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:p-6"
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-50 text-green-800 ring-1 ring-green-100 transition-colors group-hover:bg-green-900 group-hover:text-white group-hover:ring-green-900">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-50 text-green-800 ring-1 ring-green-100 transition-colors group-hover:bg-green-900 group-hover:text-white group-hover:ring-green-900 sm:h-12 sm:w-12">
                     {f.icon}
                   </div>
-                  <p className="mt-4 text-base font-extrabold text-slate-900">{f.label}</p>
-                  <p className="mt-1.5 text-sm leading-6 text-slate-500">{f.desc}</p>
+                  <p className="mt-3 text-sm font-extrabold text-slate-900 sm:mt-4 sm:text-base">{f.label}</p>
+                  <p className="mt-1 text-xs leading-5 text-slate-500 sm:mt-1.5 sm:text-sm sm:leading-6">{f.desc}</p>
                 </div>
               ))}
             </div>
@@ -257,16 +257,16 @@ export default function LandingPage() {
         </section>
 
         {/* ── How It Works ── */}
-        <section id="how" className="border-b border-slate-200 bg-white px-5 py-20">
+        <section id="how" className="border-b border-slate-200 bg-white px-5 py-12 sm:py-20">
           <div className="mx-auto max-w-5xl">
             <div className="text-center">
               <p className="text-xs font-bold uppercase tracking-widest text-green-700">How It Works</p>
-              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
                 Up and running in 3 steps
               </h2>
             </div>
 
-            <div className="mt-12 grid gap-6 md:grid-cols-3">
+            <div className="mt-8 grid gap-4 sm:mt-12 sm:gap-6 md:grid-cols-3">
               {steps.map((step, index) => (
                 <div key={step.label} className="relative">
                   {index < steps.length - 1 && (
@@ -275,7 +275,7 @@ export default function LandingPage() {
                       className="absolute right-0 top-6 hidden h-px w-1/2 translate-x-1/2 bg-linear-to-r from-green-200 to-transparent md:block"
                     />
                   )}
-                  <div className="rounded-2xl border border-slate-200 bg-[#f7f8f3] p-7">
+                  <div className="rounded-2xl border border-slate-200 bg-[#f7f8f3] p-5 sm:p-7">
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-900 text-sm font-extrabold text-white shadow">
                       {index + 1}
                     </div>
@@ -289,17 +289,17 @@ export default function LandingPage() {
         </section>
 
         {/* ── Demo ── */}
-        <section id="demo" className="border-b border-slate-200 px-5 py-20">
+        <section id="demo" className="border-b border-slate-200 px-5 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <div className="text-center">
               <p className="text-xs font-bold uppercase tracking-widest text-green-700">Demo</p>
-              <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
                 See it in action
               </h2>
-              <p className="mt-3 text-slate-500">Live data from a sample team season</p>
+              <p className="mt-3 text-sm text-slate-500 sm:text-base">Live data from a sample team season</p>
             </div>
 
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            <div className="mt-8 grid grid-cols-2 gap-4 sm:mt-10 md:grid-cols-4">
               {[
                 { label: "Games Played", value: "18", icon: "⚾", color: "bg-blue-50 text-blue-700 ring-blue-100" },
                 { label: "Team AVG", value: ".312", icon: "📊", color: "bg-green-50 text-green-700 ring-green-100" },
@@ -322,16 +322,16 @@ export default function LandingPage() {
         </section>
 
         {/* ── CTA ── */}
-        <section className="relative overflow-hidden bg-green-950 px-5 py-20 text-white">
+        <section className="relative overflow-hidden bg-green-950 px-5 py-14 text-white sm:py-20">
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_50%_120%,rgba(134,239,172,0.12),transparent)]"
           />
-          <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-6 text-center">
-            <h2 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+          <div className="relative mx-auto flex max-w-5xl flex-col items-center gap-5 text-center sm:gap-6">
+            <h2 className="text-2xl font-extrabold tracking-tight sm:text-4xl">
               Start tracking your team today.
             </h2>
-            <p className="max-w-xl text-base text-green-300">
+            <p className="max-w-xl text-sm text-green-300 sm:text-base">
               Join coaches who have already ditched the spreadsheets. Free forever for one team.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">

@@ -428,6 +428,9 @@ export default function TeamManagerPage() {
             <Link to="/stats" className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-50">
               Stats
             </Link>
+            <Link to="/record-game" className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-50">
+              Record Game
+            </Link>
             <button type="button" onClick={handleLogout} className="rounded-lg bg-green-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800">
               Logout
             </button>

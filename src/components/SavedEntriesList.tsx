@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react"
-import type { SavedBattingGameEntry } from "../types"
+import type { SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
 
 type SavedEntriesListProps = {
   savedEntries: SavedBattingGameEntry[]
+  pitchingEntries?: SavedPitchingGameEntry[]
   title?: string
   emptyMessage?: string
   onEdit?: (savedEntry: SavedBattingGameEntry) => void
@@ -37,6 +38,7 @@ function formatResult(entry: SavedBattingGameEntry) {
 
 export default function SavedEntriesList({
   savedEntries,
+  pitchingEntries = [],
   title = "Recent Entries",
   emptyMessage = "No saved entries yet.",
   onEdit,
@@ -48,6 +50,10 @@ export default function SavedEntriesList({
   showStats = true,
   previewLimit = 3,
 }: SavedEntriesListProps) {
+  const pitchedGameIds = useMemo(
+    () => new Set(pitchingEntries.map((e) => e.gameId)),
+    [pitchingEntries]
+  )
   const [isExpanded, setIsExpanded] = useState(false)
 
   const showsAllByDefault = previewLimit <= 0
@@ -146,7 +152,11 @@ export default function SavedEntriesList({
                     </p>
 
                     <p className="mt-1.5 text-xs text-gray-500">
-                      Position: {formatGamePositions(entry.gamePositions)}
+                      Position: {formatGamePositions(
+                        pitchedGameIds.has(entry.gameId) && !entry.gamePositions.includes("P")
+                          ? [...entry.gamePositions, "P"]
+                          : entry.gamePositions
+                      )}
                     </p>
 
                     {showStats && (
