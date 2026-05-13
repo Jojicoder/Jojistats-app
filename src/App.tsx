@@ -17,6 +17,7 @@ const StatsPage = lazy(() => import("./pages/StatsPage"))
 const GameRecordPage = lazy(() => import("./pages/GameRecordPage"))
 const LoginPage = lazy(() => import("./pages/LoginPage"))
 const SignupPage = lazy(() => import("./pages/SignupPage"))
+const AwaitingAccessPage = lazy(() => import("./pages/AwaitingAccessPage"))
 const ProfilePage = lazy(() => import("./pages/ProfilePage"))
 const ContactPage = lazy(() => import("./pages/ContactPage"))
 const TeamManagerPage = lazy(() => import("./pages/TeamManagerPage"))
@@ -87,6 +88,7 @@ export default function App() {
 
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
+          <Route path="/awaiting-access" element={<AwaitingAccessPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />

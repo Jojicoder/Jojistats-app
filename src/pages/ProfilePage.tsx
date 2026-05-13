@@ -119,7 +119,7 @@ export default function ProfilePage() {
     console.log("[ProfilePage] nextAvatarUrl:", nextAvatarUrl)
 
     setAvatarUrl(nextAvatarUrl)
-    publishAvatarUpdated(nextAvatarUrl)
+    publishAvatarUpdated(userId, nextAvatarUrl)
 
     console.log("[ProfilePage] localStorage after publish:", window.localStorage.getItem("jojistats-avatar-url"))
 

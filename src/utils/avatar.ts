@@ -1,5 +1,9 @@
 export const AVATAR_UPDATED_EVENT = "jojistats-avatar-updated"
 
+function avatarCacheKey(userId: string) {
+  return `jojistats-avatar-url-${userId}`
+}
+
 export function withAvatarCacheBust(url: string | null | undefined, version = Date.now()) {
   if (!url) return ""
   try {
@@ -14,20 +18,25 @@ export function withAvatarCacheBust(url: string | null | undefined, version = Da
   }
 }
 
-export function publishAvatarUpdated(avatarUrl: string) {
-  window.localStorage.setItem("jojistats-avatar-url", avatarUrl)
+export function publishAvatarUpdated(userId: string, avatarUrl: string) {
+  window.localStorage.setItem(avatarCacheKey(userId), avatarUrl)
   window.dispatchEvent(
     new CustomEvent<string>(AVATAR_UPDATED_EVENT, { detail: avatarUrl })
   )
 }
 
-export function subscribeAvatarUpdated(onAvatarUpdated: (avatarUrl: string) => void) {
+export function getUserAvatarCache(userId: string) {
+  return window.localStorage.getItem(avatarCacheKey(userId))
+}
+
+export function subscribeAvatarUpdated(userId: string | null, onAvatarUpdated: (avatarUrl: string) => void) {
   const handleAvatarUpdated = (event: Event) => {
     onAvatarUpdated((event as CustomEvent<string>).detail)
   }
 
   const handleStorage = (event: StorageEvent) => {
-    if (event.key === "jojistats-avatar-url" && event.newValue) {
+    if (!userId) return
+    if (event.key === avatarCacheKey(userId) && event.newValue) {
       onAvatarUpdated(event.newValue)
     }
   }

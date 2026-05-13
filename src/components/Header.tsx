@@ -3,13 +3,15 @@ import { useEffect, useState } from "react"
 import { supabase } from "../api/supabase-client"
 import { fetchUserAccessByEmail } from "../api/supabase-api"
 import type { UserAccess } from "../types"
-import { subscribeAvatarUpdated, withAvatarCacheBust } from "../utils/avatar"
+import { subscribeAvatarUpdated, getUserAvatarCache, withAvatarCacheBust } from "../utils/avatar"
 
 type HeaderProps = {
   teamName: string
   teams: string[]
   onChangeTeam: (teamName: string) => void
   isLoggedIn?: boolean
+  accessRole?: UserAccess["role"] | null
+  showAwaitingAccessLink?: boolean
 }
 
 function normalizeAccessRole(role: string | null | undefined) {
@@ -30,17 +32,18 @@ export default function Header({
   teams,
   onChangeTeam,
   isLoggedIn: isLoggedInProp,
+  accessRole: accessRoleProp,
+  showAwaitingAccessLink = false,
 }: HeaderProps) {
   const navigate = useNavigate()
 
   const [authIsLoggedIn, setAuthIsLoggedIn] = useState(false)
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(() => {
-    const v = window.localStorage.getItem("jojistats-avatar-url")
-    return v
-  })
+  const [userId, setUserId] = useState<string | null>(null)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
   const [accessRole, setAccessRole] = useState<UserAccess["role"] | null>(null)
 
   const isLoggedIn = isLoggedInProp ?? authIsLoggedIn
+  const displayAccessRole = accessRoleProp !== undefined ? accessRoleProp : accessRole
 
   /* ---------------- AUTH ---------------- */
 
@@ -50,9 +53,10 @@ export default function Header({
 
       if (data.user) {
         setAuthIsLoggedIn(true)
+        setUserId(data.user.id)
         const email = data.user.email?.trim().toLowerCase()
 
-        const cachedUrl = window.localStorage.getItem("jojistats-avatar-url")
+        const cachedUrl = getUserAvatarCache(data.user.id)
         if (cachedUrl) setAvatarUrl(cachedUrl)
 
         const { data: profile } = await supabase
@@ -62,11 +66,10 @@ export default function Header({
           .maybeSingle()
 
         const finalUrl = profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : cachedUrl || null
-        if (finalUrl) {
-          window.localStorage.setItem("jojistats-avatar-url", finalUrl)
-        }
         setAvatarUrl(finalUrl)
-        if (email === "admin@jojistats.com") {
+        if (accessRoleProp !== undefined) {
+          setAccessRole(accessRoleProp)
+        } else if (email === "admin@jojistats.com") {
           setAccessRole("admin")
         } else if (email) {
           const access = await fetchUserAccessByEmail(email)
@@ -74,6 +77,7 @@ export default function Header({
         }
       } else {
         setAuthIsLoggedIn(false)
+        setUserId(null)
         setAvatarUrl(null)
         setAccessRole(null)
       }
@@ -90,8 +94,9 @@ export default function Header({
         setAuthIsLoggedIn(!!session)
 
         if (session?.user) {
+          setUserId(session.user.id)
           const email = session.user.email?.trim().toLowerCase()
-          const cachedUrl = window.localStorage.getItem("jojistats-avatar-url")
+          const cachedUrl = getUserAvatarCache(session.user.id)
           if (cachedUrl) setAvatarUrl(cachedUrl)
 
           const { data: profile } = await supabase
@@ -101,13 +106,16 @@ export default function Header({
             .maybeSingle()
 
           setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : cachedUrl || null)
-          if (email === "admin@jojistats.com") {
+          if (accessRoleProp !== undefined) {
+            setAccessRole(accessRoleProp)
+          } else if (email === "admin@jojistats.com") {
             setAccessRole("admin")
           } else if (email) {
             const access = await fetchUserAccessByEmail(email)
             setAccessRole(normalizeAccessRole(access?.role))
           }
         } else {
+          setUserId(null)
           setAvatarUrl(null)
           setAccessRole(null)
         }
@@ -117,9 +125,9 @@ export default function Header({
     return () => {
       listener.subscription.unsubscribe()
     }
-  }, [isLoggedInProp])
+  }, [accessRoleProp, isLoggedInProp])
 
-  useEffect(() => subscribeAvatarUpdated(setAvatarUrl), [])
+  useEffect(() => subscribeAvatarUpdated(userId, setAvatarUrl), [userId])
 
   /* ---------------- LOGOUT ---------------- */
 
@@ -177,7 +185,7 @@ export default function Header({
 
           {isLoggedIn ? (
             <>
-              {accessRole === "recorder" && (
+              {displayAccessRole === "recorder" && (
                 <Link
                   to="/record-game"
                   className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
@@ -186,7 +194,7 @@ export default function Header({
                 </Link>
               )}
 
-              {accessRole === "player" && (
+              {displayAccessRole === "player" && (
                 <Link
                   to="/player"
                   className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
@@ -195,7 +203,7 @@ export default function Header({
                 </Link>
               )}
 
-              {accessRole === "manager" && (
+              {displayAccessRole === "manager" && (
                 <Link
                   to="/manager"
                   className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
@@ -204,12 +212,21 @@ export default function Header({
                 </Link>
               )}
 
-              {accessRole === "admin" && (
+              {displayAccessRole === "admin" && (
                 <Link
                   to="/admin"
                   className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
                 >
                   Admin
+                </Link>
+              )}
+
+              {showAwaitingAccessLink && !displayAccessRole && (
+                <Link
+                  to="/awaiting-access"
+                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                >
+                  Check Access
                 </Link>
               )}
 

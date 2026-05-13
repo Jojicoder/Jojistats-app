@@ -200,7 +200,7 @@ export default function PlayerPage() {
     load()
   }, [navigate])
 
-  useEffect(() => subscribeAvatarUpdated((url) => setGoals((prev) => ({ ...prev, avatarUrl: url }))), [])
+  useEffect(() => subscribeAvatarUpdated(userId, (url) => setGoals((prev) => ({ ...prev, avatarUrl: url }))), [userId])
 
   const metrics = useMemo(() => calcBattingMetrics(entries), [entries])
   const pitchingMetrics = useMemo(

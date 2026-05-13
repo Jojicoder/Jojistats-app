@@ -24,6 +24,7 @@ export default function SignupPage() {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/awaiting-access`,
           data: {
             name: name.trim(),
           },
@@ -40,8 +41,14 @@ export default function SignupPage() {
         return
       }
 
-      window.alert("Account created. Please log in.")
-      navigate("/login")
+      if (!data.session) {
+        window.alert("Account created. Please confirm your email, then log in.")
+        navigate(`/awaiting-access?email=${encodeURIComponent(email.trim().toLowerCase())}&confirm=1`)
+        return
+      }
+
+      window.alert("Account created. Please wait for access approval.")
+      navigate("/stats")
     } finally {
       setIsLoading(false)
     }

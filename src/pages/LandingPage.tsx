@@ -89,7 +89,7 @@ export default function LandingPage() {
           <nav className="hidden items-center gap-7 text-sm font-semibold text-slate-500 md:flex">
             <a href="#features" className="transition-colors hover:text-green-900">Features</a>
             <a href="#how" className="transition-colors hover:text-green-900">How It Works</a>
-            <a href="#demo" className="transition-colors hover:text-green-900">Demo</a>
+            <Link to="/stats" className="transition-colors hover:text-green-900">Try the Demo</Link>
             <a href="#contact" className="transition-colors hover:text-green-900">Contact</a>
             <Link to="/login" className="transition-colors hover:text-green-900">Login</Link>
           </nav>
@@ -319,6 +319,15 @@ export default function LandingPage() {
                   <p className="mt-1 text-2xl font-extrabold text-green-950">{value}</p>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-8 text-center">
+              <Link
+                to="/stats"
+                className="inline-block rounded-xl bg-green-900 px-8 py-3.5 text-sm font-bold text-white shadow transition-colors hover:bg-green-800"
+              >
+                Try the Demo
+              </Link>
             </div>
           </div>
         </section>

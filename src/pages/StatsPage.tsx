@@ -63,6 +63,17 @@ function sortPlayersByJersey(players: Player[]) {
   )
 }
 
+function isAssignedRole(
+  role: string | null | undefined
+): role is "player" | "recorder" | "manager" | "admin" {
+  return (
+    role === "player" ||
+    role === "recorder" ||
+    role === "manager" ||
+    role === "admin"
+  )
+}
+
 async function loadTeamEntries(teamId: string, seasonYear: number) {
   const [batting, pitching] = await Promise.all([
     fetchSavedEntriesByPlayer(Number(teamId), seasonYear),
@@ -97,6 +108,7 @@ export default function StatsPage() {
   const [mode, setMode] = useState<"batting" | "pitching">("batting")
   const [isRestrictedUser, setIsRestrictedUser] = useState(false)
   const [userRole, setUserRole] = useState<"player" | "recorder" | "manager" | "admin" | null>(null)
+  const [accessStatus, setAccessStatus] = useState<"public" | "assigned" | "awaiting">("public")
   const [view, setView] = useState<"stats" | "myteam" | "record" | "setup">("stats")
   const [setupSeasonYear, setSetupSeasonYear] = useState(new Date().getFullYear())
   const [setupActivePlayerId, setSetupActivePlayerId] = useState("")
@@ -193,6 +205,7 @@ export default function StatsPage() {
       try {
         setIsLoading(true)
         setErrorMessage("")
+        setAccessStatus("public")
 
         const { data: authData } = await supabase.auth.getUser()
         const userEmail = authData.user?.email?.trim().toLowerCase() ?? ""
@@ -206,7 +219,7 @@ export default function StatsPage() {
         if (authData.user && !isAdmin) {
           const access = await fetchUserAccessByEmail(userEmail)
 
-          if (!access) {
+          if (!access || !isAssignedRole(access.role)) {
             setTeams([])
             setPlayers([])
             setActiveTeamId("")
@@ -214,6 +227,8 @@ export default function StatsPage() {
             setSavedEntriesByPlayer({})
             setPitchingEntriesByPlayer({})
             setIsRestrictedUser(true)
+            setUserRole(null)
+            setAccessStatus("awaiting")
             setErrorMessage("No User Access has been assigned.")
             return
           }
@@ -251,6 +266,7 @@ export default function StatsPage() {
           }
 
           setIsRestrictedUser(true)
+          setAccessStatus("assigned")
           setUserRole(access.role)
           setTeams([team])
           setActiveTeamId(team.id)
@@ -274,6 +290,8 @@ export default function StatsPage() {
         }
 
         setIsRestrictedUser(false)
+        setUserRole(null)
+        setAccessStatus("public")
         const teamRows = await fetchTeams()
 
         const visibleTeams = teamRows
@@ -426,6 +444,8 @@ export default function StatsPage() {
           const team = teams.find((t) => t.name === teamName)
           if (team) handleChangeTeam(team.id)
         }}
+        accessRole={userRole}
+        showAwaitingAccessLink={accessStatus === "awaiting"}
       />
 
       <TopTabs
