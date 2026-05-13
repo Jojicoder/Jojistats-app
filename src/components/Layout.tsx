@@ -5,9 +5,9 @@ import MainDashboard from "./MainDashboard"
 import TeamSetupPage from "./TeamSetupPage"
 import TeamManagerDashboard from "./TeamManagerDashboard"
 import UserAccessPanel from "./UserAccessPanel"
+import ContactMessagesPanel from "./ContactMessagesPanel"
 import MyTeamPage from "./MyTeamPage"
 import { useEffect, useState } from "react"
-import type { Dispatch, SetStateAction } from "react"
 import {
   fetchTeams,
   fetchPlayers,
@@ -40,19 +40,8 @@ import type {
   UserAccess,
 } from "../types"
 
-type ActiveView = "stats" | "record" | "myteam" | "manager" | "team" | "access"
+type ActiveView = "stats" | "record" | "myteam" | "manager" | "team" | "access" | "contact"
 type StatMode = "batting" | "pitching"
-
-type LayoutProps = {
-  teams: Team[]
-  setTeams: Dispatch<SetStateAction<Team[]>>
-  players: Player[]
-  setPlayers: Dispatch<SetStateAction<Player[]>>
-  activeTeamId: string
-  setActiveTeamId: Dispatch<SetStateAction<string>>
-  activePlayerId: string
-  setActivePlayerId: Dispatch<SetStateAction<string>>
-}
 
 function mapTeamRow(team: TeamRow): Team {
   return {
@@ -111,16 +100,11 @@ function replaceTeamSeasonPlayers(
   ]
 }
 
-export default function Layout({
-  teams,
-  setTeams,
-  players,
-  setPlayers,
-  activeTeamId,
-  setActiveTeamId,
-  activePlayerId,
-  setActivePlayerId,
-}: LayoutProps) {
+export default function Layout() {
+  const [teams, setTeams] = useState<Team[]>([])
+  const [players, setPlayers] = useState<Player[]>([])
+  const [activeTeamId, setActiveTeamId] = useState("")
+  const [activePlayerId, setActivePlayerId] = useState("")
   const [activeView, setActiveView] = useState<ActiveView>("stats")
   const [mode, setMode] = useState<StatMode>("batting")
   const [isGameMode, setIsGameMode] = useState(false)
@@ -334,6 +318,7 @@ export default function Layout({
           { label: "Team Manager", view: "manager" },
           { label: "Team Setup", view: "team" },
           { label: "User Access", view: "access" },
+          { label: "Contact", view: "contact" },
           { label: "Archive", href: "/seasons" },
         ]}
       />
@@ -396,6 +381,8 @@ export default function Layout({
               onSetAccessActive={handleSetAccessActive}
             />
           </main>
+        ) : activeView === "contact" ? (
+          <ContactMessagesPanel />
         ) : (
           <>
             {!(activeView === "record" && isGameMode) && (

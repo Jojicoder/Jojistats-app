@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import ContactForm from "../components/ContactForm"
 
 const features = [
   {
@@ -89,6 +90,7 @@ export default function LandingPage() {
             <a href="#features" className="transition-colors hover:text-green-900">Features</a>
             <a href="#how" className="transition-colors hover:text-green-900">How It Works</a>
             <a href="#demo" className="transition-colors hover:text-green-900">Demo</a>
+            <a href="#contact" className="transition-colors hover:text-green-900">Contact</a>
             <Link to="/login" className="transition-colors hover:text-green-900">Login</Link>
           </nav>
 
@@ -321,6 +323,23 @@ export default function LandingPage() {
           </div>
         </section>
 
+        {/* ── Contact ── */}
+        <section id="contact" className="border-b border-slate-200 bg-white px-5 py-12 sm:py-20">
+          <div className="mx-auto max-w-2xl">
+            <div className="text-center">
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">Contact</p>
+              <h2 className="mt-2 text-2xl font-extrabold tracking-tight text-green-950 sm:text-4xl">
+                Get in touch
+              </h2>
+              <p className="mt-3 text-sm text-slate-500 sm:text-base">
+                Questions, feedback, or want to join a team? Send us a message.
+              </p>
+            </div>
+
+            <ContactForm className="mt-8" />
+          </div>
+        </section>
+
         {/* ── CTA ── */}
         <section className="relative overflow-hidden bg-green-950 px-5 py-14 text-white sm:py-20">
           <div
@@ -358,6 +377,7 @@ export default function LandingPage() {
           <nav className="flex gap-6">
             <a href="#features" className="hover:text-slate-600">Features</a>
             <a href="#how" className="hover:text-slate-600">How It Works</a>
+            <a href="#contact" className="hover:text-slate-600">Contact</a>
             <Link to="/login" className="hover:text-slate-600">Login</Link>
             <Link to="/signup" className="hover:text-slate-600">Sign Up</Link>
           </nav>

@@ -9,8 +9,6 @@ import {
 
 import { supabase } from "./api/supabase-client"
 
-import type { Player, Team } from "./types"
-
 const AdminPage = lazy(() => import("./pages/AdminPage"))
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"))
 const LandingPage = lazy(() => import("./pages/LandingPage"))
@@ -20,6 +18,7 @@ const GameRecordPage = lazy(() => import("./pages/GameRecordPage"))
 const LoginPage = lazy(() => import("./pages/LoginPage"))
 const SignupPage = lazy(() => import("./pages/SignupPage"))
 const ProfilePage = lazy(() => import("./pages/ProfilePage"))
+const ContactPage = lazy(() => import("./pages/ContactPage"))
 const TeamManagerPage = lazy(() => import("./pages/TeamManagerPage"))
 const PlayerPage = lazy(() => import("./pages/PlayerPage"))
 const SeasonArchivePage = lazy(() => import("./pages/SeasonArchivePage"))
@@ -62,11 +61,6 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
-  const [teams, setTeams] = useState<Team[]>([])
-  const [players, setPlayers] = useState<Player[]>([])
-  const [activeTeamId, setActiveTeamId] = useState("")
-  const [activePlayerId, setActivePlayerId] = useState("")
-
   return (
     <BrowserRouter>
       <Suspense fallback={<PageFallback />}>
@@ -86,16 +80,7 @@ export default function App() {
             path="/admin"
             element={
               <AdminGuard>
-                <AdminPage
-                  teams={teams}
-                  setTeams={setTeams}
-                  players={players}
-                  setPlayers={setPlayers}
-                  activeTeamId={activeTeamId}
-                  setActiveTeamId={setActiveTeamId}
-                  activePlayerId={activePlayerId}
-                  setActivePlayerId={setActivePlayerId}
-                />
+                <AdminPage />
               </AdminGuard>
             }
           />
@@ -103,6 +88,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/contact" element={<ContactPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 

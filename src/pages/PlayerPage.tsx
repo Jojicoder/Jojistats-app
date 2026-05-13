@@ -390,7 +390,7 @@ export default function PlayerPage() {
               {statCards.map((stat) => (
                 <div
                   key={stat.label}
-                  className="rounded-xl bg-[#f7f8f3] p-4"
+                  className="rounded-xl bg-white p-4 shadow-sm"
                 >
                   <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                     {stat.label}
@@ -635,7 +635,7 @@ export default function PlayerPage() {
                   {pitchingStatCards.map((stat) => (
                     <div
                       key={stat.label}
-                      className="rounded-xl bg-[#f7f8f3] p-4"
+                      className="rounded-xl bg-white p-4 shadow-sm"
                     >
                       <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                         {stat.label}
