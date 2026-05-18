@@ -383,6 +383,8 @@ export default function RecordGamePage({
           onDeleteSavedEntry={onDeleteSavedEntry}
           onStartEditSavedPitchingEntry={onStartEditSavedPitchingEntry}
           onDeleteSavedPitchingEntry={onDeleteSavedPitchingEntry}
+          saveError={saveError}
+          onClearSaveError={onClearSaveError}
         />
       )}
     </main>
