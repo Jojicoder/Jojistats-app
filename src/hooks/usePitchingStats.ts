@@ -2,6 +2,7 @@
 
 import { useMemo } from "react"
 import type { PitchingEntryData } from "../types"
+import { fmtIp } from "../utils/metrics"
 
 export function usePitchingStats(entries: PitchingEntryData[]) {
   return useMemo(() => {
@@ -35,7 +36,7 @@ export function usePitchingStats(entries: PitchingEntryData[]) {
     const whip = ip > 0 ? (totals.bb + totals.h) / ip : 0
 
     return {
-      ip: ip.toFixed(1),
+      ip: fmtIp(totals.outs),
       era: era.toFixed(2),
       whip: whip.toFixed(2),
       h: totals.h,

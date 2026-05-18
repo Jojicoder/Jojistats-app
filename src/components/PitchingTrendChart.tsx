@@ -6,7 +6,7 @@ const chartHeight = 240
 const chartPad = { top: 20, right: 24, bottom: 40, left: 48 }
 
 type TrendTab = "all" | "last5"
-type TrendMetric = "era" | "whip"
+type TrendMetric = "era" | "whip" | "k9"
 
 function sortByGame(entries: SavedPitchingGameEntry[]) {
   return [...entries].sort((a, b) => {
@@ -22,16 +22,19 @@ function buildChartData(entries: SavedPitchingGameEntry[]) {
   let er = 0
   let bb = 0
   let h = 0
+  let so = 0
 
   return entries.map((entry) => {
     outs += entry.statLine.inningsPitchedOuts
     er += entry.statLine.earnedRuns
     bb += entry.statLine.walks
     h += entry.statLine.hitsAllowed
+    so += entry.statLine.strikeouts
 
     const ip = outs / 3
     const era = ip > 0 ? (er * 9) / ip : 0
     const whip = ip > 0 ? (bb + h) / ip : 0
+    const k9 = ip > 0 ? (so * 9) / ip : 0
 
     const [, month, day] = entry.gameMeta.date.split("-")
 
@@ -40,6 +43,7 @@ function buildChartData(entries: SavedPitchingGameEntry[]) {
       fullLabel: `${entry.gameMeta.date} vs ${entry.gameMeta.opponent}`,
       era,
       whip,
+      k9,
     }
   })
 }
@@ -66,10 +70,11 @@ export default function PitchingTrendChart({
   const plotH = chartHeight - chartPad.top - chartPad.bottom
 
   const values = chartData.map((p) =>
-    activeMetric === "era" ? p.era : p.whip
+    activeMetric === "era" ? p.era : activeMetric === "whip" ? p.whip : p.k9
   )
   const rawMax = Math.max(...values, 0)
-  const chartMax = Math.max(activeMetric === "era" ? 9 : 3, rawMax * 1.15)
+  const baseMax = activeMetric === "era" ? 9 : activeMetric === "whip" ? 3 : 12
+  const chartMax = Math.max(baseMax, rawMax * 1.15)
 
   const getX = (i: number) =>
     chartData.length === 1
@@ -80,7 +85,10 @@ export default function PitchingTrendChart({
     chartPad.top + plotH - (Math.min(v, chartMax) / chartMax) * plotH
 
   const polylinePoints = chartData
-    .map((p, i) => `${getX(i)},${getY(activeMetric === "era" ? p.era : p.whip)}`)
+    .map((p, i) => {
+      const v = activeMetric === "era" ? p.era : activeMetric === "whip" ? p.whip : p.k9
+      return `${getX(i)},${getY(v)}`
+    })
     .join(" ")
 
   const yTicks = [chartMax, chartMax * 0.75, chartMax * 0.5, chartMax * 0.25, 0]
@@ -91,7 +99,7 @@ export default function PitchingTrendChart({
         <div>
           <h2 className="text-base font-bold text-gray-900">Performance Trend</h2>
           <p className="mt-0.5 text-xs font-bold uppercase tracking-widest text-green-700">
-            Cumulative {activeMetric.toUpperCase()} over time
+            Cumulative {activeMetric === "k9" ? "K/9" : activeMetric.toUpperCase()} over time
           </p>
         </div>
 
@@ -128,7 +136,7 @@ export default function PitchingTrendChart({
       ) : (
         <>
           <div className="mt-4 flex gap-2 sm:mt-6">
-            {(["era", "whip"] as TrendMetric[]).map((m) => (
+            {(["era", "whip", "k9"] as TrendMetric[]).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -139,7 +147,7 @@ export default function PitchingTrendChart({
                     : "bg-gray-100 text-gray-600"
                 }`}
               >
-                {m.toUpperCase()}
+                {m === "k9" ? "K/9" : m.toUpperCase()}
               </button>
             ))}
           </div>
@@ -190,6 +198,18 @@ export default function PitchingTrendChart({
                 stroke="#d1d5db"
               />
 
+              <defs>
+                <linearGradient id="pitching-area-fill" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#166534" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#166534" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {chartData.length >= 1 && (
+                <polygon
+                  points={`${polylinePoints} ${getX(chartData.length - 1)},${chartHeight - chartPad.bottom} ${getX(0)},${chartHeight - chartPad.bottom}`}
+                  fill="url(#pitching-area-fill)"
+                />
+              )}
               <polyline
                 points={polylinePoints}
                 fill="none"
@@ -201,9 +221,10 @@ export default function PitchingTrendChart({
 
               {chartData.map((point, i) => {
                 const x = getX(i)
-                const v = activeMetric === "era" ? point.era : point.whip
+                const v = activeMetric === "era" ? point.era : activeMetric === "whip" ? point.whip : point.k9
                 const y = getY(v)
                 const isHovered = hoveredIndex === i
+                const tooltipX = Math.max(chartPad.left, Math.min(x - 55, chartWidth - chartPad.right - 110))
 
                 return (
                   <g
@@ -216,7 +237,7 @@ export default function PitchingTrendChart({
                     {isHovered && (
                       <>
                         <rect
-                          x={x - 55}
+                          x={tooltipX}
                           y={Math.max(chartPad.top + 4, y - 38)}
                           width="110"
                           height="34"
@@ -225,7 +246,7 @@ export default function PitchingTrendChart({
                           opacity="0.94"
                         />
                         <text
-                          x={x}
+                          x={tooltipX + 55}
                           y={Math.max(chartPad.top + 4, y - 38) + 13}
                           textAnchor="middle"
                           className="fill-white text-[10px]"
@@ -233,12 +254,12 @@ export default function PitchingTrendChart({
                           {point.fullLabel}
                         </text>
                         <text
-                          x={x}
+                          x={tooltipX + 55}
                           y={Math.max(chartPad.top + 4, y - 38) + 26}
                           textAnchor="middle"
                           className="fill-white text-[11px]"
                         >
-                          {activeMetric.toUpperCase()} {v.toFixed(2)}
+                          {activeMetric === "k9" ? "K/9" : activeMetric.toUpperCase()} {v.toFixed(2)}
                         </text>
                       </>
                     )}

@@ -428,6 +428,11 @@ export default function PerformanceTrendCard({
     chartMax
   )
 
+  const areaBottomY = chartHeight - chartPadding.bottom
+  const areaPlotWidth = chartWidth - chartPadding.left - chartPadding.right
+  const areaFirstX = chartData.length <= 1 ? chartPadding.left + areaPlotWidth / 2 : chartPadding.left
+  const areaLastX = chartData.length <= 1 ? chartPadding.left + areaPlotWidth / 2 : chartPadding.left + areaPlotWidth
+
   return (
     <section className="rounded-2xl bg-white p-5 shadow-sm">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -594,6 +599,28 @@ export default function PerformanceTrendCard({
                   stroke="#d1d5db"
                 />
 
+                <defs>
+                  <linearGradient id="player-area-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#166534" stopOpacity="0.15" />
+                    <stop offset="100%" stopColor="#166534" stopOpacity="0" />
+                  </linearGradient>
+                  <linearGradient id="team-area-fill" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#2563eb" stopOpacity="0.1" />
+                    <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {chartData.length >= 1 && (
+                  <>
+                    <polygon
+                      points={`${teamLinePoints} ${areaLastX},${areaBottomY} ${areaFirstX},${areaBottomY}`}
+                      fill="url(#team-area-fill)"
+                    />
+                    <polygon
+                      points={`${playerLinePoints} ${areaLastX},${areaBottomY} ${areaFirstX},${areaBottomY}`}
+                      fill="url(#player-area-fill)"
+                    />
+                  </>
+                )}
                 <polyline
                   points={teamLinePoints}
                   fill="none"
@@ -648,11 +675,12 @@ export default function PerformanceTrendCard({
                           const tooltipY = clampTooltipY(
                             Math.min(position.playerY, position.teamY) - 42
                           )
+                          const tooltipX = Math.max(chartPadding.left, Math.min(position.x - 60, chartWidth - chartPadding.right - 120))
 
                           return (
                             <>
                               <rect
-                                x={position.x - 60}
+                                x={tooltipX}
                                 y={tooltipY}
                                 width="120"
                                 height="48"
@@ -661,7 +689,7 @@ export default function PerformanceTrendCard({
                                 opacity="0.94"
                               />
                               <text
-                                x={position.x}
+                                x={tooltipX + 60}
                                 y={tooltipY + 13}
                                 textAnchor="middle"
                                 className="fill-white text-[10px]"
@@ -669,7 +697,7 @@ export default function PerformanceTrendCard({
                                 {point.fullLabel}
                               </text>
                               <text
-                                x={position.x}
+                                x={tooltipX + 60}
                                 y={tooltipY + 27}
                                 textAnchor="middle"
                                 className="fill-white text-[11px]"
@@ -677,7 +705,7 @@ export default function PerformanceTrendCard({
                                 {`Player ${fmtRate(values.player)}`}
                               </text>
                               <text
-                                x={position.x}
+                                x={tooltipX + 60}
                                 y={tooltipY + 40}
                                 textAnchor="middle"
                                 className="fill-white text-[11px]"

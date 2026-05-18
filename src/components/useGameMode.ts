@@ -42,7 +42,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
   const [selectedBase, setSelectedBase] = useState<BaseName | null>(null)
   const [awayScore, setAwayScore] = useState(0)
   const [homeScore, setHomeScore] = useState(0)
-  const [quickRbi, setQuickRbi] = useState(0)
+  const [quickRbi, setQuickRbi] = useState<number | null>(null)
   const [quickNote, setQuickNote] = useState("")
   const [quickPitchNote, setQuickPitchNote] = useState("")
   const [livePlays, setLivePlays] = useState<LivePlay[]>([])
@@ -276,7 +276,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
   const handleRecordLivePlay = (result: LivePlayResult) => {
     if (liveGameTab !== "batting" || !isMetaComplete || !currentLiveBatter || lineupPlayers.length === 0 || isLiveBattingBlocked) return
     const autoRbi = estimateRbiForBatting(bases, result)
-    const rbi = quickRbi > 0 ? quickRbi : autoRbi
+    const rbi = quickRbi != null ? quickRbi : autoRbi
     const runs = estimateRunsForBatting(bases, result, rbi)
     const statLine = buildLiveStatLine(result, rbi)
     const play: LivePlay = {
@@ -300,7 +300,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
       setPinhitters((prev) => { const next = { ...prev }; delete next[currentBatterSlotIndex]; return next })
     }
     setCurrentBatterIndex((prev) => (prev + 1) % lineupPlayers.length)
-    setQuickRbi(0)
+    setQuickRbi(null)
     setQuickNote("")
   }
 
@@ -326,6 +326,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
       pitcherId: livePitcher.id, pitcherName: livePitcher.name,
       result, inning: liveInning, half: liveHalf, outsBefore: liveOuts,
       basesBefore, note: quickPitchNote,
+      scoredBase: scoreSelectedRunner && selectedBase ? selectedBase : null,
     }
     setLivePitchPlays((prev) => [...prev, pitchPlay])
     setBases(scoreSelectedRunner && selectedBase ? { ...bases, [selectedBase]: false } : nextBasesForPitching(bases, result))
@@ -401,11 +402,22 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
 
   const handleSyncLiveGame = async () => {
     if (!isMetaComplete || (livePlays.length === 0 && livePitchPlays.length === 0)) return
+    // Determine which half the team bats in from recorded plays.
+    // Batting plays → team's half. Pitching plays → opponent's half (so team is the other).
+    // Defaults to "Top" (away) if no plays exist to infer from.
+    const teamBattingHalf =
+      livePlays.length > 0
+        ? livePlays[0].half
+        : livePitchPlays.length > 0
+          ? (livePitchPlays[0].half === "Top" ? "Bottom" : "Top")
+          : "Top"
+    const teamScore = teamBattingHalf === "Top" ? awayScore : homeScore
+    const opponentScore = teamBattingHalf === "Top" ? homeScore : awayScore
     const liveGameMeta: DraftGameMeta = {
       ...gameMeta,
-      teamScore: awayScore,
-      opponentScore: homeScore,
-      result: awayScore > homeScore ? "W" : awayScore < homeScore ? "L" : "T",
+      teamScore,
+      opponentScore,
+      result: teamScore > opponentScore ? "W" : teamScore < opponentScore ? "L" : "T",
     }
     try {
       setIsSaving(true)
@@ -423,7 +435,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
   const handleResetLiveGame = () => {
     if ((livePlays.length > 0 || livePitchPlays.length > 0) && !window.confirm("Clear this local game draft?")) return
     resetLiveState()
-    setQuickRbi(0)
+    setQuickRbi(null)
     clearLocalDraft()
   }
 

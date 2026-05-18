@@ -427,7 +427,8 @@ export default function GameRecordPage() {
 
   const handleUpdateSavedEntry = async (
     nextGameMeta: DraftGameMeta,
-    nextStatLine: BattingEntryData
+    nextStatLine: BattingEntryData,
+    gamePositions?: import("../types").Position[]
   ) => {
     if (!activePlayer || !editingSavedEntry) return
 
@@ -449,7 +450,7 @@ export default function GameRecordPage() {
         battingStat: {
           player_id: Number(editingSavedEntry.playerId),
           batting_order: 1,
-          game_positions: editingSavedEntry.gamePositions,
+          game_positions: gamePositions ?? editingSavedEntry.gamePositions,
           ab: nextStatLine.AB,
           h: nextStatLine.H,
           double_hits: nextStatLine.doubles,
@@ -697,55 +698,23 @@ export default function GameRecordPage() {
     nextPitchingEntry = pitchingEntry,
     pitcherId = activePlayer?.id
   ) => {
-    if (!activePlayer) return
+    if (!activePlayer || !pitcherId) return
 
-    await createFullGame({
-      game: {
-        team_id: Number(activePlayer.teamId),
-        game_date: gameMeta.date,
-        opponent_name: gameMeta.opponent,
-        season_year: gameMeta.seasonYear,
-        match_number: gameMeta.matchNumber,
-        location: gameMeta.location?.trim() || null,
-        ...(gameMeta.memo !== undefined ? { memo: gameMeta.memo.trim() || null } : {}),
-        team_score: gameMeta.teamScore ?? null,
-        opponent_score: gameMeta.opponentScore ?? null,
-        result: gameMeta.result || null,
-      },
-      battingStats: [],
-      pitchingStats: [
+    const pitcher = allPlayers.find((player) => player.id === pitcherId)
+
+    try {
+      await handleSaveGame(gameMeta, [], [
         {
-          player_id: Number(pitcherId),
-          innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
-          hits_allowed: nextPitchingEntry.hitsAllowed,
-          runs_allowed: nextPitchingEntry.runsAllowed,
-          earned_runs: nextPitchingEntry.earnedRuns,
-          walks: nextPitchingEntry.walks,
-          hbp: nextPitchingEntry.hitBatters,
-          strikeouts: nextPitchingEntry.strikeouts,
-          home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
+          ...nextPitchingEntry,
+          playerId: pitcherId,
+          playerName: pitcher?.name ?? activePlayer.name,
         },
-      ],
-    })
-
-    setPitchingEntry(emptyPitchingEntry)
-
-    if (teamId != null) {
-      const [refreshedPitching, refreshedGames] = await Promise.all([
-        fetchPitchingEntriesByPlayer(teamId, gameMeta.seasonYear),
-        fetchGamesBySeason(teamId, gameMeta.seasonYear),
       ])
-      setPitchingEntriesByPlayer(refreshedPitching)
-      setSeasonGames(refreshedGames)
-      setGameMeta((prev) => ({
-        ...prev,
-        matchNumber: getNextMatchNumber(refreshedGames),
-      }))
-    } else {
-      setGameMeta((prev) => ({
-        ...prev,
-        matchNumber: Math.max(prev.matchNumber + 1, getNextMatchNumber(seasonGames)),
-      }))
+      setPitchingEntry(emptyPitchingEntry)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Pitching save failed"
+      setSaveError(message)
+      throw err
     }
   }
 
@@ -833,13 +802,17 @@ export default function GameRecordPage() {
           onUpdateSavedPitchingEntry={handleUpdateSavedPitchingEntry}
           onCancelEditSavedPitchingEntry={handleCancelEditSavedPitchingEntry}
           onDeleteSavedPitchingEntry={handleDeleteSavedPitchingEntry}
-          editingGamePositions={undefined}
+          editingGamePositions={editingSavedEntry?.gamePositions}
           recordMode={recordMode}
           setRecordMode={setRecordMode}
           pitchingEntry={pitchingEntry}
           onPitchingEntryChange={setPitchingEntry}
           onSavePitchingGame={handleSavePitchingGame}
-          isPitchingSaveDisabled={pitchingEntry.earnedRuns > pitchingEntry.runsAllowed}
+          isPitchingSaveDisabled={
+            !gameMeta.date.trim() ||
+            !gameMeta.opponent.trim() ||
+            pitchingEntry.earnedRuns > pitchingEntry.runsAllowed
+          }
           saveError={saveError}
           onClearSaveError={() => setSaveError("")}
         />

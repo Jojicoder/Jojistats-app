@@ -2,7 +2,7 @@ import type { Player, PitchingEntryData, DraftGameMeta } from "../types"
 import type {
   BaseName, BasesState, GameHalf, LiveGameTab, LiveInningSummary,
   LivePitchPlay, LivePitchResult, LivePlay, LivePlayResult,
-  RunnerOutAction, RunnerRbiAction, RunnerRunAction,
+  QuickRbiValue, RunnerOutAction, RunnerRbiAction, RunnerRunAction,
 } from "./RecordGamePage.types"
 import BaseDiamond from "./BaseDiamond"
 import GameModeActionsCard from "./GameModeActionsCard"
@@ -84,8 +84,8 @@ type Props = {
   runnerRbiHistory: RunnerRbiAction[]
   runnerRunHistory: RunnerRunAction[]
   // Notes & quick inputs
-  quickRbi: number
-  onQuickRbiChange: (n: number) => void
+  quickRbi: QuickRbiValue
+  onQuickRbiChange: (n: QuickRbiValue) => void
   quickNote: string
   onQuickNoteChange: (s: string) => void
   quickPitchNote: string
@@ -128,7 +128,7 @@ export default function GameModePanel({
   liveInningSummaries, expandedLiveInningKey, onExpandedLiveInningKeyChange,
   editingLiveEventId, onEditingLiveEventIdChange,
   runnerOutHistory, runnerRbiHistory, runnerRunHistory,
-  quickNote, onQuickNoteChange, quickPitchNote, onQuickPitchNoteChange,
+  quickRbi, onQuickRbiChange, quickNote, onQuickNoteChange, quickPitchNote, onQuickPitchNoteChange,
   onRecordLivePlay, onRecordLivePitch, onUndoLiveAction,
   onRunnerOut, onRunnerRbi, onRunnerRun,
   onDeleteLivePlay, onDeleteLivePitchPlay, onUpdateLivePlay, onUpdateLivePitchPlay,
@@ -257,7 +257,18 @@ export default function GameModePanel({
               ))}
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-3">
+            <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr]">
+              <div className="rounded-xl bg-[#f7f8f3] p-3">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">RBI</p>
+                <input
+                  type="number"
+                  min={0}
+                  placeholder="Auto"
+                  value={quickRbi ?? ""}
+                  onChange={(e) => onQuickRbiChange(e.target.value === "" ? null : Math.max(0, Number(e.target.value) || 0))}
+                  className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-sm"
+                />
+              </div>
               <div className="rounded-xl bg-[#f7f8f3] p-3">
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Note</p>
                 <input type="text" value={quickNote} onChange={(e) => onQuickNoteChange(e.target.value)} placeholder="e.g. deep fly..." className="mt-2 w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-sm" />
@@ -276,8 +287,8 @@ export default function GameModePanel({
               <div className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[230px]">
                 <div className="grid grid-cols-2 gap-1.5">
                   <button type="button" onClick={() => onUndoLiveAction("pitching")} disabled={livePitchPlays.length === 0 && runnerOutHistory.length === 0} className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs font-semibold text-gray-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-40">Undo</button>
-                  <button type="button" onClick={() => onRecordLivePitch("R")} disabled={!isMetaComplete || isLivePitchingBlocked} className="rounded-lg bg-orange-100 px-2 py-2 text-xs font-semibold text-orange-900 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">Run</button>
-                  <button type="button" onClick={() => onRecordLivePitch("ER")} disabled={!isMetaComplete || isLivePitchingBlocked} className="rounded-lg bg-red-200 px-2 py-2 text-xs font-semibold text-red-900 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">ER</button>
+                  <button type="button" onClick={() => onRecordLivePitch("R")} disabled={!isMetaComplete || isLivePitchingBlocked || !selectedBase || !bases[selectedBase]} className="rounded-lg bg-orange-100 px-2 py-2 text-xs font-semibold text-orange-900 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">Run</button>
+                  <button type="button" onClick={() => onRecordLivePitch("ER")} disabled={!isMetaComplete || isLivePitchingBlocked || !selectedBase || !bases[selectedBase]} className="rounded-lg bg-red-200 px-2 py-2 text-xs font-semibold text-red-900 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">ER</button>
                   <button type="button" onClick={onRunnerOut} disabled={!selectedBase || !bases[selectedBase]} className="rounded-lg bg-gray-900 px-2 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300">Out</button>
                 </div>
                 <BaseDiamond bases={bases} onBasesChange={onBasesChange} selectedBase={selectedBase} onSelectBase={onSelectBase} />

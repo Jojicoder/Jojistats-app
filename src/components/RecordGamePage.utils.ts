@@ -22,6 +22,8 @@ export const liveResultLabels: { result: LivePlayResult; label: string }[] = [
   { result: "SO", label: "Strikeout" },
   { result: "OUT", label: "Out" },
   { result: "E", label: "Error" },
+  { result: "FC", label: "FC Safe" },
+  { result: "FC_OUT", label: "FC Out" },
 ]
 
 export const livePitchResultLabels: { result: LivePitchResult; label: string }[] = [
@@ -58,7 +60,7 @@ export function buildLiveStatLine(result: LivePlayResult, rbi: number): BattingE
 }
 
 export function isOutResult(result: LivePlayResult) {
-  return result === "SO" || result === "OUT" || result === "SF"
+  return result === "SO" || result === "OUT" || result === "SF" || result === "FC_OUT"
 }
 
 export function isPitchOutResult(result: LivePitchResult) {
@@ -132,12 +134,14 @@ export function nextBasesForBatting(bases: BasesState, result: LivePlayResult, r
   if (result === "HR") return { ...emptyBases }
   if (result === "BB" || result === "HBP") return advanceBasesByWalk(bases)
   if (result === "E") return { ...removeScoredRunners(bases, bases.third ? 1 : 0), first: true }
+  if (result === "FC" || result === "FC_OUT") return { ...removeScoredRunners(bases, rbi), first: true }
   return removeScoredRunners(bases, rbi)
 }
 
 export function estimateRunsForBatting(bases: BasesState, result: LivePlayResult, rbi: number) {
   if (result === "E") return bases.third ? 1 : 0
   if (result === "SF") return bases.third ? 1 : 0
+  if (result === "FC" || result === "FC_OUT") return Number(bases.third)
   if (result === "HR") return countBases(bases) + 1
   if (result === "BB" || result === "HBP") return isBasesLoaded(bases) ? 1 : 0
   return rbi
@@ -150,6 +154,7 @@ export function estimateRbiForBatting(bases: BasesState, result: LivePlayResult)
   if (result === "1B") return Number(bases.third)
   if (result === "SF") return bases.third ? 1 : 0
   if (result === "BB" || result === "HBP") return isBasesLoaded(bases) ? 1 : 0
+  if (result === "FC" || result === "FC_OUT") return Number(bases.third)
   return 0
 }
 
@@ -264,9 +269,14 @@ export function recomputeLiveGame(battingPlays: LivePlay[], pitchingPlays: LiveP
       inning = nextFrame.inning; half = nextFrame.half; outs = 0; bases = emptyBases
     } else {
       outs = nextOuts
-      bases = play.result === "R" || play.result === "ER"
-        ? removeScoredRunners(bases, 1)
-        : nextBasesForPitching(bases, play.result)
+      if (play.result === "R" || play.result === "ER") {
+        // Use the recorded scoredBase if available; fall back to removing the closest runner.
+        bases = play.scoredBase && bases[play.scoredBase]
+          ? { ...bases, [play.scoredBase]: false }
+          : removeScoredRunners(bases, 1)
+      } else {
+        bases = nextBasesForPitching(bases, play.result)
+      }
     }
 
     stateAfterEvent.set(play.id, { inning, half, outs, bases })
@@ -394,6 +404,8 @@ export function battingResultClass(result: LivePlayResult): string {
     case "SO":  return "bg-red-100 text-red-900 hover:bg-red-200"
     case "OUT": return "bg-gray-800 text-white hover:bg-gray-700"
     case "E":   return "bg-amber-100 text-amber-900 hover:bg-amber-200"
+    case "FC":  return "bg-indigo-100 text-indigo-900 hover:bg-indigo-200"
+    case "FC_OUT": return "bg-indigo-800 text-white hover:bg-indigo-700"
   }
 }
 
@@ -425,6 +437,8 @@ export function battingResultBadge(result: LivePlayResult): string {
     case "SO":  return "bg-red-100 text-red-900"
     case "OUT": return "bg-gray-200 text-gray-700"
     case "E":   return "bg-amber-100 text-amber-900"
+    case "FC":  return "bg-indigo-100 text-indigo-900"
+    case "FC_OUT": return "bg-indigo-800 text-white"
   }
 }
 

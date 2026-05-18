@@ -269,6 +269,44 @@ const assertRowsChanged = (rows: unknown[] | null, message: string) => {
   if (!rows || rows.length === 0) throw new Error(message)
 }
 
+const isMatchNumberConflict = (error: unknown) =>
+  error instanceof Error &&
+  (error.message.includes("games_team_season_match_number_unique") ||
+    error.message.includes("duplicate key value"))
+
+const getNextAvailableMatchNumber = async (
+  teamId: number,
+  seasonYear: number,
+  attemptedMatchNumber: number
+) => {
+  const { data, error } = await supabase
+    .from("games")
+    .select("match_number")
+    .eq("team_id", teamId)
+    .eq("season_year", seasonYear)
+    .order("match_number", { ascending: false })
+    .limit(1)
+
+  if (error) throw new Error(error.message)
+
+  const maxMatchNumber = Number(data?.[0]?.match_number) || 0
+  return Math.max(maxMatchNumber + 1, attemptedMatchNumber + 1)
+}
+
+const deleteRowsByGameId = async (gameId: number) => {
+  const { error: battingError } = await supabase
+    .from("batting_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+  if (battingError) throw new Error(battingError.message)
+
+  const { error: pitchingError } = await supabase
+    .from("pitching_game_stats")
+    .delete()
+    .eq("game_id", gameId)
+  if (pitchingError) throw new Error(pitchingError.message)
+}
+
 const deleteGameIfNoStats = async (gameId: number) => {
   const { count: remainingBattingCount, error: battingCountError } = await supabase
     .from("batting_game_stats")
@@ -306,63 +344,149 @@ const updateGameRow = async (gameId: number, game: FullGamePayload["game"]) => {
 }
 
 export const createFullGame = async (data: FullGamePayload) => {
-  const { data: game, error: gameError } = await supabase
-    .from("games")
-    .insert({
-      team_id: data.game.team_id,
-      ...toGameRow(data.game),
+  try {
+    return await createFullGameOnce(data)
+  } catch (error) {
+    if (!isMatchNumberConflict(error)) throw error
+
+    const nextMatchNumber = await getNextAvailableMatchNumber(
+      data.game.team_id,
+      data.game.season_year,
+      data.game.match_number
+    )
+    return await createFullGameOnce({
+      ...data,
+      game: { ...data.game, match_number: nextMatchNumber },
     })
-    .select()
-    .single()
-  if (gameError) throw new Error(gameError.message)
-
-  if (data.battingStats.length > 0) {
-    const { error: battingError } = await supabase
-      .from("batting_game_stats")
-      .insert(data.battingStats.map((s) => toBattingStatRow(s, game.id)))
-    if (battingError) throw new Error(battingError.message)
   }
+}
 
-  if (data.pitchingStats && data.pitchingStats.length > 0) {
-    const { error: pitchingError } = await supabase
-      .from("pitching_game_stats")
-      .insert(data.pitchingStats.map((s) => toPitchingStatRow(s, game.id, true)))
-    if (pitchingError) throw new Error(pitchingError.message)
+const createFullGameOnce = async (data: FullGamePayload) => {
+  let createdGameId: number | null = null
+
+  try {
+    const { data: game, error: gameError } = await supabase
+      .from("games")
+      .insert({
+        team_id: data.game.team_id,
+        ...toGameRow(data.game),
+      })
+      .select()
+      .single()
+    if (gameError) throw new Error(gameError.message)
+    createdGameId = game.id
+
+    if (data.battingStats.length > 0) {
+      const { error: battingError } = await supabase
+        .from("batting_game_stats")
+        .insert(data.battingStats.map((s) => toBattingStatRow(s, game.id)))
+      if (battingError) throw new Error(battingError.message)
+    }
+
+    if (data.pitchingStats && data.pitchingStats.length > 0) {
+      const { error: pitchingError } = await supabase
+        .from("pitching_game_stats")
+        .insert(data.pitchingStats.map((s) => toPitchingStatRow(s, game.id, true)))
+      if (pitchingError) throw new Error(pitchingError.message)
+    }
+
+    createdGameId = null
+    return { game_id: game.id }
+  } catch (error) {
+    if (createdGameId != null) {
+      await cleanupCreatedGame(createdGameId).catch((cleanupError) => {
+        console.error("Failed to clean up partially saved game", cleanupError)
+      })
+    }
+    throw error
   }
+}
 
-  return { game_id: game.id }
+const cleanupCreatedGame = async (gameId: number) => {
+  await deleteRowsByGameId(gameId)
+  const { error } = await supabase.from("games").delete().eq("id", gameId)
+  if (error) throw new Error(error.message)
 }
 
 export const updateFullGame = async (gameId: number, data: FullGamePayload) => {
+  const [existingGameResult, existingBattingResult, existingPitchingResult] = await Promise.all([
+    supabase.from("games").select("*").eq("id", gameId).single(),
+    supabase.from("batting_game_stats").select("*").eq("game_id", gameId),
+    supabase.from("pitching_game_stats").select("*").eq("game_id", gameId),
+  ])
+
+  if (existingGameResult.error) throw new Error(existingGameResult.error.message)
+  if (existingBattingResult.error) throw new Error(existingBattingResult.error.message)
+  if (existingPitchingResult.error) throw new Error(existingPitchingResult.error.message)
+
+  const existingGame = existingGameResult.data
+  const existingBattingStats = existingBattingResult.data ?? []
+  const existingPitchingStats = existingPitchingResult.data ?? []
+  let shouldRestore = false
+
+  try {
+    await updateGameRow(gameId, data.game)
+    shouldRestore = true
+    await deleteRowsByGameId(gameId)
+
+    if (data.battingStats.length > 0) {
+      const { error: battingError } = await supabase
+        .from("batting_game_stats")
+        .insert(data.battingStats.map((s) => toBattingStatRow(s, gameId)))
+      if (battingError) throw new Error(battingError.message)
+    }
+
+    if (data.pitchingStats && data.pitchingStats.length > 0) {
+      const { error: pitchingError } = await supabase
+        .from("pitching_game_stats")
+        .insert(data.pitchingStats.map((s) => toPitchingStatRow(s, gameId, true)))
+      if (pitchingError) throw new Error(pitchingError.message)
+    }
+  } catch (error) {
+    if (shouldRestore) {
+      await restoreFullGame(gameId, existingGame, existingBattingStats, existingPitchingStats).catch((restoreError) => {
+        console.error("Failed to restore game after update error", restoreError)
+      })
+    }
+    throw error
+  }
+}
+
+const restoreFullGame = async (
+  gameId: number,
+  existingGame: Record<string, unknown>,
+  existingBattingStats: Record<string, unknown>[],
+  existingPitchingStats: Record<string, unknown>[]
+) => {
   const { error: gameError } = await supabase
     .from("games")
-    .update(toGameRow(data.game))
+    .update({
+      game_date: existingGame.game_date,
+      opponent_name: existingGame.opponent_name,
+      season_year: existingGame.season_year,
+      match_number: existingGame.match_number,
+      location: existingGame.location,
+      memo: existingGame.memo,
+      team_score: existingGame.team_score,
+      opponent_score: existingGame.opponent_score,
+      result: existingGame.result,
+    })
     .eq("id", gameId)
   if (gameError) throw new Error(gameError.message)
 
-  const { error: deleteError } = await supabase
-    .from("batting_game_stats")
-    .delete()
-    .eq("game_id", gameId)
-  if (deleteError) throw new Error(deleteError.message)
+  await deleteRowsByGameId(gameId)
 
-  const { error: deletePitchingError } = await supabase
-    .from("pitching_game_stats")
-    .delete()
-    .eq("game_id", gameId)
-  if (deletePitchingError) throw new Error(deletePitchingError.message)
-
-  if (data.battingStats.length > 0) {
+  if (existingBattingStats.length > 0) {
     const { error: battingError } = await supabase
       .from("batting_game_stats")
-      .insert(data.battingStats.map((s) => toBattingStatRow(s, gameId)))
+      .insert(existingBattingStats)
     if (battingError) throw new Error(battingError.message)
   }
 
-  if (data.pitchingStats && data.pitchingStats.length > 0) {
+  if (existingPitchingStats.length > 0) {
     const { error: pitchingError } = await supabase
       .from("pitching_game_stats")
-      .insert(data.pitchingStats.map((s) => toPitchingStatRow(s, gameId, true)))
+      .insert(existingPitchingStats)
     if (pitchingError) throw new Error(pitchingError.message)
   }
 }

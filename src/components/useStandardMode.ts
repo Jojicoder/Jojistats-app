@@ -88,16 +88,23 @@ export function useStandardMode({
   }
 
   const handlePrimaryAction = () => {
-    if (isEditingSavedEntry) { onUpdateSavedEntry(gameMeta, currentEntry); return }
+    if (isEditingSavedEntry) { onUpdateSavedEntry(gameMeta, currentEntry, gamePositions); return }
     handleAdd()
   }
 
-  const handlePitchingPrimaryAction = () => {
-    if (isEditingSavedPitchingEntry && onUpdateSavedPitchingEntry) {
-      onUpdateSavedPitchingEntry(gameMeta, pitchingEntry)
-      return
+  const handlePitchingPrimaryAction = async () => {
+    try {
+      setIsSaving(true)
+      if (isEditingSavedPitchingEntry && onUpdateSavedPitchingEntry) {
+        await onUpdateSavedPitchingEntry(gameMeta, pitchingEntry)
+        return
+      }
+      await onSavePitchingGame()
+    } catch {
+      // Parent save handlers surface the message through saveError.
+    } finally {
+      setIsSaving(false)
     }
-    onSavePitchingGame()
   }
 
   const validateScore = (entries: { RBI: number }[]): boolean => {
@@ -120,6 +127,8 @@ export function useStandardMode({
       setIsSaving(true)
       await onSaveGame(gameMeta, pendingEntries)
       setPendingEntries([])
+    } catch {
+      // Parent save handlers surface the message through saveError.
     } finally {
       setIsSaving(false)
     }

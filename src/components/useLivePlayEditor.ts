@@ -73,6 +73,21 @@ export function useLivePlayEditor({
     setLiveOuts(r.liveOuts)
     setBases(r.bases)
     setExpandedLiveInningKey(`${r.liveInning}-${r.liveHalf}`)
+
+    // Sync the tab to match the current half-inning's play type.
+    const frameHasBatting = r.livePlays.some((p) => p.inning === r.liveInning && p.half === r.liveHalf)
+    const frameHasPitching = r.livePitchPlays.some((p) => p.inning === r.liveInning && p.half === r.liveHalf)
+    if (frameHasBatting && !frameHasPitching) {
+      setLiveGameTab("batting")
+    } else if (frameHasPitching && !frameHasBatting) {
+      setLiveGameTab("pitching")
+    } else if (!frameHasBatting && !frameHasPitching) {
+      // Current frame is empty (advanced past all plays). Infer from the last recorded play.
+      const lastBattingTime = r.livePlays.length > 0 ? getActionTimeFromId(r.livePlays[r.livePlays.length - 1].id) : 0
+      const lastPitchingTime = r.livePitchPlays.length > 0 ? getActionTimeFromId(r.livePitchPlays[r.livePitchPlays.length - 1].id) : 0
+      if (lastBattingTime > lastPitchingTime) setLiveGameTab("pitching")
+      else if (lastPitchingTime > lastBattingTime) setLiveGameTab("batting")
+    }
   }
 
   const handleDeleteLivePlay = (playId: string) => {

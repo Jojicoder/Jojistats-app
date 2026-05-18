@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import {
   fetchGamesBySeason,
   fetchPitchingEntriesByPlayer,
@@ -82,6 +82,8 @@ export default function RecordGameContainer({
   const [editingSavedPitchingEntry, setEditingSavedPitchingEntry] = useState<SavedPitchingGameEntry | null>(null)
   const [recordMode, setRecordMode] = useState<"batting" | "pitching">("batting")
   const [saveError, setSaveError] = useState("")
+  const skipNextSaveRef = useRef(true)
+  const standardDraftKey = `standard-draft-${teamId}-${seasonYear}`
 
   const savedEntries = savedEntriesByPlayer[activePlayer.id] ?? []
   const savedPitchingEntries = pitchingEntriesByPlayer[activePlayer.id] ?? []
@@ -96,6 +98,46 @@ export default function RecordGameContainer({
       })
       .catch(console.error)
   }, [teamId, seasonYear])
+
+  useEffect(() => {
+    const saved = localStorage.getItem(standardDraftKey)
+    if (!saved) return
+    try {
+      const draft = JSON.parse(saved) as {
+        gameMeta?: DraftGameMeta
+        currentEntry?: BattingEntryData
+        pitchingEntry?: PitchingEntryData
+        recordMode?: "batting" | "pitching"
+        activePlayerId?: string
+      }
+      skipNextSaveRef.current = true
+      if (draft.gameMeta) setGameMeta(draft.gameMeta)
+      if (draft.currentEntry) setCurrentEntry(draft.currentEntry)
+      if (draft.pitchingEntry) setPitchingEntry(draft.pitchingEntry)
+      if (draft.recordMode) setRecordMode(draft.recordMode)
+      if (draft.activePlayerId) {
+        const player = allPlayers.find((p) => p.id === draft.activePlayerId)
+        if (player) setActivePlayer(player)
+      }
+    } catch (error) {
+      console.error("Failed to restore standard draft", error)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [standardDraftKey])
+
+  useEffect(() => {
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false
+      return
+    }
+    if (editingSavedEntryId || editingSavedPitchingEntry) return
+    localStorage.setItem(
+      standardDraftKey,
+      JSON.stringify({ gameMeta, currentEntry, pitchingEntry, recordMode, activePlayerId: activePlayer.id })
+    )
+  }, [gameMeta, currentEntry, pitchingEntry, recordMode, activePlayer.id, standardDraftKey, editingSavedEntryId, editingSavedPitchingEntry])
+
+  const clearDraft = () => localStorage.removeItem(standardDraftKey)
 
   const refreshAll = async (nextSeasonYear = seasonYear) => {
     const [batting, pitching, games] = await Promise.all([
@@ -141,6 +183,7 @@ export default function RecordGameContainer({
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
       setCurrentEntry(emptyBattingEntry)
+      clearDraft()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed"
       setSaveError(message)
@@ -155,7 +198,7 @@ export default function RecordGameContainer({
     setCurrentEntry(entry.statLine)
   }
 
-  const handleUpdateSavedEntry = async (nextGameMeta: DraftGameMeta, nextStatLine: BattingEntryData) => {
+  const handleUpdateSavedEntry = async (nextGameMeta: DraftGameMeta, nextStatLine: BattingEntryData, gamePositions?: import("../types").Position[]) => {
     if (!editingSavedEntry) return
     setSaveError("")
     try {
@@ -163,7 +206,7 @@ export default function RecordGameContainer({
         game: buildGamePayload(teamId, nextGameMeta),
         battingStat: buildBattingStatPayload(
           editingSavedEntry.playerId,
-          editingSavedEntry.gamePositions,
+          gamePositions ?? editingSavedEntry.gamePositions,
           nextStatLine,
           1
         ),
@@ -172,6 +215,7 @@ export default function RecordGameContainer({
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
       setCurrentEntry(emptyBattingEntry)
+      clearDraft()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Update failed"
       setSaveError(message)
@@ -293,14 +337,22 @@ export default function RecordGameContainer({
     nextPitchingEntry = pitchingEntry,
     pitcherId = activePlayer.id
   ) => {
-    await createFullGame({
-      game: buildGamePayload(teamId, gameMeta),
-      battingStats: [],
-      pitchingStats: [buildPitchingStatPayload(pitcherId, nextPitchingEntry)],
-    })
-    setPitchingEntry(emptyPitchingEntry)
-    const { games } = await refreshAll(gameMeta.seasonYear)
-    setGameMeta((prev) => ({ ...prev, matchNumber: getNextMatchNumber(games) }))
+    const pitcher = allPlayers.find((player) => player.id === pitcherId)
+
+    try {
+      await handleSaveGame(gameMeta, [], [
+        {
+          ...nextPitchingEntry,
+          playerId: pitcherId,
+          playerName: pitcher?.name ?? activePlayer.name,
+        },
+      ])
+      setPitchingEntry(emptyPitchingEntry)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Pitching save failed"
+      setSaveError(message)
+      throw err
+    }
   }
 
   return (
@@ -335,13 +387,17 @@ export default function RecordGameContainer({
       onUpdateSavedPitchingEntry={handleUpdateSavedPitchingEntry}
       onCancelEditSavedPitchingEntry={handleCancelEditSavedPitchingEntry}
       onDeleteSavedPitchingEntry={handleDeleteSavedPitchingEntry}
-      editingGamePositions={undefined}
+      editingGamePositions={editingSavedEntry?.gamePositions}
       recordMode={recordMode}
       setRecordMode={setRecordMode}
       pitchingEntry={pitchingEntry}
       onPitchingEntryChange={setPitchingEntry}
       onSavePitchingGame={handleSavePitchingGame}
-      isPitchingSaveDisabled={pitchingEntry.earnedRuns > pitchingEntry.runsAllowed}
+      isPitchingSaveDisabled={
+        !gameMeta.date.trim() ||
+        !gameMeta.opponent.trim() ||
+        pitchingEntry.earnedRuns > pitchingEntry.runsAllowed
+      }
       saveError={saveError}
       onClearSaveError={() => setSaveError("")}
     />
