@@ -374,6 +374,10 @@ export default function RecordGamePage({
           isPitchingSaveDisabled={isPitchingSaveDisabled}
           onCancelEditSavedPitchingEntry={onCancelEditSavedPitchingEntry}
           pendingEntries={standard.pendingEntries}
+          editingPendingPlayerId={standard.editingPendingPlayerId}
+          onStartEditPendingEntry={standard.handleStartEditPendingEntry}
+          onRemovePendingEntry={standard.handleRemovePendingEntry}
+          onCancelEditPendingEntry={standard.resetPendingEdit}
           isSaving={standard.isSaving}
           onSave={standard.handleSave}
           savedEntries={savedEntries}

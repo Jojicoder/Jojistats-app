@@ -49,7 +49,6 @@ export function useStandardMode({
   }, [activePlayer.position, editingGamePositions, isEditingSavedEntry, isEditingSavedPitchingEntry])
 
   const [gamePositions, setGamePositions] = useState<Position[]>(defaultGamePositions)
-  useEffect(() => { setGamePositions(defaultGamePositions) }, [defaultGamePositions])
 
   const canRecordPitching = gamePositions.includes("P")
 
@@ -58,14 +57,25 @@ export function useStandardMode({
   }, [canRecordPitching, recordMode, setRecordMode])
 
   const [pendingEntries, setPendingEntries] = useState<PendingBattingEntry[]>([])
+  const [editingPendingPlayerId, setEditingPendingPlayerId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  useEffect(() => {
+    if (editingPendingPlayerId) return
+    setGamePositions(defaultGamePositions)
+  }, [defaultGamePositions, editingPendingPlayerId])
 
   const hasInvalidStats =
     currentEntry.H > currentEntry.AB ||
     currentEntry.doubles + currentEntry.triples + currentEntry.HR > currentEntry.H
-  const isPlayerAlreadyAdded = pendingEntries.some((e) => e.playerId === activePlayer.id)
+  const isEditingPendingEntry = editingPendingPlayerId != null
+  const isPlayerAlreadyAdded = pendingEntries.some(
+    (e) => e.playerId === activePlayer.id && e.playerId !== editingPendingPlayerId
+  )
   const canAdd = isMetaComplete && !hasInvalidStats && !isPlayerAlreadyAdded
-  const primaryActionDisabled = isEditingSavedEntry ? !isMetaComplete || hasInvalidStats : !canAdd
+  const primaryActionDisabled =
+    isEditingSavedEntry || isEditingPendingEntry
+      ? !isMetaComplete || hasInvalidStats
+      : !canAdd
 
   const addGamePosition = () => setGamePositions((prev) => [...prev, activePlayer.position])
   const updateGamePosition = (index: number, next: Position) =>
@@ -87,8 +97,51 @@ export function useStandardMode({
     onEntryChange({ AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, note: "" })
   }
 
+  const resetPendingEdit = () => {
+    setEditingPendingPlayerId(null)
+    onEntryChange({ AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, note: "" })
+    setGamePositions(defaultGamePositions)
+  }
+
+  const handleStartEditPendingEntry = (entry: PendingBattingEntry) => {
+    setEditingPendingPlayerId(entry.playerId)
+    setGamePositions(entry.gamePositions.length ? entry.gamePositions : [activePlayer.position])
+    onEntryChange({
+      AB: entry.AB,
+      H: entry.H,
+      doubles: entry.doubles,
+      triples: entry.triples,
+      HR: entry.HR,
+      RBI: entry.RBI,
+      BB: entry.BB,
+      HBP: entry.HBP,
+      SF: entry.SF,
+      SO: entry.SO,
+      note: entry.note,
+    })
+    setRecordMode("batting")
+  }
+
+  const handleUpdatePendingEntry = () => {
+    if (!editingPendingPlayerId || hasInvalidStats) return
+    setPendingEntries((prev) =>
+      prev.map((entry) =>
+        entry.playerId === editingPendingPlayerId
+          ? { ...entry, ...currentEntry, gamePositions }
+          : entry
+      )
+    )
+    resetPendingEdit()
+  }
+
+  const handleRemovePendingEntry = (playerId: string) => {
+    setPendingEntries((prev) => prev.filter((entry) => entry.playerId !== playerId))
+    if (editingPendingPlayerId === playerId) resetPendingEdit()
+  }
+
   const handlePrimaryAction = () => {
     if (isEditingSavedEntry) { onUpdateSavedEntry(gameMeta, currentEntry, gamePositions); return }
+    if (isEditingPendingEntry) { handleUpdatePendingEntry(); return }
     handleAdd()
   }
 
@@ -127,6 +180,7 @@ export function useStandardMode({
       setIsSaving(true)
       await onSaveGame(gameMeta, pendingEntries)
       setPendingEntries([])
+      setEditingPendingPlayerId(null)
     } catch {
       // Parent save handlers surface the message through saveError.
     } finally {
@@ -138,6 +192,8 @@ export function useStandardMode({
     gamePositions,
     canRecordPitching,
     pendingEntries,
+    editingPendingPlayerId,
+    isEditingPendingEntry,
     isSaving,
     primaryActionDisabled,
     addGamePosition,
@@ -145,6 +201,9 @@ export function useStandardMode({
     removeGamePosition,
     handleSetRecordMode,
     handlePrimaryAction,
+    handleStartEditPendingEntry,
+    handleRemovePendingEntry,
+    resetPendingEdit,
     handlePitchingPrimaryAction,
     handleSave,
   }

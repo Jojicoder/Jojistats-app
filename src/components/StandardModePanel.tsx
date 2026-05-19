@@ -34,6 +34,10 @@ type Props = {
   isPitchingSaveDisabled: boolean
   onCancelEditSavedPitchingEntry?: () => void
   pendingEntries: PendingBattingEntry[]
+  editingPendingPlayerId?: string | null
+  onStartEditPendingEntry?: (entry: PendingBattingEntry) => void
+  onRemovePendingEntry?: (playerId: string) => void
+  onCancelEditPendingEntry?: () => void
   isSaving: boolean
   onSave: () => void
   savedEntries: SavedBattingGameEntry[]
@@ -76,6 +80,10 @@ export default function StandardModePanel({
   isPitchingSaveDisabled,
   onCancelEditSavedPitchingEntry,
   pendingEntries,
+  editingPendingPlayerId = null,
+  onStartEditPendingEntry,
+  onRemovePendingEntry,
+  onCancelEditPendingEntry,
   isSaving,
   onSave,
   savedEntries,
@@ -223,15 +231,21 @@ export default function StandardModePanel({
               entry={currentEntry}
               onEntryChange={onEntryChange}
               onPrimaryAction={onPrimaryAction}
-              primaryActionLabel={isEditingSavedEntry ? "Update Saved Entry" : "Add Player Entry"}
+              primaryActionLabel={
+                isEditingSavedEntry
+                  ? "Update Saved Entry"
+                  : editingPendingPlayerId
+                    ? "Update Queued Entry"
+                    : "Add Player Entry"
+              }
               primaryActionDisabled={primaryActionDisabled}
               calculatedAvg={
                 currentEntry.AB > 0
                   ? (currentEntry.H / currentEntry.AB).toFixed(3).replace("0.", ".")
                   : ".000"
               }
-              showCancelEdit={isEditingSavedEntry}
-              onCancelEdit={onCancelEditSavedEntry}
+              showCancelEdit={isEditingSavedEntry || Boolean(editingPendingPlayerId)}
+              onCancelEdit={isEditingSavedEntry ? onCancelEditSavedEntry : onCancelEditPendingEntry}
             />
           ) : (
             <div>
@@ -266,8 +280,44 @@ export default function StandardModePanel({
                   Queued — {pendingEntries.length} {pendingEntries.length === 1 ? "player" : "players"}
                 </p>
                 {pendingEntries.map((entry) => (
-                  <div key={entry.playerId} className="rounded-xl border border-gray-100 px-3 py-2.5">
-                    <p className="text-sm font-semibold">{entry.playerName}</p>
+                  <div
+                    key={entry.playerId}
+                    className={`rounded-xl border px-3 py-2.5 ${
+                      editingPendingPlayerId === entry.playerId
+                        ? "border-green-900 bg-green-50"
+                        : "border-gray-100"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">{entry.playerName}</p>
+                        <p className="mt-0.5 text-xs text-gray-400">{entry.gamePositions.join(" / ")}</p>
+                      </div>
+                      <div className="flex shrink-0 gap-1.5">
+                        {onStartEditPendingEntry && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const player = allPlayers.find((item) => item.id === entry.playerId)
+                              if (player) onSelectPlayer(player)
+                              onStartEditPendingEntry(entry)
+                            }}
+                            className="rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs font-semibold text-gray-700 hover:bg-gray-50"
+                          >
+                            {editingPendingPlayerId === entry.playerId ? "Editing" : "Edit"}
+                          </button>
+                        )}
+                        {onRemovePendingEntry && (
+                          <button
+                            type="button"
+                            onClick={() => onRemovePendingEntry(entry.playerId)}
+                            className="rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+                          >
+                            Undo
+                          </button>
+                        )}
+                      </div>
+                    </div>
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
                       {entry.AB > 0 && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-600">AB {entry.AB}</span>}
                       {entry.H > 0 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs text-emerald-800">H {entry.H}</span>}
