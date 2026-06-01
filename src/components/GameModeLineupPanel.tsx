@@ -56,7 +56,7 @@ export default function GameModeLineupPanel({
         <button
           type="button"
           onClick={onAddLineupSpot}
-          disabled={lineupIds.length >= allPlayers.length}
+          disabled={allPlayers.length === 0}
           className="rounded-lg border border-green-900 px-3 py-2 text-xs font-semibold text-green-900 disabled:cursor-not-allowed disabled:border-gray-200 disabled:text-gray-400"
         >
           Add

@@ -61,7 +61,7 @@ export function useLiveLineup({ allPlayers }: Input) {
   }
 
   const handleAddLineupSpot = () => {
-    const next = allPlayers.find((p) => !lineupIds.includes(p.id))
+    const next = allPlayers.find((p) => !lineupIds.includes(p.id)) ?? allPlayers[0]
     if (!next) return
     setLineupIds((prev) => [...prev, next.id])
   }
