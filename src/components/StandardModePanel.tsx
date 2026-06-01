@@ -251,6 +251,18 @@ export default function StandardModePanel({
             />
           ) : (
             <div>
+              {isEditingSavedEntry && (
+                <div className="mb-4 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                  <p className="text-xs font-semibold text-amber-700">Editing batting entry</p>
+                  <button
+                    type="button"
+                    onClick={onCancelEditSavedEntry}
+                    className="rounded-lg bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800 hover:bg-amber-200"
+                  >
+                    Cancel Edit
+                  </button>
+                </div>
+              )}
               <PitchingEntryPanel
                 entry={pitchingEntry}
                 onEntryChange={onPitchingEntryChange}
@@ -375,7 +387,7 @@ export default function StandardModePanel({
           </div>
         )}
 
-        {recordMode === "batting" && (
+        {(recordMode === "batting" || isEditingSavedEntry) && (
           <SavedEntriesList
             savedEntries={savedEntries}
             pitchingEntries={savedPitchingEntries}
