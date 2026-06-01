@@ -18,6 +18,7 @@ type Input = {
   pitchingEntry: PitchingEntryData
   onSavePitchingGame: RecordGamePageProps["onSavePitchingGame"]
   onUpdateSavedPitchingEntry?: RecordGamePageProps["onUpdateSavedPitchingEntry"]
+  onNewGame?: () => void
 }
 
 export function useStandardMode({
@@ -36,6 +37,7 @@ export function useStandardMode({
   pitchingEntry,
   onSavePitchingGame,
   onUpdateSavedPitchingEntry,
+  onNewGame,
 }: Input) {
   const defaultGamePositions = useMemo(() => {
     const base =
@@ -209,6 +211,13 @@ export function useStandardMode({
     }
   }
 
+  const handleNewGame = () => {
+    setPendingEntries([])
+    setEditingPendingPlayerId(null)
+    localStorage.removeItem(pendingDraftKey)
+    onNewGame?.()
+  }
+
   return {
     gamePositions,
     canRecordPitching,
@@ -227,5 +236,6 @@ export function useStandardMode({
     resetPendingEdit,
     handlePitchingPrimaryAction,
     handleSave,
+    handleNewGame,
   }
 }

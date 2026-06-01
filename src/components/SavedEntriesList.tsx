@@ -7,6 +7,7 @@ type SavedEntriesListProps = {
   title?: string
   emptyMessage?: string
   onEdit?: (savedEntry: SavedBattingGameEntry) => void
+  onCancelEdit?: () => void
   onDelete?: (savedEntry: SavedBattingGameEntry) => void
   onSelect?: (savedEntry: SavedBattingGameEntry) => void
   editingSavedEntryId?: string | null
@@ -42,6 +43,7 @@ export default function SavedEntriesList({
   title = "Recent Entries",
   emptyMessage = "No saved entries yet.",
   onEdit,
+  onCancelEdit,
   onDelete,
   onSelect,
   editingSavedEntryId = null,
@@ -195,14 +197,18 @@ export default function SavedEntriesList({
                       {onEdit && (
                         <button
                           type="button"
-                          onClick={(e) => { e.stopPropagation(); onEdit(entry) }}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (isEditing) { onCancelEdit?.(); return }
+                            onEdit(entry)
+                          }}
                           className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
                             isEditing
-                              ? "bg-green-900 text-white"
+                              ? "bg-red-50 text-red-600 hover:bg-red-100"
                               : "border border-gray-200 bg-white text-gray-600 hover:bg-gray-50"
                           }`}
                         >
-                          {isEditing ? "Editing" : "Edit"}
+                          {isEditing ? "Cancel" : "Edit"}
                         </button>
                       )}
                       {onDelete && (

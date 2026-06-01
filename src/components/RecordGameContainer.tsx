@@ -194,12 +194,25 @@ export default function RecordGameContainer({
   }
 
   const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
-    preEditGameMetaRef.current = gameMeta
-    preEditCurrentEntryRef.current = currentEntry
+    // Only snapshot pre-edit state the first time — don't overwrite if already editing
+    if (!editingSavedEntryId) {
+      preEditGameMetaRef.current = gameMeta
+      preEditCurrentEntryRef.current = currentEntry
+    }
     setEditingSavedEntryId(entry.id)
     setEditingSavedEntry(entry)
     setGameMeta(entry.gameMeta)
     setCurrentEntry(entry.statLine)
+  }
+
+  const handleNewGame = () => {
+    preEditGameMetaRef.current = null
+    preEditCurrentEntryRef.current = null
+    setEditingSavedEntryId(null)
+    setEditingSavedEntry(null)
+    setCurrentEntry(emptyBattingEntry)
+    setGameMeta({ date: "", opponent: "", location: "", seasonYear, matchNumber: getNextMatchNumber(seasonGames) })
+    clearDraft()
   }
 
   const restorePreEditState = () => {
@@ -413,6 +426,7 @@ export default function RecordGameContainer({
       }
       saveError={saveError}
       onClearSaveError={() => setSaveError("")}
+      onNewGame={handleNewGame}
     />
   )
 }

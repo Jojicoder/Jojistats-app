@@ -49,6 +49,7 @@ type Props = {
   onDeleteSavedPitchingEntry?: (entry: SavedPitchingGameEntry) => void | Promise<void>
   saveError?: string
   onClearSaveError?: () => void
+  onNewGame?: () => void
 }
 
 export default function StandardModePanel({
@@ -95,6 +96,7 @@ export default function StandardModePanel({
   onDeleteSavedPitchingEntry,
   saveError,
   onClearSaveError,
+  onNewGame,
 }: Props) {
   return (
     <div
@@ -346,6 +348,15 @@ export default function StandardModePanel({
                 </div>
               )
             })()}
+            {onNewGame && (
+              <button
+                type="button"
+                onClick={onNewGame}
+                className="w-full rounded-lg border border-green-900 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50"
+              >
+                + Record New Game
+              </button>
+            )}
             <button
               onClick={onSave}
               disabled={isSaving || pendingEntries.length === 0 || isEditingSavedEntry}
@@ -369,6 +380,7 @@ export default function StandardModePanel({
             savedEntries={savedEntries}
             pitchingEntries={savedPitchingEntries}
             onEdit={onStartEditSavedEntry}
+            onCancelEdit={onCancelEditSavedEntry}
             onDelete={onDeleteSavedEntry}
             editingSavedEntryId={editingSavedEntryId}
           />

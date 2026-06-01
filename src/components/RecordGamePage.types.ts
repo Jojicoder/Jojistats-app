@@ -76,6 +76,7 @@ export type RecordGamePageProps = {
   saveError?: string
   onClearSaveError?: () => void
   onGameModeChange?: (isGameMode: boolean) => void
+  onNewGame?: () => void
 }
 
 export type GameHalf = "Top" | "Bottom"

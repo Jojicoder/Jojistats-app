@@ -56,6 +56,7 @@ export default function RecordGamePage({
   saveError = "",
   onClearSaveError,
   onGameModeChange,
+  onNewGame,
 }: RecordGamePageProps) {
 
   const [inputStyle, setInputStyle] = useState<InputStyle>("standard")
@@ -168,6 +169,7 @@ export default function RecordGamePage({
     isEditingSavedEntry, isEditingSavedPitchingEntry, editingGamePositions,
     recordMode, setRecordMode, onSaveGame, onUpdateSavedEntry,
     pitchingEntry, onSavePitchingGame, onUpdateSavedPitchingEntry,
+    onNewGame,
   })
 
   const game = useGameMode({
@@ -389,6 +391,7 @@ export default function RecordGamePage({
           onDeleteSavedPitchingEntry={onDeleteSavedPitchingEntry}
           saveError={saveError}
           onClearSaveError={onClearSaveError}
+          onNewGame={standard.handleNewGame}
         />
       )}
     </main>
