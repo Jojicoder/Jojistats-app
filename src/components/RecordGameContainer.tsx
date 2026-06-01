@@ -83,8 +83,7 @@ export default function RecordGameContainer({
   const [recordMode, setRecordMode] = useState<"batting" | "pitching">("batting")
   const [saveError, setSaveError] = useState("")
   const skipNextSaveRef = useRef(true)
-  const preEditGameMetaRef = useRef<DraftGameMeta | null>(null)
-  const preEditCurrentEntryRef = useRef<BattingEntryData | null>(null)
+  const [preEditSnapshot, setPreEditSnapshot] = useState<{ gameMeta: DraftGameMeta; currentEntry: BattingEntryData } | null>(null)
   const standardDraftKey = `standard-draft-${teamId}-${seasonYear}`
 
   const savedEntries = savedEntriesByPlayer[activePlayer.id] ?? []
@@ -194,10 +193,9 @@ export default function RecordGameContainer({
   }
 
   const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
-    // Only snapshot pre-edit state the first time — don't overwrite if already editing
+    // Only snapshot pre-edit state the first time entering edit mode
     if (!editingSavedEntryId) {
-      preEditGameMetaRef.current = gameMeta
-      preEditCurrentEntryRef.current = currentEntry
+      setPreEditSnapshot({ gameMeta, currentEntry })
     }
     setEditingSavedEntryId(entry.id)
     setEditingSavedEntry(entry)
@@ -206,8 +204,7 @@ export default function RecordGameContainer({
   }
 
   const handleNewGame = () => {
-    preEditGameMetaRef.current = null
-    preEditCurrentEntryRef.current = null
+    setPreEditSnapshot(null)
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
     setCurrentEntry(emptyBattingEntry)
@@ -216,12 +213,10 @@ export default function RecordGameContainer({
   }
 
   const restorePreEditState = () => {
-    if (preEditGameMetaRef.current) {
-      setGameMeta(preEditGameMetaRef.current)
-      preEditGameMetaRef.current = null
-    }
-    setCurrentEntry(preEditCurrentEntryRef.current ?? emptyBattingEntry)
-    preEditCurrentEntryRef.current = null
+    const snap = preEditSnapshot
+    setPreEditSnapshot(null)
+    setGameMeta(snap?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: getNextMatchNumber(seasonGames) })
+    setCurrentEntry(snap?.currentEntry ?? emptyBattingEntry)
   }
 
   const handleUpdateSavedEntry = async (nextGameMeta: DraftGameMeta, nextStatLine: BattingEntryData, gamePositions?: import("../types").Position[]) => {
