@@ -529,7 +529,6 @@ export default function GameRecordPage() {
   }
 
   const handleCancelEditSavedEntry = () => {
-    console.log('[GameRecordPage Cancel] preEditSnapshot:', preEditSnapshot)
     const snap = preEditSnapshot
     setPreEditSnapshot(null)
     setEditingSavedEntryId(null)

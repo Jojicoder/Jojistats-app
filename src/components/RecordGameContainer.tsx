@@ -193,7 +193,6 @@ export default function RecordGameContainer({
   }
 
   const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
-    console.log('[Edit] editingSavedEntryId:', editingSavedEntryId, '| will snapshot:', !editingSavedEntryId)
     if (!editingSavedEntryId) {
       setPreEditSnapshot({ gameMeta, currentEntry })
     }
@@ -263,7 +262,6 @@ export default function RecordGameContainer({
   }
 
   const handleCancelEditSavedEntry = () => {
-    console.log('[Cancel] preEditSnapshot:', preEditSnapshot, '| editingSavedEntryId:', editingSavedEntryId)
     const snap = preEditSnapshot
     setPreEditSnapshot(null)
     setEditingSavedEntryId(null)

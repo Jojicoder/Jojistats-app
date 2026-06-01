@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import type { MouseEvent } from "react"
 import type { SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
 
 type SavedEntriesListProps = {
@@ -77,6 +78,22 @@ export default function SavedEntriesList({
         : sortedEntries.slice(0, previewLimit),
     [isExpanded, previewLimit, showsAllByDefault, sortedEntries]
   )
+
+  const handleEditClick = (
+    event: MouseEvent<HTMLButtonElement>,
+    entry: SavedBattingGameEntry,
+    isEditing: boolean
+  ) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (isEditing) {
+      onCancelEdit?.()
+      return
+    }
+
+    onEdit?.(entry)
+  }
 
   return (
     <section className="rounded-2xl bg-white p-5 shadow-sm">
@@ -197,11 +214,7 @@ export default function SavedEntriesList({
                       {onEdit && (
                         <button
                           type="button"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            if (isEditing) { onCancelEdit?.(); return }
-                            onEdit(entry)
-                          }}
+                          onClick={(e) => handleEditClick(e, entry, isEditing)}
                           className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${
                             isEditing
                               ? "bg-red-50 text-red-600 hover:bg-red-100"
