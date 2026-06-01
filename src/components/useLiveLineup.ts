@@ -14,7 +14,7 @@ const normalizeLineupIds = (lineupIds: string[], allPlayers: Player[]) => {
     .filter((id) => !next.includes(id))
     .slice(0, Math.max(9 - next.length, 0))
 
-  return [...next, ...missing].slice(0, Math.min(allPlayers.length, 9))
+  return [...next, ...missing]
 }
 
 export function useLiveLineup({ allPlayers }: Input) {
