@@ -84,6 +84,7 @@ export default function RecordGameContainer({
   const [saveError, setSaveError] = useState("")
   const skipNextSaveRef = useRef(true)
   const preEditGameMetaRef = useRef<DraftGameMeta | null>(null)
+  const preEditCurrentEntryRef = useRef<BattingEntryData | null>(null)
   const standardDraftKey = `standard-draft-${teamId}-${seasonYear}`
 
   const savedEntries = savedEntriesByPlayer[activePlayer.id] ?? []
@@ -194,10 +195,20 @@ export default function RecordGameContainer({
 
   const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
     preEditGameMetaRef.current = gameMeta
+    preEditCurrentEntryRef.current = currentEntry
     setEditingSavedEntryId(entry.id)
     setEditingSavedEntry(entry)
     setGameMeta(entry.gameMeta)
     setCurrentEntry(entry.statLine)
+  }
+
+  const restorePreEditState = () => {
+    if (preEditGameMetaRef.current) {
+      setGameMeta(preEditGameMetaRef.current)
+      preEditGameMetaRef.current = null
+    }
+    setCurrentEntry(preEditCurrentEntryRef.current ?? emptyBattingEntry)
+    preEditCurrentEntryRef.current = null
   }
 
   const handleUpdateSavedEntry = async (nextGameMeta: DraftGameMeta, nextStatLine: BattingEntryData, gamePositions?: import("../types").Position[]) => {
@@ -216,7 +227,7 @@ export default function RecordGameContainer({
       await refreshAll(nextGameMeta.seasonYear)
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
-      setCurrentEntry(emptyBattingEntry)
+      restorePreEditState()
       clearDraft()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Update failed"
@@ -235,7 +246,7 @@ export default function RecordGameContainer({
       await refreshAll(nextGameMeta.seasonYear)
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
-      setCurrentEntry(emptyBattingEntry)
+      restorePreEditState()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Update failed"
       setSaveError(message)
@@ -244,13 +255,9 @@ export default function RecordGameContainer({
   }
 
   const handleCancelEditSavedEntry = () => {
-    if (preEditGameMetaRef.current) {
-      setGameMeta(preEditGameMetaRef.current)
-      preEditGameMetaRef.current = null
-    }
+    restorePreEditState()
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
-    setCurrentEntry(emptyBattingEntry)
   }
 
   const handleDeleteSavedEntry = async (entry: SavedBattingGameEntry) => {
