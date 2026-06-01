@@ -163,6 +163,7 @@ export default function GameRecordPage() {
   const [seasonGames, setSeasonGames] = useState<GameRow[]>([])
   const [editingSavedEntryId, setEditingSavedEntryId] = useState<string | null>(null)
   const [editingSavedEntry, setEditingSavedEntry] = useState<SavedBattingGameEntry | null>(null)
+  const [preEditSnapshot, setPreEditSnapshot] = useState<{ gameMeta: DraftGameMeta; currentEntry: BattingEntryData } | null>(null)
   const [editingSavedPitchingEntry, setEditingSavedPitchingEntry] =
     useState<SavedPitchingGameEntry | null>(null)
 
@@ -419,6 +420,9 @@ export default function GameRecordPage() {
   }
 
   const handleStartEditSavedEntry = (savedEntry: SavedBattingGameEntry) => {
+    if (!editingSavedEntryId) {
+      setPreEditSnapshot({ gameMeta, currentEntry })
+    }
     setEditingSavedEntryId(savedEntry.id)
     setEditingSavedEntry(savedEntry)
     setGameMeta(savedEntry.gameMeta)
@@ -525,9 +529,13 @@ export default function GameRecordPage() {
   }
 
   const handleCancelEditSavedEntry = () => {
+    console.log('[GameRecordPage Cancel] preEditSnapshot:', preEditSnapshot)
+    const snap = preEditSnapshot
+    setPreEditSnapshot(null)
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
-    setCurrentEntry(emptyBattingEntry)
+    setGameMeta(snap?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: 1 })
+    setCurrentEntry(snap?.currentEntry ?? emptyBattingEntry)
   }
 
   const handleDeleteSavedEntry = async (savedEntry: SavedBattingGameEntry) => {
