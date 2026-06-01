@@ -168,7 +168,7 @@ export default function RecordGamePage({
     activePlayer, currentEntry, onEntryChange, gameMeta, isMetaComplete,
     isEditingSavedEntry, isEditingSavedPitchingEntry, editingGamePositions,
     recordMode, setRecordMode, onSaveGame, onUpdateSavedEntry,
-    pitchingEntry, onSavePitchingGame, onUpdateSavedPitchingEntry,
+    onCancelEditSavedEntry, pitchingEntry, onSavePitchingGame, onUpdateSavedPitchingEntry,
     onNewGame,
   })
 
@@ -369,7 +369,7 @@ export default function RecordGamePage({
           primaryActionDisabled={standard.primaryActionDisabled}
           isEditingSavedEntry={isEditingSavedEntry}
           isEditingSavedPitchingEntry={isEditingSavedPitchingEntry}
-          onCancelEditSavedEntry={onCancelEditSavedEntry}
+          onCancelEditSavedEntry={standard.handleCancelEditSavedEntry}
           pitchingEntry={pitchingEntry}
           onPitchingEntryChange={onPitchingEntryChange}
           onPitchingPrimaryAction={standard.handlePitchingPrimaryAction}

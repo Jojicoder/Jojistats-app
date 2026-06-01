@@ -364,9 +364,10 @@ export default function StandardModePanel({
               <button
                 type="button"
                 onClick={onNewGame}
+                disabled={isSaving}
                 className="w-full rounded-lg border border-green-900 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50"
               >
-                + Record New Game
+                {isSaving ? "Saving..." : "+ Record New Game"}
               </button>
             )}
             <button

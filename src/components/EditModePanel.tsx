@@ -339,6 +339,7 @@ export default function EditModePanel({
           savedEntries={teamGameEntries}
           title="Games"
           onEdit={onStartEditSavedEntry}
+          onCancelEdit={onCancelEditSavedEntry}
           editingSavedEntryId={editingSavedEntryId}
           emptyMessage="No saved games yet."
           showDescription={false}

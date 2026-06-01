@@ -404,14 +404,20 @@ export default function GameRecordPage() {
         setPitchingEntriesByPlayer(refreshedPitching)
         setSavedEntries(refreshed[activePlayer.id] ?? [])
         setSeasonGames(refreshedGames)
-        setGameMeta((prev) => ({
-          ...prev,
+        setGameMeta({
+          date: "",
+          opponent: "",
+          location: "",
+          seasonYear: nextGameMeta.seasonYear,
           matchNumber: getNextMatchNumber(refreshedGames),
-        }))
+        })
       }
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
+      setEditingSavedPitchingEntry(null)
       setCurrentEntry(emptyBattingEntry)
+      setPitchingEntry(emptyPitchingEntry)
+      setRecordMode("batting")
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed"
       setSaveError(message)
@@ -533,8 +539,11 @@ export default function GameRecordPage() {
     setPreEditSnapshot(null)
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
+    setEditingSavedPitchingEntry(null)
     setGameMeta(snap?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: 1 })
     setCurrentEntry(snap?.currentEntry ?? emptyBattingEntry)
+    setPitchingEntry(emptyPitchingEntry)
+    setRecordMode("batting")
   }
 
   const handleDeleteSavedEntry = async (savedEntry: SavedBattingGameEntry) => {
@@ -670,6 +679,24 @@ export default function GameRecordPage() {
   const handleCancelEditSavedPitchingEntry = () => {
     setEditingSavedPitchingEntry(null)
     setPitchingEntry(emptyPitchingEntry)
+  }
+
+  const handleNewGame = () => {
+    setSaveError("")
+    setPreEditSnapshot(null)
+    setEditingSavedEntryId(null)
+    setEditingSavedEntry(null)
+    setEditingSavedPitchingEntry(null)
+    setCurrentEntry(emptyBattingEntry)
+    setPitchingEntry(emptyPitchingEntry)
+    setRecordMode("batting")
+    setGameMeta({
+      date: "",
+      opponent: "",
+      location: "",
+      seasonYear,
+      matchNumber: getNextMatchNumber(seasonGames),
+    })
   }
 
   const handleDeleteSavedPitchingEntry = async (savedEntry: SavedPitchingGameEntry) => {
@@ -822,6 +849,7 @@ export default function GameRecordPage() {
           }
           saveError={saveError}
           onClearSaveError={() => setSaveError("")}
+          onNewGame={handleNewGame}
         />
       </main>
     </div>

@@ -15,6 +15,7 @@ type Input = {
   setRecordMode: (mode: "batting" | "pitching") => void
   onSaveGame: RecordGamePageProps["onSaveGame"]
   onUpdateSavedEntry: RecordGamePageProps["onUpdateSavedEntry"]
+  onCancelEditSavedEntry: RecordGamePageProps["onCancelEditSavedEntry"]
   pitchingEntry: PitchingEntryData
   onSavePitchingGame: RecordGamePageProps["onSavePitchingGame"]
   onUpdateSavedPitchingEntry?: RecordGamePageProps["onUpdateSavedPitchingEntry"]
@@ -34,6 +35,7 @@ export function useStandardMode({
   setRecordMode,
   onSaveGame,
   onUpdateSavedEntry,
+  onCancelEditSavedEntry,
   pitchingEntry,
   onSavePitchingGame,
   onUpdateSavedPitchingEntry,
@@ -42,13 +44,19 @@ export function useStandardMode({
   const defaultGamePositions = useMemo(() => {
     const base =
       isEditingSavedEntry && editingGamePositions?.length
-        ? editingGamePositions
+        ? [...editingGamePositions]
         : [activePlayer.position]
     if (isEditingSavedPitchingEntry && !base.includes("P")) {
       return [...base, "P" as Position]
     }
-    return base
-  }, [activePlayer.position, editingGamePositions, isEditingSavedEntry, isEditingSavedPitchingEntry])
+    return [...base]
+  }, [
+    activePlayer.id,
+    activePlayer.position,
+    editingGamePositions,
+    isEditingSavedEntry,
+    isEditingSavedPitchingEntry,
+  ])
 
   const [gamePositions, setGamePositions] = useState<Position[]>(defaultGamePositions)
 
@@ -85,7 +93,12 @@ export function useStandardMode({
   useEffect(() => {
     if (editingPendingPlayerId) return
     setGamePositions(defaultGamePositions)
-  }, [defaultGamePositions, editingPendingPlayerId])
+  }, [activePlayer.id, defaultGamePositions, editingPendingPlayerId])
+
+  useEffect(() => {
+    if (isEditingSavedEntry || editingPendingPlayerId) return
+    setGamePositions([activePlayer.position])
+  }, [activePlayer.id, activePlayer.position, editingPendingPlayerId, isEditingSavedEntry])
 
   const hasInvalidStats =
     currentEntry.H > currentEntry.AB ||
@@ -168,6 +181,12 @@ export function useStandardMode({
     handleAdd()
   }
 
+  const handleCancelEditSavedEntry = () => {
+    setGamePositions([activePlayer.position])
+    setRecordMode("batting")
+    onCancelEditSavedEntry()
+  }
+
   const handlePitchingPrimaryAction = async () => {
     try {
       setIsSaving(true)
@@ -211,11 +230,32 @@ export function useStandardMode({
     }
   }
 
-  const handleNewGame = () => {
+  const resetStandardDraft = (resetParent = true) => {
     setPendingEntries([])
     setEditingPendingPlayerId(null)
+    setGamePositions([activePlayer.position])
+    setRecordMode("batting")
     localStorage.removeItem(pendingDraftKey)
-    onNewGame?.()
+    if (resetParent) onNewGame?.()
+  }
+
+  const handleNewGame = async () => {
+    if (isSaving) return
+    if (isEditingSavedEntry || isEditingSavedPitchingEntry || !isMetaComplete) {
+      resetStandardDraft()
+      return
+    }
+    if (pendingEntries.length > 0 && !validateScore(pendingEntries)) return
+
+    try {
+      setIsSaving(true)
+      await onSaveGame(gameMeta, pendingEntries)
+      resetStandardDraft(false)
+    } catch {
+      // Parent save handlers surface the message through saveError.
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   return {
@@ -231,6 +271,7 @@ export function useStandardMode({
     removeGamePosition,
     handleSetRecordMode,
     handlePrimaryAction,
+    handleCancelEditSavedEntry,
     handleStartEditPendingEntry,
     handleRemovePendingEntry,
     resetPendingEdit,

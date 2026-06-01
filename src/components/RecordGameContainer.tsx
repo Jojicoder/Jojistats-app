@@ -179,11 +179,20 @@ export default function RecordGameContainer({
         await createFullGame(payload)
       }
       const { batting, games } = await refreshAll(nextGameMeta.seasonYear)
-      setGameMeta((prev) => ({ ...prev, matchNumber: getNextMatchNumber(games) }))
+      setGameMeta({
+        date: "",
+        opponent: "",
+        location: "",
+        seasonYear: nextGameMeta.seasonYear,
+        matchNumber: getNextMatchNumber(games),
+      })
       setSavedEntriesByPlayer(batting)
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
+      setEditingSavedPitchingEntry(null)
       setCurrentEntry(emptyBattingEntry)
+      setPitchingEntry(emptyPitchingEntry)
+      setRecordMode("batting")
       clearDraft()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed"
@@ -203,10 +212,14 @@ export default function RecordGameContainer({
   }
 
   const handleNewGame = () => {
+    setSaveError("")
     setPreEditSnapshot(null)
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
+    setEditingSavedPitchingEntry(null)
     setCurrentEntry(emptyBattingEntry)
+    setPitchingEntry(emptyPitchingEntry)
+    setRecordMode("batting")
     setGameMeta({ date: "", opponent: "", location: "", seasonYear, matchNumber: getNextMatchNumber(seasonGames) })
     clearDraft()
   }
@@ -266,8 +279,11 @@ export default function RecordGameContainer({
     setPreEditSnapshot(null)
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
+    setEditingSavedPitchingEntry(null)
     setGameMeta(snap?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: getNextMatchNumber(seasonGames) })
     setCurrentEntry(snap?.currentEntry ?? emptyBattingEntry)
+    setPitchingEntry(emptyPitchingEntry)
+    setRecordMode("batting")
   }
 
   const handleDeleteSavedEntry = async (entry: SavedBattingGameEntry) => {
