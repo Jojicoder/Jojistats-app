@@ -59,6 +59,27 @@ export function useStandardMode({
   const [pendingEntries, setPendingEntries] = useState<PendingBattingEntry[]>([])
   const [editingPendingPlayerId, setEditingPendingPlayerId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+
+  const pendingDraftKey = `standard-pending-${activePlayer.teamId}-${activePlayer.seasonYear}`
+
+  useEffect(() => {
+    const saved = localStorage.getItem(pendingDraftKey)
+    if (!saved) return
+    try {
+      const pending = JSON.parse(saved) as PendingBattingEntry[]
+      if (Array.isArray(pending) && pending.length > 0) setPendingEntries(pending)
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingDraftKey])
+
+  useEffect(() => {
+    if (pendingEntries.length === 0) {
+      localStorage.removeItem(pendingDraftKey)
+    } else {
+      localStorage.setItem(pendingDraftKey, JSON.stringify(pendingEntries))
+    }
+  }, [pendingEntries, pendingDraftKey])
+
   useEffect(() => {
     if (editingPendingPlayerId) return
     setGamePositions(defaultGamePositions)
@@ -175,7 +196,7 @@ export function useStandardMode({
   }
 
   const handleSave = async () => {
-    if (!isMetaComplete || pendingEntries.length === 0 || !validateScore(pendingEntries)) return
+    if (isEditingSavedEntry || !isMetaComplete || pendingEntries.length === 0 || !validateScore(pendingEntries)) return
     try {
       setIsSaving(true)
       await onSaveGame(gameMeta, pendingEntries)

@@ -83,6 +83,7 @@ export default function RecordGameContainer({
   const [recordMode, setRecordMode] = useState<"batting" | "pitching">("batting")
   const [saveError, setSaveError] = useState("")
   const skipNextSaveRef = useRef(true)
+  const preEditGameMetaRef = useRef<DraftGameMeta | null>(null)
   const standardDraftKey = `standard-draft-${teamId}-${seasonYear}`
 
   const savedEntries = savedEntriesByPlayer[activePlayer.id] ?? []
@@ -192,6 +193,7 @@ export default function RecordGameContainer({
   }
 
   const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
+    preEditGameMetaRef.current = gameMeta
     setEditingSavedEntryId(entry.id)
     setEditingSavedEntry(entry)
     setGameMeta(entry.gameMeta)
@@ -242,6 +244,10 @@ export default function RecordGameContainer({
   }
 
   const handleCancelEditSavedEntry = () => {
+    if (preEditGameMetaRef.current) {
+      setGameMeta(preEditGameMetaRef.current)
+      preEditGameMetaRef.current = null
+    }
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
     setCurrentEntry(emptyBattingEntry)

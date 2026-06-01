@@ -348,10 +348,10 @@ export default function StandardModePanel({
             })()}
             <button
               onClick={onSave}
-              disabled={isSaving || pendingEntries.length === 0}
+              disabled={isSaving || pendingEntries.length === 0 || isEditingSavedEntry}
               className="w-full rounded-lg bg-green-900 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              {isSaving ? "Saving..." : pendingEntries.length > 0 ? `Save Game (${pendingEntries.length})` : "Save Game"}
+              {isSaving ? "Saving..." : isEditingSavedEntry ? "Finish editing entry first" : pendingEntries.length > 0 ? `Save Game (${pendingEntries.length})` : "Save Game"}
             </button>
             {saveError && (
               <div className="mt-3 flex items-start justify-between gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
