@@ -193,7 +193,7 @@ export default function RecordGameContainer({
   }
 
   const handleStartEditSavedEntry = (entry: SavedBattingGameEntry) => {
-    // Only snapshot pre-edit state the first time entering edit mode
+    console.log('[Edit] editingSavedEntryId:', editingSavedEntryId, '| will snapshot:', !editingSavedEntryId)
     if (!editingSavedEntryId) {
       setPreEditSnapshot({ gameMeta, currentEntry })
     }
@@ -263,9 +263,13 @@ export default function RecordGameContainer({
   }
 
   const handleCancelEditSavedEntry = () => {
-    restorePreEditState()
+    console.log('[Cancel] preEditSnapshot:', preEditSnapshot, '| editingSavedEntryId:', editingSavedEntryId)
+    const snap = preEditSnapshot
+    setPreEditSnapshot(null)
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
+    setGameMeta(snap?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: getNextMatchNumber(seasonGames) })
+    setCurrentEntry(snap?.currentEntry ?? emptyBattingEntry)
   }
 
   const handleDeleteSavedEntry = async (entry: SavedBattingGameEntry) => {
