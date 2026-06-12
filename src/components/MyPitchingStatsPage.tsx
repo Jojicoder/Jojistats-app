@@ -99,9 +99,9 @@ export default function MyPitchingStatsPage({ activePlayer, entries, mode = "pit
       <div className="w-full max-w-6xl space-y-5">
 
         {/* Player Header */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
+        <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-widest text-green-700">Pitching Stats</p>
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
                 {activePlayer.jerseyNumber != null
@@ -111,7 +111,7 @@ export default function MyPitchingStatsPage({ activePlayer, entries, mode = "pit
               <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
             </div>
             {onModeChange && (
-              <div className="inline-flex shrink-0 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1">
+              <div className="grid w-full grid-cols-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:inline-flex sm:w-auto sm:shrink-0">
                 <button type="button" onClick={() => onModeChange("batting")}
                   className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${mode === "batting" ? "bg-green-900 text-white shadow-sm" : "text-gray-600 hover:text-green-900"}`}>
                   Batting
@@ -168,10 +168,10 @@ export default function MyPitchingStatsPage({ activePlayer, entries, mode = "pit
           ).map(({ label, value }) => {
             const s = getPitchingStatCardStyle(label, value, gamesPlayed)
             return (
-              <div key={label} className={`rounded-2xl p-4 shadow-sm ${s.bg}`}>
+              <div key={label} className={`min-w-0 rounded-2xl p-3 shadow-sm sm:p-4 ${s.bg}`}>
                 <p className={`text-xs font-bold uppercase tracking-widest ${s.label}`}>{label}</p>
                 <p className="mt-0.5 text-xs text-gray-400">{statDescriptions[label]}</p>
-                <p className={`mt-3 text-3xl font-extrabold tracking-tight ${s.value}`}>{value}</p>
+                <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${s.value}`}>{value}</p>
               </div>
             )
           })}

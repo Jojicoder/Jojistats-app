@@ -25,16 +25,17 @@
 .mlb-themed {
   --mlb-primary: #14532d;
   --mlb-secondary: #86efac;
+  --mlb-background: #14532d;
   --mlb-on-primary: #ffffff;
   background:
     radial-gradient(
       circle at 92% 4%,
-      color-mix(in srgb, var(--mlb-primary) 18%, transparent) 0,
+      color-mix(in srgb, var(--mlb-background) 22%, transparent) 0,
       transparent 38rem
     ),
     radial-gradient(
       circle at 0% 36%,
-      color-mix(in srgb, var(--mlb-primary) 12%, transparent) 0,
+      color-mix(in srgb, var(--mlb-background) 10%, transparent) 0,
       transparent 34rem
     ),
     linear-gradient(

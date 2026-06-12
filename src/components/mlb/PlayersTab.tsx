@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import {
   getPlayerGameLog,
   getPlayerStats,
@@ -48,9 +48,12 @@ export default function PlayersTab({
   const [gameLog, setGameLog] = useState<GameLogSplit[]>([])
   const [teamStats, setTeamStats] = useState<MLBTeamStats | null>(null)
   const [cardsExpanded, setCardsExpanded] = useState(false)
+  const appliedInitialPlayerId = useRef<number | null>(null)
+  const playerRequestId = useRef(0)
 
   useEffect(() => {
     if (!selectedTeamId) {
+      playerRequestId.current += 1
       setRoster([])
       setSelectedPlayer(null)
       setStats(null)
@@ -58,6 +61,7 @@ export default function PlayersTab({
       setTeamStats(null)
       return
     }
+    playerRequestId.current += 1
     setSelectedPlayer(null)
     setStats(null)
     setGameLog([])
@@ -95,6 +99,8 @@ export default function PlayersTab({
     player: RosterPlayer,
     mode: "hitting" | "pitching"
   ) => {
+    const requestId = playerRequestId.current + 1
+    playerRequestId.current = requestId
     setStatsMode(mode)
     setSelectedPlayer(player)
     setStatsLoading(true)
@@ -106,21 +112,31 @@ export default function PlayersTab({
         getPlayerStats(player.person.id, mode),
         getPlayerGameLog(player.person.id, mode),
       ])
+      if (playerRequestId.current !== requestId) return
       setStats(rawStats ? enrichStats(rawStats, mode) : null)
       setGameLog(logData)
+    } catch {
+      if (playerRequestId.current !== requestId) return
+      setStats(null)
+      setGameLog([])
     } finally {
-      setStatsLoading(false)
+      if (playerRequestId.current === requestId) setStatsLoading(false)
     }
   }, [])
 
   useEffect(() => {
-    if (!initialPlayerId || rosterLoading || selectedPlayer?.person.id === initialPlayerId) return
+    if (
+      !initialPlayerId ||
+      rosterLoading ||
+      appliedInitialPlayerId.current === initialPlayerId
+    ) return
 
     const player = roster.find((candidate) => candidate.person.id === initialPlayerId)
     if (!player) return
 
+    appliedInitialPlayerId.current = initialPlayerId
     void handleSelectPlayer(player, getDefaultStatsMode(player))
-  }, [handleSelectPlayer, initialPlayerId, roster, rosterLoading, selectedPlayer?.person.id])
+  }, [handleSelectPlayer, initialPlayerId, roster, rosterLoading])
 
   const handleModeChange = (mode: "hitting" | "pitching") => {
     setStatsMode(mode)
@@ -156,7 +172,7 @@ export default function PlayersTab({
                     <option value="pos">Position</option>
                     <option value="num">Jersey Number</option>
                   </select>
-                  <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+                  <div className="max-h-80 space-y-2 overflow-y-auto lg:max-h-[60vh]">
                     {sortedRoster.map((player) => {
                       const isSelected = selectedPlayer?.person.id === player.person.id
                       return (
@@ -304,12 +320,12 @@ export default function PlayersTab({
                       const value = raw !== undefined && raw !== null ? String(raw) : "—"
                       const color = getStatColor(label, value)
                       return (
-                        <div key={label} className={`rounded-xl p-4 ${color.bg}`}>
+                        <div key={label} className={`min-w-0 rounded-xl p-3 sm:p-4 ${color.bg}`}>
                           <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>
                             {label}
                           </p>
                           <p className="mt-0.5 text-xs text-gray-400">{desc}</p>
-                          <p className={`mt-3 text-3xl font-extrabold tracking-tight ${color.val}`}>
+                          <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${color.val}`}>
                             {value}
                           </p>
                         </div>

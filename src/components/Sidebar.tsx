@@ -128,15 +128,14 @@ export default function Sidebar({
 
   return (
     <aside className="h-fit w-full shrink-0 overflow-visible rounded-2xl bg-white p-4 shadow-sm lg:max-h-[calc(100vh-8rem)] lg:w-72 lg:max-w-72 lg:overflow-y-auto">
-      <div className="flex min-w-0 items-center justify-between gap-2 lg:block">
+      <div className="flex min-w-0 flex-col gap-3 lg:block">
         <div className="min-w-0">
           <h2 className="text-base font-bold text-gray-900">Team Roster</h2>
-          <p className="hidden text-xs text-gray-400 lg:mt-0.5 lg:block">{players.length} players</p>
+          <p className="mt-0.5 text-xs text-gray-400">{players.length} players</p>
         </div>
 
-        <div className="flex min-w-0 items-center gap-2 lg:mt-4 lg:flex-col lg:items-start lg:gap-0">
-          <span className="shrink-0 text-xs font-bold uppercase tracking-widest text-gray-400 lg:hidden">Sort</span>
-          <label className="hidden text-xs font-bold uppercase tracking-widest text-gray-400 lg:block">Sort by</label>
+        <div className="min-w-0 lg:mt-4">
+          <label className="block text-xs font-bold uppercase tracking-widest text-gray-400">Sort by</label>
           <select
             value={sortBy}
             onChange={(e) =>
@@ -145,7 +144,7 @@ export default function Sidebar({
                 [mode]: e.target.value as SidebarSortKey,
               }))
             }
-            className="min-w-0 max-w-36 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-600 lg:mt-1 lg:w-full lg:max-w-none lg:px-3 lg:py-2"
+            className="mt-1 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600"
           >
             <option value="jersey">Jersey Number</option>
             <option value="name">Name</option>
@@ -173,7 +172,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="mt-3 flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:gap-2 lg:overflow-visible lg:pb-0">
+      <div className="mt-3 flex max-h-72 flex-col gap-2 overflow-y-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
         {sortedPlayers.map((player) => {
           const isActive = player.id === activePlayerId
           const battingMetrics = playerMetrics[player.id].batting
@@ -184,7 +183,7 @@ export default function Sidebar({
               key={player.id}
               type="button"
               onClick={() => setActivePlayerId(player.id)}
-              className={`flex min-w-[180px] max-w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left transition lg:w-full lg:min-w-0 ${
+              className={`flex w-full min-w-0 items-center gap-2 rounded-xl px-3 py-2.5 text-left transition ${
                 isActive
                   ? "bg-green-900 text-white"
                   : "bg-[#f7f8f3] text-gray-800 hover:bg-[#eef0e9]"

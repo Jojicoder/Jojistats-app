@@ -119,9 +119,9 @@ export default function MyStatsPage({
       <div className="w-full max-w-6xl space-y-5">
 
         {/* ── Player Header ── */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <div className="flex items-start justify-between gap-4">
-            <div>
+        <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-widest text-green-700">My Stats</p>
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900">
                 {activePlayer.jerseyNumber != null
@@ -131,7 +131,7 @@ export default function MyStatsPage({
               <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
             </div>
             {onModeChange && (
-              <div className="inline-flex shrink-0 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1">
+              <div className="grid w-full grid-cols-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:inline-flex sm:w-auto sm:shrink-0">
                 <button type="button" onClick={() => onModeChange("batting")}
                   className={`rounded-lg px-4 py-2 text-sm font-semibold transition ${mode === "batting" ? "bg-green-900 text-white shadow-sm" : "text-gray-600 hover:text-green-900"}`}>
                   Batting
@@ -160,11 +160,11 @@ export default function MyStatsPage({
           )}
 
           <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
+            <div className="min-w-0 rounded-xl bg-[#f7f8f3] px-3 py-3 sm:px-4">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Games Played</p>
               <p className="mt-2 text-2xl font-extrabold text-green-950">{displayedGamesPlayed}</p>
             </div>
-            <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
+            <div className="min-w-0 rounded-xl bg-[#f7f8f3] px-3 py-3 sm:px-4">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Plate Apps</p>
               <p className="mt-2 text-2xl font-extrabold text-green-950">{totalPlateAppearances}</p>
               <p className="mt-0.5 text-xs text-gray-400">AB + BB + HBP + SF</p>
@@ -177,12 +177,12 @@ export default function MyStatsPage({
           {displayedStats.map((stat) => {
             const style = getStatCardStyle(stat.label, stat.value, displayedGamesPlayed)
             return (
-              <div key={stat.label} className={`rounded-2xl p-4 shadow-sm ${style.bg}`}>
+              <div key={stat.label} className={`min-w-0 rounded-2xl p-3 shadow-sm sm:p-4 ${style.bg}`}>
                 <p className={`text-xs font-bold uppercase tracking-widest ${style.label}`}>
                   {stat.label}
                 </p>
                 <p className="mt-0.5 text-xs text-gray-400">{statDescriptions[stat.label]}</p>
-                <p className={`mt-3 text-3xl font-extrabold tracking-tight ${style.value}`}>
+                <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${style.value}`}>
                   {stat.value}
                 </p>
               </div>

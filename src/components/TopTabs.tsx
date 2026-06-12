@@ -11,7 +11,7 @@ type TopTabsProps = {
 }
 
 export default function TopTabs({ activeView, onChangeView, tabs }: TopTabsProps) {
-  const baseClass = "shrink-0 rounded-lg px-3 py-2 text-sm font-semibold transition cursor-pointer"
+  const baseClass = "shrink-0 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition cursor-pointer sm:px-3 sm:py-2 sm:text-sm"
   const inactiveClass = "text-gray-500 hover:bg-white hover:text-green-900"
   const activeClass = "bg-white text-green-900 shadow-sm"
 
