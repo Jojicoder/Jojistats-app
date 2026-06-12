@@ -181,6 +181,7 @@ export default function StatsPage() {
         { label: "Team Setup", view: "setup" },
         { label: "Team Manager", href: "/manager" },
         { label: "Archive", href: "/seasons" },
+        { label: "MLB", href: "/mlb" },
       ]
     }
     if (userRole === "recorder") {
@@ -189,12 +190,14 @@ export default function StatsPage() {
         { label: "My Team", view: "myteam" },
         { label: "Record Game", view: "record" },
         { label: "Archive", href: "/seasons" },
+        { label: "MLB", href: "/mlb" },
       ]
     }
     return [
       { label: "My Stats", view: "stats" },
       { label: "My Team", view: "myteam" },
       { label: "Archive", href: "/seasons" },
+      { label: "MLB", href: "/mlb" },
     ]
   }, [userRole])
 
