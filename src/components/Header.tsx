@@ -9,6 +9,7 @@ type HeaderProps = {
   teamName: string
   teams: string[]
   onChangeTeam: (teamName: string) => void
+  placeholder?: string
   isLoggedIn?: boolean
   accessRole?: UserAccess["role"] | null
   showAwaitingAccessLink?: boolean
@@ -31,6 +32,7 @@ export default function Header({
   teamName,
   teams,
   onChangeTeam,
+  placeholder,
   isLoggedIn: isLoggedInProp,
   accessRole: accessRoleProp,
   showAwaitingAccessLink = false,
@@ -139,24 +141,24 @@ export default function Header({
   /* ---------------- UI ---------------- */
 
   return (
-    <header className="shrink-0 border-b border-gray-200 bg-white px-3 py-2 shadow-sm sm:px-5 sm:py-3">
+    <header className="shrink-0 overflow-hidden border-b border-gray-200 bg-white px-3 py-2 shadow-sm xl:px-5 xl:py-3">
       <div className="mx-auto max-w-screen-2xl">
-      <div className="flex flex-wrap items-center justify-between gap-2 sm:flex-nowrap sm:gap-3">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 xl:flex-nowrap xl:gap-3">
 
         {/* LEFT */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-2 xl:gap-3">
           <Link to="/stats" className="shrink-0">
             <img
               src="/logo.png"
               alt="JojiStats logo"
-              className="h-9 w-9 rounded-full object-cover sm:h-14 sm:w-14"
+              className="h-9 w-9 rounded-full object-cover xl:h-14 xl:w-14"
             />
           </Link>
 
           <div className="min-w-0">
             <Link
               to="/stats"
-              className="block truncate text-xl font-extrabold uppercase tracking-tight text-green-900 sm:text-4xl"
+              className="block truncate text-xl font-extrabold uppercase tracking-tight text-green-900 xl:text-4xl"
             >
               Joji Stats
             </Link>
@@ -164,24 +166,27 @@ export default function Header({
             <select
               value={teams.includes(teamName) ? teamName : ""}
               onChange={(event) => onChangeTeam(event.target.value)}
-              className="mt-1 w-32 rounded-md border border-gray-200 bg-white px-2 py-2 text-xs text-gray-700 sm:w-36 sm:py-1"
+              className="mt-1 w-40 max-w-full rounded-md border border-gray-200 bg-white px-2 py-2 text-xs text-gray-700 xl:w-36 xl:py-1"
               disabled={teams.length === 0}
             >
               {teams.length === 0 ? (
                 <option value="">No teams</option>
               ) : (
-                teams.map((team) => (
-                  <option key={team} value={team}>
-                    {team}
-                  </option>
-                ))
+                <>
+                  {placeholder && <option value="">{placeholder}</option>}
+                  {teams.map((team) => (
+                    <option key={team} value={team}>
+                      {team}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
           </div>
         </div>
 
         {/* RIGHT */}
-        <div className="flex w-full shrink-0 items-center justify-start gap-2 sm:w-auto sm:justify-end sm:gap-3">
+        <div className="flex w-full min-w-0 shrink-0 items-center justify-end gap-2 overflow-x-auto xl:w-auto xl:gap-3">
 
           {isLoggedIn ? (
             <>

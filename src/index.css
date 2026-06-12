@@ -20,3 +20,74 @@
     font-size: 16px;
   }
 }
+
+/* MLB pages inherit the selected team's palette through CSS variables. */
+.mlb-themed {
+  --mlb-primary: #14532d;
+  --mlb-secondary: #86efac;
+  --mlb-on-primary: #ffffff;
+  background:
+    radial-gradient(
+      circle at 92% 4%,
+      color-mix(in srgb, var(--mlb-primary) 18%, transparent) 0,
+      transparent 38rem
+    ),
+    radial-gradient(
+      circle at 0% 36%,
+      color-mix(in srgb, var(--mlb-primary) 12%, transparent) 0,
+      transparent 34rem
+    ),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--mlb-primary) 12%, #f9fafb) 0,
+      color-mix(in srgb, var(--mlb-primary) 5%, #f9fafb) 24rem,
+      #f9fafb 48rem
+    );
+  background-attachment: fixed;
+}
+
+.mlb-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-green-950) {
+  color: var(--mlb-primary);
+}
+
+.mlb-themed :is(.bg-green-700, .bg-green-800, .bg-green-900) {
+  background-color: var(--mlb-primary);
+  color: var(--mlb-on-primary);
+}
+
+.mlb-themed :is(.text-green-300, .text-green-400) {
+  color: color-mix(in srgb, var(--mlb-primary) 38%, white);
+}
+
+.mlb-themed .bg-green-50 {
+  background-color: color-mix(in srgb, var(--mlb-primary) 8%, white);
+}
+
+.mlb-themed .bg-green-100 {
+  background-color: color-mix(in srgb, var(--mlb-primary) 14%, white);
+}
+
+.mlb-themed :is(.border-green-200, .border-green-300, .border-green-700, .border-green-900) {
+  border-color: color-mix(in srgb, var(--mlb-primary) 45%, white);
+}
+
+.mlb-themed .hover\:bg-green-50:hover {
+  background-color: color-mix(in srgb, var(--mlb-primary) 8%, white);
+}
+
+.mlb-themed .hover\:bg-green-100:hover {
+  background-color: color-mix(in srgb, var(--mlb-primary) 14%, white);
+}
+
+.mlb-themed .hover\:bg-green-800:hover {
+  background-color: color-mix(in srgb, var(--mlb-primary) 88%, black);
+}
+
+.mlb-themed .hover\:text-green-900:hover {
+  color: var(--mlb-primary);
+}
+
+.mlb-themed select:focus {
+  border-color: var(--mlb-primary);
+  outline-color: var(--mlb-primary);
+}
