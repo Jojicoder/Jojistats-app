@@ -91,7 +91,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
       <div className="space-y-5">
 
         {/* ── Team Header ── */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-green-700">My Team</p>
@@ -102,11 +102,11 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
             </span>
           </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-3">
+          <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3">
             {/* Record — accent card */}
-            <div className="rounded-xl bg-green-800 p-4 text-white">
+            <div className="col-span-2 rounded-xl bg-green-800 p-4 text-white sm:col-span-1">
               <p className="text-xs font-bold uppercase tracking-widest text-green-300">Record</p>
-              <p className="mt-2 text-2xl font-extrabold">
+              <p className="mt-2 whitespace-nowrap text-2xl font-extrabold">
                 {record.w}–{record.l}{record.t > 0 ? `–${record.t}` : ""}
               </p>
               <p className="mt-0.5 text-xs text-green-400">{uniqueGames.length} games</p>
@@ -135,7 +135,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
               {sortedRoster.length === 0 ? (
                 <p className="mt-4 text-sm text-gray-400">No players on this team.</p>
               ) : (
-                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                   {sortedRoster.map((player) => (
                     <div key={player.id} className="flex items-center gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-200 bg-green-50 text-xs font-bold text-green-900">
@@ -153,7 +153,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
 
             {/* Team Batting */}
             <Card title="Team Batting">
-              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
                 {[
                   { label: "AVG", value: teamBatting.ab > 0 ? fmtRate(teamBatting.avg) : "—", accent: true },
                   { label: "OBP", value: teamBatting.pa > 0 ? fmtRate(teamBatting.obp) : "—" },
@@ -167,7 +167,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
             {/* Team Pitching */}
             {teamPitching.games > 0 && (
               <Card title="Team Pitching">
-                <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-5">
+                <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
                   {[
                     { label: "ERA",  value: teamPitching.outs > 0 ? teamPitching.era.toFixed(2) : "—", accent: true },
                     { label: "WHIP", value: teamPitching.outs > 0 ? teamPitching.whip.toFixed(2) : "—" },
@@ -297,7 +297,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
 
 function Card({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-2xl bg-white p-5 shadow-sm">
+    <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
       <h2 className="text-base font-bold text-gray-900">{title}</h2>
       {children}
     </div>

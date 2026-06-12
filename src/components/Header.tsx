@@ -143,22 +143,22 @@ export default function Header({
   return (
     <header className="shrink-0 overflow-hidden border-b border-gray-200 bg-white px-3 py-2 shadow-sm xl:px-5 xl:py-3">
       <div className="mx-auto max-w-screen-2xl">
-      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 xl:flex-nowrap xl:gap-3">
+      <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-2 xl:flex xl:items-center xl:justify-between xl:gap-3">
 
         {/* LEFT */}
-        <div className="flex min-w-0 flex-1 items-center gap-2 xl:gap-3">
+        <div className="flex min-w-0 items-center gap-2 xl:flex-1 xl:gap-3">
           <Link to="/stats" className="shrink-0">
             <img
               src="/logo.png"
               alt="JojiStats logo"
-              className="h-9 w-9 rounded-full object-cover xl:h-14 xl:w-14"
+              className="h-8 w-8 rounded-full object-cover xl:h-14 xl:w-14"
             />
           </Link>
 
           <div className="min-w-0">
             <Link
               to="/stats"
-              className="block truncate text-xl font-extrabold uppercase tracking-tight text-green-900 xl:text-4xl"
+              className="block truncate text-lg font-extrabold uppercase tracking-tight text-green-900 xl:text-4xl"
             >
               Joji Stats
             </Link>
@@ -166,7 +166,7 @@ export default function Header({
             <select
               value={teams.includes(teamName) ? teamName : ""}
               onChange={(event) => onChangeTeam(event.target.value)}
-              className="mt-1 w-40 max-w-full rounded-md border border-gray-200 bg-white px-2 py-2 text-xs text-gray-700 xl:w-36 xl:py-1"
+              className="mt-0.5 w-36 max-w-full rounded-md border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 xl:mt-1 xl:w-36"
               disabled={teams.length === 0}
             >
               {teams.length === 0 ? (
@@ -186,14 +186,14 @@ export default function Header({
         </div>
 
         {/* RIGHT */}
-        <div className="flex w-full min-w-0 shrink-0 items-center justify-end gap-2 overflow-x-auto xl:w-auto xl:gap-3">
+        <div className="flex max-w-[46vw] shrink-0 flex-wrap items-center justify-end gap-1.5 xl:max-w-none xl:flex-nowrap xl:gap-3">
 
           {isLoggedIn ? (
             <>
               {displayAccessRole === "recorder" && (
                 <Link
                   to="/record-game"
-                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
                 >
                   Record Game
                 </Link>
@@ -202,7 +202,7 @@ export default function Header({
               {displayAccessRole === "player" && (
                 <Link
                   to="/player"
-                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
                 >
                   My Player
                 </Link>
@@ -211,7 +211,7 @@ export default function Header({
               {displayAccessRole === "manager" && (
                 <Link
                   to="/manager"
-                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
                 >
                   Manager
                 </Link>
@@ -220,7 +220,7 @@ export default function Header({
               {displayAccessRole === "admin" && (
                 <Link
                   to="/admin"
-                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
                 >
                   Admin
                 </Link>
@@ -229,7 +229,7 @@ export default function Header({
               {showAwaitingAccessLink && !displayAccessRole && (
                 <Link
                   to="/awaiting-access"
-                  className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
                 >
                   Check Access
                 </Link>
@@ -238,7 +238,7 @@ export default function Header({
               <button
                 type="button"
                 onClick={handleLogout}
-                className="rounded-lg bg-green-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-green-800 sm:py-2"
+                className="whitespace-nowrap rounded-lg bg-green-900 px-2.5 py-2 text-xs font-semibold text-white hover:bg-green-800 xl:px-3 xl:text-sm"
               >
                 Logout
               </button>
@@ -247,7 +247,7 @@ export default function Header({
               <img
                 src={avatarUrl || "/logo.png"}
                 alt="avatar"
-                className="h-9 w-9 cursor-pointer rounded-full border border-gray-200 object-cover sm:h-10 sm:w-10"
+                className="h-8 w-8 cursor-pointer rounded-full border border-gray-200 object-cover xl:h-10 xl:w-10"
                 onClick={() => navigate("/profile")}
               />
             </>
@@ -255,14 +255,14 @@ export default function Header({
             <>
               <Link
                 to="/login"
-                className="rounded-lg bg-green-900 px-3 py-2.5 text-sm font-semibold text-white hover:bg-green-800 sm:py-2"
+                className="whitespace-nowrap rounded-lg bg-green-900 px-2.5 py-2 text-xs font-semibold text-white hover:bg-green-800 xl:px-3 xl:text-sm"
               >
                 Login
               </Link>
 
               <Link
                 to="/signup"
-                className="rounded-lg border border-green-900 px-3 py-2.5 text-sm font-semibold text-green-900 hover:bg-green-50 sm:py-2"
+                className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
               >
                 Sign Up
               </Link>
