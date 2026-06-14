@@ -8,6 +8,7 @@ import {
 } from "react-router-dom"
 
 import { supabase } from "./api/supabase-client"
+import SiteFooter from "./components/SiteFooter"
 
 const AdminPage = lazy(() => import("./pages/AdminPage"))
 const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"))
@@ -67,42 +68,47 @@ function AdminGuard({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <Suspense fallback={<PageFallback />}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
+      <div className="flex min-h-dvh flex-col">
+        <div className="site-page-content flex flex-1 flex-col">
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
+              <Route path="/" element={<LandingPage />} />
 
-          <Route path="/stats" element={<StatsPage />} />
-          <Route path="/states" element={<Navigate to="/stats" replace />} />
+              <Route path="/stats" element={<StatsPage />} />
+              <Route path="/states" element={<Navigate to="/stats" replace />} />
 
-          <Route path="/record-game" element={<GameRecordPage />} />
+              <Route path="/record-game" element={<GameRecordPage />} />
 
-          <Route path="/manager" element={<TeamManagerPage />} />
-          <Route path="/player" element={<PlayerPage />} />
-          <Route path="/seasons" element={<SeasonArchivePage />} />
-          <Route path="/mlb" element={<MLBPage />} />
-          <Route path="/mlb/teams/:teamId" element={<MLBTeamPage />} />
-          <Route path="/mlb/games/:gamePk" element={<MLBGamePage />} />
+              <Route path="/manager" element={<TeamManagerPage />} />
+              <Route path="/player" element={<PlayerPage />} />
+              <Route path="/seasons" element={<SeasonArchivePage />} />
+              <Route path="/mlb" element={<MLBPage />} />
+              <Route path="/mlb/teams/:teamId" element={<MLBTeamPage />} />
+              <Route path="/mlb/games/:gamePk" element={<MLBGamePage />} />
 
-          <Route
-            path="/admin"
-            element={
-              <AdminGuard>
-                <AdminPage />
-              </AdminGuard>
-            }
-          />
+              <Route
+                path="/admin"
+                element={
+                  <AdminGuard>
+                    <AdminPage />
+                  </AdminGuard>
+                }
+              />
 
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/awaiting-access" element={<AwaitingAccessPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/contact" element={<ContactPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/signup" element={<SignupPage />} />
+              <Route path="/awaiting-access" element={<AwaitingAccessPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          <Route path="*" element={<Navigate to="/stats" replace />} />
-        </Routes>
-      </Suspense>
+              <Route path="*" element={<Navigate to="/stats" replace />} />
+            </Routes>
+          </Suspense>
+        </div>
+        <SiteFooter />
+      </div>
     </BrowserRouter>
   )
 }

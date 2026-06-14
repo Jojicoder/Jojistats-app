@@ -127,7 +127,7 @@ export default function Sidebar({
   }, [players, playerMetrics, sortBy, mode])
 
   return (
-    <aside className="h-fit w-full shrink-0 overflow-visible rounded-2xl bg-white p-4 shadow-sm lg:max-h-[calc(100vh-8rem)] lg:w-72 lg:max-w-72 lg:overflow-y-auto">
+    <aside className="h-fit w-full shrink-0 rounded-2xl bg-white p-4 shadow-sm lg:w-72 lg:max-w-72">
       <div className="flex min-w-0 flex-col gap-3 lg:block">
         <div className="min-w-0">
           <h2 className="text-base font-bold text-gray-900">Team Roster</h2>
@@ -172,7 +172,7 @@ export default function Sidebar({
         </div>
       </div>
 
-      <div className="mt-3 flex max-h-72 flex-col gap-2 overflow-y-auto pr-1 lg:max-h-none lg:overflow-visible lg:pr-0">
+      <div className="mt-3 flex flex-col gap-2">
         {sortedPlayers.map((player) => {
           const isActive = player.id === activePlayerId
           const battingMetrics = playerMetrics[player.id].batting

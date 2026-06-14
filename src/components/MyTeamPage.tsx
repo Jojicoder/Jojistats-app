@@ -1,6 +1,7 @@
 import { useMemo } from "react"
 import type { Player, Team, SavedBattingGameEntry, SavedPitchingGameEntry, DraftGameMeta } from "../types"
 import { calcBattingMetrics, calcPitchingMetrics, fmtRate, fmtIp } from "../utils/metrics"
+import { getStatColor } from "./mlb/playerStats"
 
 type Props = {
   team: Team | null
@@ -155,12 +156,12 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
             <Card title="Team Batting">
               <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
                 {[
-                  { label: "AVG", value: teamBatting.ab > 0 ? fmtRate(teamBatting.avg) : "—", accent: true },
+                  { label: "AVG", value: teamBatting.ab > 0 ? fmtRate(teamBatting.avg) : "—" },
                   { label: "OBP", value: teamBatting.pa > 0 ? fmtRate(teamBatting.obp) : "—" },
                   { label: "OPS", value: teamBatting.pa > 0 ? fmtRate(teamBatting.ops) : "—" },
                   { label: "HR",  value: String(teamBatting.hr) },
                   { label: "RBI", value: String(teamBatting.rbi) },
-                ].map((s) => <StatTile key={s.label} label={s.label} value={s.value} accent={s.accent} />)}
+                ].map((s) => <StatTile key={s.label} label={s.label} value={s.value} />)}
               </div>
             </Card>
 
@@ -169,12 +170,12 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
               <Card title="Team Pitching">
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
                   {[
-                    { label: "ERA",  value: teamPitching.outs > 0 ? teamPitching.era.toFixed(2) : "—", accent: true },
+                    { label: "ERA",  value: teamPitching.outs > 0 ? teamPitching.era.toFixed(2) : "—" },
                     { label: "WHIP", value: teamPitching.outs > 0 ? teamPitching.whip.toFixed(2) : "—" },
                     { label: "IP",   value: fmtIp(teamPitching.outs) },
                     { label: "SO",   value: String(teamPitching.so) },
                     { label: "BB",   value: String(teamPitching.bb) },
-                  ].map((s) => <StatTile key={s.label} label={s.label} value={s.value} accent={s.accent} />)}
+                  ].map((s) => <StatTile key={s.label} label={s.label} value={s.value} />)}
                 </div>
               </Card>
             )}
@@ -209,9 +210,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
                           <span className="ml-1.5 text-xs text-gray-400">{player.position}</span>
                         </td>
                         <td className="px-2 py-3 text-center text-gray-500">{metrics.games}</td>
-                        <td className="px-2 py-3 text-center font-bold text-green-900">
-                          {metrics.ab > 0 ? fmtRate(metrics.avg) : "—"}
-                        </td>
+                        <td className="px-2 py-3 text-center font-bold text-green-900">{metrics.ab > 0 ? fmtRate(metrics.avg) : "—"}</td>
                         <td className="px-2 py-3 text-center text-gray-600">{metrics.pa > 0 ? fmtRate(metrics.obp) : "—"}</td>
                         <td className="px-2 py-3 text-center text-gray-600">{metrics.pa > 0 ? fmtRate(metrics.ops) : "—"}</td>
                         <td className="px-2 py-3 text-center text-gray-600">{metrics.hr}</td>
@@ -255,9 +254,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
                           </td>
                           <td className="px-2 py-3 text-center text-gray-500">{metrics.games}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{fmtIp(metrics.outs)}</td>
-                          <td className="px-2 py-3 text-center font-bold text-green-900">
-                            {metrics.outs > 0 ? metrics.era.toFixed(2) : "—"}
-                          </td>
+                          <td className="px-2 py-3 text-center font-bold text-green-900">{metrics.outs > 0 ? metrics.era.toFixed(2) : "—"}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{metrics.outs > 0 ? metrics.whip.toFixed(2) : "—"}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{metrics.so}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{metrics.bb}</td>
@@ -304,19 +301,12 @@ function Card({ title, children }: { title: string; children: React.ReactNode })
   )
 }
 
-function StatTile({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
-  if (accent) {
-    return (
-      <div className="rounded-xl bg-green-800 p-3 text-center text-white">
-        <p className="text-xs font-bold uppercase tracking-widest text-green-300">{label}</p>
-        <p className="mt-1.5 text-xl font-extrabold">{value}</p>
-      </div>
-    )
-  }
+function StatTile({ label, value }: { label: string; value: string }) {
+  const color = getStatColor(label, value, "jaa")
   return (
-    <div className="rounded-xl bg-[#f7f8f3] p-3 text-center">
-      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
-      <p className="mt-1.5 text-xl font-extrabold text-green-950">{value}</p>
+    <div className={`rounded-xl p-3 text-center ${color.bg}`}>
+      <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>{label}</p>
+      <p className={`mt-1.5 text-xl font-extrabold ${color.val}`}>{value}</p>
     </div>
   )
 }

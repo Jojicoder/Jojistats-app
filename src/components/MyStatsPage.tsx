@@ -5,7 +5,8 @@ import type {
   SavedPitchingGameEntry,
 } from "../types"
 import { useMemo, useState } from "react"
-import { fmtRate } from "../utils/metrics"
+import { calcBattingMetrics, fmtRate } from "../utils/metrics"
+import { getStatColor } from "./mlb/playerStats"
 import SavedEntriesList from "./SavedEntriesList"
 import PerformanceTrendCard from "./PerformanceTrendCard"
 
@@ -31,18 +32,7 @@ const statDescriptions: Record<string, string> = {
   HBP: "Hit By Pitch",
 }
 
-function getStatCardStyle(label: string, value: string, gamesPlayed: number) {
-  if (gamesPlayed === 0) return { bg: "bg-[#f7f8f3]", label: "text-gray-400", value: "text-green-950" }
-
-  const levels: Record<string, { thresholds: number[]; styles: string[] }> = {
-    AVG:  { thresholds: [0.33, 0.3, 0.25, 0.22], styles: ["emerald", "green", "neutral", "rose", "red"] },
-    OBP:  { thresholds: [0.4,  0.37, 0.31, 0.28], styles: ["emerald", "green", "neutral", "rose", "red"] },
-    OPS:  { thresholds: [0.9,  0.8,  0.65, 0.55], styles: ["emerald", "green", "neutral", "rose", "red"] },
-    "BB/K": { thresholds: [1.0, 0.7, 0.4, 0.2],  styles: ["emerald", "green", "neutral", "rose", "red"] },
-    HR:   { thresholds: [4, 2],                   styles: ["emerald", "green", "neutral"] },
-    RBI:  { thresholds: [10, 7],                  styles: ["emerald", "green", "neutral"] },
-  }
-
+function getStatCardStyle(playerValue: number, teamValue: number, hasMinimumSample: boolean) {
   const map: Record<string, { bg: string; label: string; value: string }> = {
     emerald: { bg: "bg-emerald-50",  label: "text-emerald-700", value: "text-emerald-900" },
     green:   { bg: "bg-green-50",    label: "text-green-700",   value: "text-green-900"   },
@@ -51,15 +41,13 @@ function getStatCardStyle(label: string, value: string, gamesPlayed: number) {
     red:     { bg: "bg-red-50",       label: "text-red-600",     value: "text-red-900"     },
   }
 
-  const cfg = levels[label]
-  if (!cfg) return map.neutral
-
-  if (label === "BB/K" && (value === "--" || Number.isNaN(Number(value)))) return map.neutral
-
-  const num = Number(value)
-  const idx = cfg.thresholds.findIndex((t) => num >= t)
-  const styleName = idx === -1 ? cfg.styles[cfg.styles.length - 1] : cfg.styles[idx]
-  return map[styleName] ?? map.neutral
+  if (!hasMinimumSample || !Number.isFinite(playerValue) || teamValue <= 0) return map.neutral
+  const ratio = playerValue / teamValue
+  if (ratio >= 1.25) return map.emerald
+  if (ratio >= 1.08) return map.green
+  if (ratio < 0.7) return map.red
+  if (ratio < 0.85) return map.rose
+  return map.neutral
 }
 
 function formatRatio(value: number) { return value.toFixed(2) }
@@ -102,7 +90,10 @@ export default function MyStatsPage({
     [calculatedStats, selectedEntry]
   )
 
-  const displayedEntries = selectedEntry ? [selectedEntry] : savedEntries
+  const displayedEntries = useMemo(
+    () => (selectedEntry ? [selectedEntry] : savedEntries),
+    [savedEntries, selectedEntry]
+  )
   const displayedGamesPlayed = selectedEntry ? 1 : gamesPlayed
   const totalPlateAppearances = displayedEntries.reduce(
     (total, entry) =>
@@ -113,6 +104,31 @@ export default function MyStatsPage({
       (entry.statLine.SF ?? 0),
     0
   )
+  const playerMetrics = useMemo(() => calcBattingMetrics(displayedEntries), [displayedEntries])
+  const teamMetrics = useMemo(() => calcBattingMetrics(teamSavedEntries), [teamSavedEntries])
+  const teamGames = Math.max(teamMetrics.games, 1)
+  const playerGames = Math.max(playerMetrics.games, 1)
+  const statComparisons: Record<string, { player: number; team: number; teamLabel: string }> = {
+    AVG: { player: playerMetrics.avg, team: teamMetrics.avg, teamLabel: fmtRate(teamMetrics.avg) },
+    OBP: { player: playerMetrics.obp, team: teamMetrics.obp, teamLabel: fmtRate(teamMetrics.obp) },
+    OPS: { player: playerMetrics.ops, team: teamMetrics.ops, teamLabel: fmtRate(teamMetrics.ops) },
+    "BB/K": {
+      player: playerMetrics.so > 0 ? playerMetrics.bb / playerMetrics.so : Number.NaN,
+      team: teamMetrics.so > 0 ? teamMetrics.bb / teamMetrics.so : 0,
+      teamLabel: teamMetrics.so > 0 ? formatRatio(teamMetrics.bb / teamMetrics.so) : "--",
+    },
+    HR: {
+      player: playerMetrics.hr / playerGames,
+      team: teamMetrics.hr / teamGames,
+      teamLabel: `${(teamMetrics.hr / teamGames).toFixed(2)}/G`,
+    },
+    RBI: {
+      player: playerMetrics.rbi / playerGames,
+      team: teamMetrics.rbi / teamGames,
+      teamLabel: `${(teamMetrics.rbi / teamGames).toFixed(2)}/G`,
+    },
+  }
+  const hasMinimumSample = totalPlateAppearances >= 5
 
   return (
     <main className="min-w-0 w-full">
@@ -175,7 +191,13 @@ export default function MyStatsPage({
         {/* ── Stat Cards ── */}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {displayedStats.map((stat) => {
-            const style = getStatCardStyle(stat.label, stat.value, displayedGamesPlayed)
+            const comparison = statComparisons[stat.label]
+            const jaaOverride = stat.label === "HR"
+              ? (() => { const c = getStatColor("HR", stat.value, "jaa"); return { bg: c.bg, label: c.lbl, value: c.val } })()
+              : null
+            const style = jaaOverride ?? (comparison
+              ? getStatCardStyle(comparison.player, comparison.team, hasMinimumSample)
+              : getStatCardStyle(0, 0, false))
             return (
               <div key={stat.label} className={`min-w-0 rounded-2xl p-3 shadow-sm sm:p-4 ${style.bg}`}>
                 <p className={`text-xs font-bold uppercase tracking-widest ${style.label}`}>
@@ -185,6 +207,9 @@ export default function MyStatsPage({
                 <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${style.value}`}>
                   {stat.value}
                 </p>
+                {comparison && !jaaOverride && (
+                  <p className="mt-1 text-xs text-gray-400">Team {comparison.teamLabel}</p>
+                )}
               </div>
             )
           })}

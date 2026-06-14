@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import Header from "../components/Header"
+import PageShell from "../components/PageShell"
 import PlayersTab from "../components/mlb/PlayersTab"
 import StandingsTab from "../components/mlb/StandingsTab"
 import TodayGamesTab from "../components/mlb/TodayGamesTab"
 import { getAllTeams } from "../components/mlb/api"
 import type { MLBTeam } from "../components/mlb/types"
-import { getTeamThemeStyle } from "../components/mlb/teamTheme"
-import TopTabs from "../components/TopTabs"
+import { applyGlobalMLBTheme, clearGlobalMLBTheme, getTeamThemeStyle } from "../components/mlb/teamTheme"
 
 type MLBView = "team" | "today" | "standings" | "players"
 
@@ -38,6 +37,11 @@ export default function MLBPage() {
       navigate(`/mlb/teams/${selectedTeamId}`, { replace: true })
     }
   }, [activeView, selectedTeamId, navigate])
+
+  useEffect(() => {
+    applyGlobalMLBTheme(selectedTeamId)
+    return () => clearGlobalMLBTheme()
+  }, [selectedTeamId])
 
   const selectedTeam = mlbTeams.find((team) => team.id === selectedTeamId)
 
@@ -73,30 +77,25 @@ export default function MLBPage() {
   }
 
   return (
-    <div
-      className="mlb-themed flex min-h-dvh flex-col bg-gray-50"
+    <PageShell
+      variant="mlb"
       style={getTeamThemeStyle(selectedTeamId)}
-    >
-      <Header
-        teamName={selectedTeam?.name ?? ""}
-        teams={mlbTeams.map((team) => team.name)}
-        onChangeTeam={handleChangeTeam}
-        placeholder="Select a team..."
-      />
-
-      <TopTabs
-        activeView={activeView}
-        onChangeView={handleChangeView}
-        tabs={[
+      headerProps={{
+        teamName: selectedTeam?.name ?? "",
+        teams: mlbTeams.map((team) => team.name),
+        onChangeTeam: handleChangeTeam,
+        placeholder: "Select a team...",
+      }}
+      activeView={activeView}
+      onChangeView={handleChangeView}
+      tabs={[
           { label: "Team Overview", view: "team" },
           { label: "Players", view: "players" },
           { label: "Today's Games", view: "today" },
           { label: "Standings", view: "standings" },
           { label: "Back to Your Stats", href: "/stats" },
-        ]}
-      />
-
-      <div className="mx-auto w-full max-w-screen-2xl flex-1 p-3 lg:p-4">
+      ]}
+    >
         {activeView === "team" && (
           <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
             <p className="text-sm text-gray-500">Select a team from the header to view Team Overview.</p>
@@ -115,7 +114,6 @@ export default function MLBPage() {
             }
           />
         )}
-      </div>
-    </div>
+    </PageShell>
   )
 }

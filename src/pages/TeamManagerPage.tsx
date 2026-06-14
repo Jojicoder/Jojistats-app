@@ -338,8 +338,8 @@ export default function TeamManagerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f3]">
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-4 py-3 shadow-sm backdrop-blur">
+    <div className="flex flex-1 flex-col bg-[#f7f8f3]">
+      <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <Link to="/stats" className="flex min-w-0 items-center gap-2.5">
             <img src="/logo.png" alt="JojiStats logo" className="h-10 w-10 shrink-0 rounded-full object-cover sm:h-11 sm:w-11" />
@@ -379,41 +379,43 @@ export default function TeamManagerPage() {
           <div className="space-y-6">
 
             {/* ── Title + Mode Picker ── */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-green-700">{team?.name}</p>
-                <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
-                  Team Manager
-                </h1>
-                <p className="mt-1 text-sm text-gray-400">
-                  {team?.currentSeasonYear} Season · {players.length} players
-                </p>
+            <section className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-green-700">{team?.name}</p>
+                  <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
+                    Team Manager
+                  </h1>
+                  <p className="mt-1 text-sm text-gray-400">
+                    {team?.currentSeasonYear} Season · {players.length} players
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setManagerMode("batting")}
+                    className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                      managerMode === "batting"
+                        ? "bg-green-900 text-white shadow-sm"
+                        : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
+                    }`}
+                  >
+                    Batting
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setManagerMode("pitching")}
+                    className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                      managerMode === "pitching"
+                        ? "bg-green-900 text-white shadow-sm"
+                        : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
+                    }`}
+                  >
+                    Pitching
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => setManagerMode("batting")}
-                  className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-                    managerMode === "batting"
-                      ? "bg-green-900 text-white shadow-sm"
-                      : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
-                  }`}
-                >
-                  Batting
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setManagerMode("pitching")}
-                  className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-                    managerMode === "pitching"
-                      ? "bg-green-900 text-white shadow-sm"
-                      : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
-                  }`}
-                >
-                  Pitching
-                </button>
-              </div>
-            </div>
+            </section>
 
             {/* Team summary tiles */}
             <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">

@@ -49,7 +49,11 @@ function buildRoster(
     .sort((a, b) => b.avg - a.avg)
 }
 
-export default function SeasonArchivePage() {
+type SeasonArchivePageProps = {
+  embedded?: boolean
+}
+
+export default function SeasonArchivePage({ embedded = false }: SeasonArchivePageProps) {
   const navigate = useNavigate()
   const [isAdmin, setIsAdmin] = useState(false)
   const [allTeams, setAllTeams] = useState<TeamRow[]>([])
@@ -176,32 +180,34 @@ export default function SeasonArchivePage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f3]">
+    <div className={embedded ? "w-full" : "flex flex-1 flex-col bg-[#f7f8f3]"}>
       {/* ── Header ── */}
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur shadow-sm">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
-          <Link to="/stats" className="flex items-center gap-2.5">
-            <img src="/logo.png" alt="JojiStats logo" className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11" />
-            <span className="text-xl font-extrabold uppercase tracking-tight text-green-900 sm:text-3xl">
-              JojiStats
-            </span>
-          </Link>
-          <div className="flex items-center gap-2">
-            <Link to={isAdmin ? "/admin" : "/stats"} className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-50">
-              {isAdmin ? "Admin" : "Stats"}
+      {!embedded && (
+        <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
+          <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between gap-4">
+            <Link to="/stats" className="flex items-center gap-2.5">
+              <img src="/logo.png" alt="JojiStats logo" className="h-10 w-10 rounded-full object-cover sm:h-11 sm:w-11" />
+              <span className="text-xl font-extrabold uppercase tracking-tight text-green-900 sm:text-3xl">
+                JojiStats
+              </span>
             </Link>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="rounded-lg bg-green-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800"
-            >
-              Logout
-            </button>
+            <div className="flex items-center gap-2">
+              <Link to={isAdmin ? "/admin" : "/stats"} className="rounded-lg border border-green-900 px-3 py-2 text-sm font-semibold text-green-900 transition-colors hover:bg-green-50">
+                {isAdmin ? "Admin" : "Stats"}
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="rounded-lg bg-green-900 px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-green-800"
+              >
+                Logout
+              </button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className={embedded ? "w-full" : "mx-auto w-full max-w-screen-2xl px-3 py-6 sm:px-4 sm:py-8 lg:px-6"}>
         {isLoading ? (
           <div className="flex items-center gap-3 text-sm text-gray-500">
             <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-900 border-t-transparent" />
@@ -236,35 +242,37 @@ export default function SeasonArchivePage() {
             )}
 
             {/* ── Title + Season Picker ── */}
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-green-700">{teamName}</p>
-                <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
-                  Season Archive
-                </h1>
-              </div>
-
-              {availableSeasons.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {availableSeasons.map((year) => (
-                    <button
-                      key={year}
-                      type="button"
-                      onClick={() => setSelectedSeason(year)}
-                      className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
-                        selectedSeason === year
-                          ? "bg-green-900 text-white shadow-sm"
-                          : "bg-white border border-gray-200 text-gray-600 hover:border-green-800 hover:text-green-900"
-                      }`}
-                    >
-                      {year}
-                    </button>
-                  ))}
+            <section className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm sm:p-6">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-xs font-bold uppercase tracking-widest text-green-700">{teamName}</p>
+                  <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
+                    Season Archive
+                  </h1>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-400">No seasons recorded yet.</p>
-              )}
-            </div>
+
+                {availableSeasons.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {availableSeasons.map((year) => (
+                      <button
+                        key={year}
+                        type="button"
+                        onClick={() => setSelectedSeason(year)}
+                        className={`rounded-full px-4 py-1.5 text-sm font-bold transition-colors ${
+                          selectedSeason === year
+                            ? "bg-green-900 text-white shadow-sm"
+                            : "border border-gray-200 bg-white text-gray-600 hover:border-green-800 hover:text-green-900"
+                        }`}
+                      >
+                        {year}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-400">No seasons recorded yet.</p>
+                )}
+              </div>
+            </section>
 
             {selectedSeason != null && (
               isSeasonLoading ? (
@@ -275,7 +283,7 @@ export default function SeasonArchivePage() {
               ) : (
                 <>
                   {/* ── Summary Cards ── */}
-                  <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                  <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     <SummaryCard
                       label="Record"
                       value={`${record.w}-${record.l}`}
@@ -291,7 +299,7 @@ export default function SeasonArchivePage() {
                   {leaders && (
                     <section className="rounded-2xl bg-white p-5 shadow-sm sm:p-6">
                       <h2 className="text-base font-bold text-gray-900">Season Leaders</h2>
-                      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
                         <LeaderCard stat="AVG"
                           name={leaders.avgLeader?.player.name ?? "—"}
                           value={leaders.avgLeader ? fmtRate(leaders.avgLeader.avg) : "—"} />

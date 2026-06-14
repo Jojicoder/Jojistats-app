@@ -287,7 +287,7 @@ export default function PlayerPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#f7f8f3]">
+    <div className="flex flex-1 flex-col bg-[#f7f8f3]">
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex w-full items-center justify-between gap-4">
           <Link to="/stats" className="flex items-center gap-3">

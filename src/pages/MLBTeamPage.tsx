@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
-import Header from "../components/Header"
-import TopTabs from "../components/TopTabs"
+import PageShell from "../components/PageShell"
 import {
   getAllTeams,
   getRoster,
@@ -17,7 +16,7 @@ import type {
   RosterPlayer,
 } from "../components/mlb/types"
 import { getStatColor } from "../components/mlb/playerStats"
-import { getTeamThemeStyle } from "../components/mlb/teamTheme"
+import { applyGlobalMLBTheme, clearGlobalMLBTheme, getTeamThemeStyle } from "../components/mlb/teamTheme"
 
 const POSITION_ORDER: Record<string, number> = {
   SP: 0, RP: 1, CL: 2, P: 3,
@@ -70,6 +69,11 @@ export default function MLBTeamPage() {
     }
   }, [isValidTeamId, teamId])
 
+  useEffect(() => {
+    applyGlobalMLBTheme(teamId)
+    return () => clearGlobalMLBTheme()
+  }, [teamId])
+
   const sortedRoster = useMemo(
     () => [...roster].sort((a, b) => {
       const positionDifference =
@@ -106,30 +110,25 @@ export default function MLBTeamPage() {
   }
 
   return (
-    <div
-      className="mlb-themed flex min-h-dvh flex-col bg-gray-50"
+    <PageShell
+      variant="mlb"
       style={getTeamThemeStyle(teamId)}
-    >
-      <Header
-        teamName={team?.name ?? ""}
-        teams={teams.map((candidate) => candidate.name)}
-        onChangeTeam={handleChangeTeam}
-        placeholder="Select an MLB team..."
-      />
-
-      <TopTabs
-        activeView="team"
-        onChangeView={() => {}}
-        tabs={[
+      headerProps={{
+        teamName: team?.name ?? "",
+        teams: teams.map((candidate) => candidate.name),
+        onChangeTeam: handleChangeTeam,
+        placeholder: "Select an MLB team...",
+      }}
+      activeView="team"
+      onChangeView={() => {}}
+      tabs={[
           { label: "Team Overview", view: "team" },
           { label: "Players", href: `/mlb?teamId=${teamId}&view=players` },
           { label: "Today's Games", href: `/mlb?teamId=${teamId}&view=today` },
           { label: "Standings", href: `/mlb?teamId=${teamId}&view=standings` },
           { label: "Back to Your Stats", href: "/stats" },
-        ]}
-      />
-
-      <main className="mx-auto w-full max-w-screen-2xl flex-1 p-3 lg:p-4">
+      ]}
+    >
         {loading && (
           <div className="rounded-2xl bg-white p-6 text-sm text-gray-500 shadow-sm">
             Loading team...
@@ -252,8 +251,7 @@ export default function MLBTeamPage() {
             </Link>
           </div>
         )}
-      </main>
-    </div>
+    </PageShell>
   )
 }
 

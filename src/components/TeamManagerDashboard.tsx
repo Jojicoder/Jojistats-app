@@ -183,20 +183,21 @@ export default function TeamManagerDashboard({
 
   return (
     <main className="w-full space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-green-700">
-            {team?.name ?? "No Team"}
-          </p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
-            Team Manager
-          </h1>
-          <p className="mt-1 text-sm text-gray-400">
-            {team?.currentSeasonYear ?? "-"} Season · {players.length} players
-          </p>
-        </div>
+      <section className="rounded-2xl border border-white/70 bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-green-700">
+              {team?.name ?? "No Team"}
+            </p>
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-green-950 sm:text-3xl">
+              Team Manager
+            </h1>
+            <p className="mt-1 text-sm text-gray-400">
+              {team?.currentSeasonYear ?? "-"} Season · {players.length} players
+            </p>
+          </div>
 
-        <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2">
             {(["batting", "pitching"] as const).map((view) => (
               <button
                 key={view}
@@ -211,8 +212,9 @@ export default function TeamManagerDashboard({
                 {view === "batting" ? "Batting" : "Pitching"}
               </button>
             ))}
+          </div>
         </div>
-      </div>
+      </section>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         {managerMode === "batting" ? (

@@ -71,9 +71,9 @@ const recentGames = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#f7f8f3] text-slate-950">
+    <div className="flex flex-1 flex-col bg-[#f7f8f3] text-slate-950">
       {/* ── Header ── */}
-      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 px-5 py-3 backdrop-blur">
+      <header className="border-b border-slate-200 bg-white px-5 py-3">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">
             <img
@@ -380,18 +380,6 @@ export default function LandingPage() {
         </section>
       </main>
 
-      <footer className="border-t border-slate-200 bg-white px-5 py-8">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 text-xs font-semibold text-slate-400 sm:flex-row">
-          <span>JojiStats © 2026</span>
-          <nav className="flex gap-6">
-            <a href="#features" className="hover:text-slate-600">Features</a>
-            <a href="#how" className="hover:text-slate-600">How It Works</a>
-            <a href="#contact" className="hover:text-slate-600">Contact</a>
-            <Link to="/login" className="hover:text-slate-600">Login</Link>
-            <Link to="/signup" className="hover:text-slate-600">Sign Up</Link>
-          </nav>
-        </div>
-      </footer>
     </div>
   )
 }

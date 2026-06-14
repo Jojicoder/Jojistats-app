@@ -471,6 +471,7 @@ export default function GameRecordPage() {
           hbp: nextStatLine.HBP,
           sf: nextStatLine.SF,
           so: nextStatLine.SO,
+          note: nextStatLine.note.trim() || null,
         },
       })
 
@@ -754,7 +755,7 @@ export default function GameRecordPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 p-6 text-gray-600">
+      <div className="flex flex-1 bg-gray-50 p-6 text-gray-600">
         Checking auth...
       </div>
     )
@@ -762,7 +763,7 @@ export default function GameRecordPage() {
 
   if (accessError || !activePlayer) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="flex flex-1 flex-col bg-gray-50">
         <header className="border-b border-gray-200 bg-white px-3 py-3 shadow-sm sm:px-4">
           <div className="flex w-full items-center justify-between gap-3 sm:gap-4">
             <Link to="/stats" className="flex min-w-0 items-center gap-2 sm:gap-3">
@@ -782,7 +783,7 @@ export default function GameRecordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex flex-1 flex-col bg-gray-50">
       {!isOnline && (
         <div className="flex items-center justify-between bg-amber-500 px-4 py-2 text-sm font-medium text-white">
           <span>Offline{offlineQueueSize > 0 ? ` — ${offlineQueueSize} game(s) pending sync` : ""}</span>

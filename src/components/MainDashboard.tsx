@@ -565,6 +565,7 @@ export default function MainDashboard({
       <MyPitchingStatsPage
         activePlayer={activePlayer}
         entries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
+        teamEntries={teamSavedPitchingEntries}
         battingEntries={savedEntries}
         mode={mode}
         onModeChange={onModeChange}

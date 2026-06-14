@@ -35,25 +35,45 @@ export const PITCHING_CARDS = [
   { key: "inningsPitched",     label: "IP",   desc: "Innings Pitched" },
 ]
 
-export function getStatColor(label: string, value: string) {
+type StatThreshold = { hi: number; lo: number; lowerBetter?: boolean }
+type StatConfig = Record<string, StatThreshold>
+
+const MLB_THRESHOLDS: StatConfig = {
+  AVG:    { hi: 0.300, lo: 0.240 },
+  OBP:    { hi: 0.370, lo: 0.300 },
+  SLG:    { hi: 0.500, lo: 0.380 },
+  OPS:    { hi: 0.850, lo: 0.650 },
+  "BB/K": { hi: 0.50,  lo: 0.25 },
+  ISO:    { hi: 0.200, lo: 0.100 },
+  ERA:    { hi: 3.00,  lo: 4.50,  lowerBetter: true },
+  WHIP:   { hi: 1.10,  lo: 1.35,  lowerBetter: true },
+  "K/9":  { hi: 10.0,  lo: 7.0 },
+  "BB/9": { hi: 2.50,  lo: 4.00,  lowerBetter: true },
+  "K/BB": { hi: 3.00,  lo: 1.50 },
+  "HR/9": { hi: 0.90,  lo: 1.50,  lowerBetter: true },
+}
+
+const JAA_THRESHOLDS: StatConfig = {
+  AVG:    { hi: 0.380, lo: 0.220 },
+  OBP:    { hi: 0.450, lo: 0.300 },
+  SLG:    { hi: 0.600, lo: 0.380 },
+  OPS:    { hi: 0.950, lo: 0.680 },
+  "BB/K": { hi: 0.70,  lo: 0.25 },
+  ISO:    { hi: 0.250, lo: 0.120 },
+  HR:     { hi: 3,     lo: -1 },
+  ERA:    { hi: 4.00,  lo: 7.00,  lowerBetter: true },
+  WHIP:   { hi: 1.30,  lo: 1.80,  lowerBetter: true },
+  "K/9":  { hi: 9.0,   lo: 5.0 },
+  "BB/9": { hi: 3.00,  lo: 5.00,  lowerBetter: true },
+  "K/BB": { hi: 2.50,  lo: 1.20 },
+  "HR/9": { hi: 1.00,  lo: 2.00,  lowerBetter: true },
+}
+
+export function getStatColor(label: string, value: string, league: "mlb" | "jaa" = "mlb") {
   const num = parseFloat(value)
   if (isNaN(num)) return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
 
-  const cfg: Record<string, { hi: number; lo: number; lowerBetter?: boolean }> = {
-    AVG:  { hi: 0.300, lo: 0.240 },
-    OBP:  { hi: 0.370, lo: 0.300 },
-    SLG:  { hi: 0.500, lo: 0.380 },
-    OPS:  { hi: 0.850, lo: 0.650 },
-    "BB/K": { hi: 0.50, lo: 0.25 },
-    ISO:  { hi: 0.200, lo: 0.100 },
-    ERA:  { hi: 3.00, lo: 4.50, lowerBetter: true },
-    WHIP: { hi: 1.10, lo: 1.35, lowerBetter: true },
-    "K/9":  { hi: 10.0, lo: 7.0 },
-    "BB/9": { hi: 2.50, lo: 4.00, lowerBetter: true },
-    "K/BB": { hi: 3.00, lo: 1.50 },
-    "HR/9": { hi: 0.90, lo: 1.50, lowerBetter: true },
-  }
-
+  const cfg = league === "jaa" ? JAA_THRESHOLDS : MLB_THRESHOLDS
   const c = cfg[label]
   if (!c) return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
 

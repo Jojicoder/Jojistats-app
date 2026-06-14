@@ -1,5 +1,4 @@
-import Header from "./Header"
-import TopTabs from "./TopTabs"
+import PageShell from "./PageShell"
 import Sidebar from "./Sidebar"
 import MainDashboard from "./MainDashboard"
 import TeamSetupPage from "./TeamSetupPage"
@@ -7,6 +6,13 @@ import TeamManagerDashboard from "./TeamManagerDashboard"
 import UserAccessPanel from "./UserAccessPanel"
 import ContactMessagesPanel from "./ContactMessagesPanel"
 import MyTeamPage from "./MyTeamPage"
+import SeasonArchivePage from "../pages/SeasonArchivePage"
+import {
+  applyGlobalTheme,
+  isJunksTeam,
+  JUNKS_THEME_STYLE,
+  resetGlobalTheme,
+} from "./teamTheme"
 import { useEffect, useState } from "react"
 import {
   fetchTeams,
@@ -40,7 +46,7 @@ import type {
   UserAccess,
 } from "../types"
 
-type ActiveView = "stats" | "record" | "myteam" | "manager" | "team" | "access" | "contact"
+type ActiveView = "stats" | "record" | "myteam" | "manager" | "team" | "access" | "contact" | "archive"
 type StatMode = "batting" | "pitching"
 
 function mapTeamRow(team: TeamRow): Team {
@@ -131,6 +137,17 @@ export default function Layout() {
 
   const activePlayer =
     teamPlayers.find((p: Player) => p.id === activePlayerId) || teamPlayers[0] || null
+  const useJunksTheme = isJunksTeam(activeTeam?.name)
+
+  useEffect(() => {
+    if (useJunksTheme) {
+      applyGlobalTheme(JUNKS_THEME_STYLE)
+    } else {
+      resetGlobalTheme()
+    }
+
+    return resetGlobalTheme
+  }, [useJunksTheme])
 
   /* ---------------- LOAD ---------------- */
 
@@ -290,12 +307,13 @@ export default function Layout() {
   /* ---------------- UI ---------------- */
 
   return (
-    <div className="flex h-screen flex-col bg-gray-50">
-
-      <Header
-        teamName={activeTeam?.name ?? "No Team"}
-        teams={visibleTeams.map((t) => t.name)}
-        onChangeTeam={(name) => {
+    <PageShell
+      variant={useJunksTheme ? "team" : "default"}
+      style={useJunksTheme ? JUNKS_THEME_STYLE : undefined}
+      headerProps={{
+        teamName: activeTeam?.name ?? "No Team",
+        teams: visibleTeams.map((team) => team.name),
+        onChangeTeam: (name) => {
           const t = visibleTeams.find((x: Team) => x.name === name)
           if (t) {
             setActiveTeamId(t.id)
@@ -304,14 +322,12 @@ export default function Layout() {
               seasonYear: t.currentSeasonYear,
             }))
           }
-        }}
-        isLoggedIn={true}
-      />
-
-      <TopTabs
-        activeView={activeView}
-        onChangeView={(v) => setActiveView(v as ActiveView)}
-        tabs={[
+        },
+        isLoggedIn: true,
+      }}
+      activeView={activeView}
+      onChangeView={(nextView) => setActiveView(nextView as ActiveView)}
+      tabs={[
           { label: "My Stats", view: "stats" },
           { label: "Record Game", view: "record" },
           { label: "My Team", view: "myteam" },
@@ -319,14 +335,13 @@ export default function Layout() {
           { label: "Team Setup", view: "team" },
           { label: "User Access", view: "access" },
           { label: "Contact", view: "contact" },
-          { label: "Archive", href: "/seasons" },
-        ]}
-      />
-
-
-      <div className="flex flex-1 overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-screen-2xl flex-col gap-3 p-3 lg:flex-row lg:p-4">
-        {activeView === "myteam" ? (
+          { label: "Archive", view: "archive" },
+      ]}
+      contentClassName="mx-auto flex w-full max-w-screen-2xl flex-1 flex-col gap-3 p-3 lg:flex-row lg:items-start lg:p-4"
+    >
+        {activeView === "archive" ? (
+          <SeasonArchivePage embedded />
+        ) : activeView === "myteam" ? (
           <MyTeamPage
             team={activeTeam}
             players={teamPlayers}
@@ -424,8 +439,6 @@ export default function Layout() {
             )}
           </>
         )}
-      </div>
-    </div>
-  </div>
+    </PageShell>
   )
 }

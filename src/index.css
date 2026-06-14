@@ -1,5 +1,50 @@
 @import "tailwindcss";
 
+/* Register MLB theme vars so browsers can interpolate them in transitions */
+@property --mlb-primary {
+  syntax: '<color>';
+  initial-value: #14532d;
+  inherits: true;
+}
+
+@property --mlb-secondary {
+  syntax: '<color>';
+  initial-value: #86efac;
+  inherits: true;
+}
+
+@property --mlb-background {
+  syntax: '<color>';
+  initial-value: #14532d;
+  inherits: true;
+}
+
+@property --mlb-on-primary {
+  syntax: '<color>';
+  initial-value: #ffffff;
+  inherits: true;
+}
+
+@property --mlb-pattern-angle {
+  syntax: '<angle>';
+  initial-value: 135deg;
+  inherits: true;
+}
+
+:root {
+  --mlb-primary: #14532d;
+  --mlb-secondary: #86efac;
+  --mlb-background: #14532d;
+  --mlb-on-primary: #ffffff;
+  --mlb-accent: #86efac;
+  transition:
+    --mlb-primary 0.5s ease,
+    --mlb-secondary 0.5s ease,
+    --mlb-background 0.5s ease,
+    --mlb-on-primary 0.5s ease,
+    --mlb-pattern-angle 0.5s ease;
+}
+
 @theme {
   --color-evergreen: #14422c;
   --color-evergreen-light: #2d5a42;
@@ -21,16 +66,47 @@
   }
 }
 
+.site-page-content {
+  background: transparent;
+}
+
+.site-page-content > :not(.mlb-themed) {
+  padding-bottom: 2.5rem;
+}
+
+@media (min-width: 640px) {
+  .site-page-content > :not(.mlb-themed) {
+    padding-bottom: 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .site-page-content > :not(.mlb-themed) {
+    padding-bottom: 4rem;
+  }
+}
+
+html:has(.mlb-themed) .site-page-content {
+  background: transparent;
+}
+
 /* MLB pages inherit the selected team's palette through CSS variables. */
 .mlb-themed {
   --mlb-primary: #14532d;
   --mlb-secondary: #86efac;
   --mlb-background: #14532d;
   --mlb-on-primary: #ffffff;
+  --mlb-accent: var(--mlb-secondary);
   --mlb-accent-x: 82%;
   --mlb-accent-y: 8%;
   --mlb-pattern-angle: 135deg;
+  padding-bottom: 2.5rem;
   background:
+    radial-gradient(
+      circle at 12% 88%,
+      color-mix(in srgb, var(--mlb-accent) 12%, transparent) 0,
+      transparent 22rem
+    ),
     /* Two-tone diagonal: primary → secondary across the page */
     linear-gradient(
       var(--mlb-pattern-angle),
@@ -47,6 +123,18 @@
       white 60rem
     );
   background-attachment: fixed;
+}
+
+@media (min-width: 640px) {
+  .mlb-themed {
+    padding-bottom: 3.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .mlb-themed {
+    padding-bottom: 4rem;
+  }
 }
 
 /* Header: strong team-color tint + thick top border */

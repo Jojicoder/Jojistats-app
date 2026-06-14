@@ -42,6 +42,7 @@ export function buildBattingStatPayload(
     hbp: entry.HBP,
     sf: entry.SF,
     so: entry.SO,
+    note: entry.note.trim() || null,
   }
 }
 

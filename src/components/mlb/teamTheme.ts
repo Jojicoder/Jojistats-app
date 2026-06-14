@@ -58,6 +58,18 @@ export function getTeamTheme(teamId: number | null | undefined) {
   return teamId ? MLB_TEAM_THEMES[teamId] ?? DEFAULT_THEME : DEFAULT_THEME
 }
 
+export function applyGlobalMLBTheme(teamId: number | null | undefined) {
+  const style = getTeamThemeStyle(teamId)
+  const root = document.documentElement
+  for (const [key, value] of Object.entries(style)) {
+    root.style.setProperty(key, value as string)
+  }
+}
+
+export function clearGlobalMLBTheme() {
+  applyGlobalMLBTheme(null)
+}
+
 export function getTeamThemeStyle(teamId: number | null | undefined): CSSProperties {
   const theme = getTeamTheme(teamId)
   const seed = teamId ?? 0

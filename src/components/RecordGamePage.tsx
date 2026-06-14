@@ -51,7 +51,6 @@ export default function RecordGamePage({
   setRecordMode,
   pitchingEntry,
   onPitchingEntryChange,
-  onSavePitchingGame,
   isPitchingSaveDisabled,
   saveError = "",
   onClearSaveError,
@@ -168,7 +167,7 @@ export default function RecordGamePage({
     activePlayer, currentEntry, onEntryChange, gameMeta, isMetaComplete,
     isEditingSavedEntry, isEditingSavedPitchingEntry, editingGamePositions,
     recordMode, setRecordMode, onSaveGame, onUpdateSavedEntry,
-    onCancelEditSavedEntry, pitchingEntry, onSavePitchingGame, onUpdateSavedPitchingEntry,
+    onCancelEditSavedEntry, pitchingEntry, onPitchingEntryChange, onUpdateSavedPitchingEntry,
     onNewGame,
   })
 
@@ -373,12 +372,18 @@ export default function RecordGamePage({
           pitchingEntry={pitchingEntry}
           onPitchingEntryChange={onPitchingEntryChange}
           onPitchingPrimaryAction={standard.handlePitchingPrimaryAction}
-          isPitchingSaveDisabled={isPitchingSaveDisabled}
+          isPitchingSaveDisabled={
+            isPitchingSaveDisabled ||
+            (!isEditingSavedPitchingEntry &&
+              standard.pendingPitchingEntries.some((entry) => entry.playerId === activePlayer.id))
+          }
           onCancelEditSavedPitchingEntry={onCancelEditSavedPitchingEntry}
           pendingEntries={standard.pendingEntries}
+          pendingPitchingEntries={standard.pendingPitchingEntries}
           editingPendingPlayerId={standard.editingPendingPlayerId}
           onStartEditPendingEntry={standard.handleStartEditPendingEntry}
           onRemovePendingEntry={standard.handleRemovePendingEntry}
+          onRemovePendingPitchingEntry={standard.handleRemovePendingPitchingEntry}
           onCancelEditPendingEntry={standard.resetPendingEdit}
           isSaving={standard.isSaving}
           onSave={standard.handleSave}

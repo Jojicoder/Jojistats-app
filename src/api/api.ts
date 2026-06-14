@@ -176,6 +176,7 @@ type BattingGameStatPayload = {
   so?: number
   hbp?: number
   sf?: number
+  note?: string | null
 }
 
 type PitchingGameStatPayload = {
@@ -238,6 +239,7 @@ const toBattingStatRow = (s: BattingGameStatPayload, gameId?: number) => ({
   so: s.so ?? 0,
   hbp: s.hbp ?? 0,
   sf: s.sf ?? 0,
+  note: s.note?.trim() || null,
 })
 
 const toPitchingStatRow = (

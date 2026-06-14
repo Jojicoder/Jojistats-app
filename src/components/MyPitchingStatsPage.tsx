@@ -2,10 +2,12 @@ import { useState } from "react"
 import type { Player, SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
 import { usePitchingStats } from "../hooks/usePitchingStats"
 import PitchingTrendChart from "./PitchingTrendChart"
+import { calcPitchingMetrics } from "../utils/metrics"
 
 type Props = {
   activePlayer: Player
   entries: SavedPitchingGameEntry[]
+  teamEntries?: SavedPitchingGameEntry[]
   battingEntries?: SavedBattingGameEntry[]
   mode?: "batting" | "pitching"
   onModeChange?: (mode: "batting" | "pitching") => void
@@ -26,7 +28,12 @@ const statDescriptions: Record<string, string> = {
 
 type StatCardStyle = { bg: string; label: string; value: string }
 
-function getPitchingStatCardStyle(label: string, value: string, gamesPlayed: number): StatCardStyle {
+function getPitchingStatCardStyle(
+  playerValue: number,
+  teamValue: number,
+  lowerIsBetter: boolean,
+  hasMinimumSample: boolean
+): StatCardStyle {
   const map: Record<string, StatCardStyle> = {
     emerald: { bg: "bg-emerald-50",  label: "text-emerald-700", value: "text-emerald-900" },
     green:   { bg: "bg-green-50",    label: "text-green-700",   value: "text-green-900"   },
@@ -35,34 +42,13 @@ function getPitchingStatCardStyle(label: string, value: string, gamesPlayed: num
     red:     { bg: "bg-red-50",       label: "text-red-600",     value: "text-red-900"     },
   }
 
-  if (gamesPlayed === 0) return map.neutral
-
-  const n = Number(value)
-
-  if (label === "ERA") {
-    if (Number.isNaN(n)) return map.neutral
-    if (n <= 1.50) return map.emerald
-    if (n <= 2.50) return map.green
-    if (n <= 4.50) return map.neutral
-    if (n <= 6.00) return map.rose
-    return map.red
-  }
-
-  if (label === "WHIP") {
-    if (Number.isNaN(n)) return map.neutral
-    if (n <= 0.80) return map.emerald
-    if (n <= 1.10) return map.green
-    if (n <= 1.50) return map.neutral
-    if (n <= 2.00) return map.rose
-    return map.red
-  }
-
-  if (label === "SO") {
-    if (n >= 30) return map.emerald
-    if (n >= 15) return map.green
-    return map.neutral
-  }
-
+  if (!hasMinimumSample || !Number.isFinite(playerValue) || teamValue <= 0) return map.neutral
+  const ratio = lowerIsBetter ? teamValue / playerValue : playerValue / teamValue
+  if (!Number.isFinite(ratio)) return map.emerald
+  if (ratio >= 1.25) return map.emerald
+  if (ratio >= 1.08) return map.green
+  if (ratio < 0.7) return map.red
+  if (ratio < 0.85) return map.rose
   return map.neutral
 }
 
@@ -87,12 +73,35 @@ function formatIP(outs: number) {
   return rem === 0 ? `${whole}.0` : `${whole}.${rem}`
 }
 
-export default function MyPitchingStatsPage({ activePlayer, entries, mode = "pitching", onModeChange }: Props) {
+export default function MyPitchingStatsPage({
+  activePlayer,
+  entries,
+  teamEntries = [],
+  mode = "pitching",
+  onModeChange,
+}: Props) {
   const [selectedEntry, setSelectedEntry] = useState<SavedPitchingGameEntry | null>(null)
   const displayedEntries = selectedEntry ? [selectedEntry] : entries
   const statLines = displayedEntries.map((e) => e.statLine)
   const stats = usePitchingStats(statLines)
   const gamesPlayed = displayedEntries.length
+  const playerMetrics = calcPitchingMetrics(displayedEntries)
+  const teamMetrics = calcPitchingMetrics(teamEntries)
+  const playerIp = playerMetrics.outs / 3
+  const teamIp = teamMetrics.outs / 3
+  const perInning = (value: number, innings: number) => innings > 0 ? value / innings : 0
+  const comparisons: Record<string, { player: number; team: number; lower: boolean; label: string }> = {
+    ERA: { player: playerMetrics.era, team: teamMetrics.era, lower: true, label: teamMetrics.era.toFixed(2) },
+    WHIP: { player: playerMetrics.whip, team: teamMetrics.whip, lower: true, label: teamMetrics.whip.toFixed(2) },
+    H: { player: perInning(playerMetrics.h, playerIp), team: perInning(teamMetrics.h, teamIp), lower: true, label: `${perInning(teamMetrics.h, teamIp).toFixed(2)}/IP` },
+    R: { player: perInning(playerMetrics.r, playerIp), team: perInning(teamMetrics.r, teamIp), lower: true, label: `${perInning(teamMetrics.r, teamIp).toFixed(2)}/IP` },
+    ER: { player: perInning(playerMetrics.er, playerIp), team: perInning(teamMetrics.er, teamIp), lower: true, label: `${perInning(teamMetrics.er, teamIp).toFixed(2)}/IP` },
+    BB: { player: perInning(playerMetrics.bb, playerIp), team: perInning(teamMetrics.bb, teamIp), lower: true, label: `${perInning(teamMetrics.bb, teamIp).toFixed(2)}/IP` },
+    HBP: { player: perInning(playerMetrics.hbp, playerIp), team: perInning(teamMetrics.hbp, teamIp), lower: true, label: `${perInning(teamMetrics.hbp, teamIp).toFixed(2)}/IP` },
+    SO: { player: perInning(playerMetrics.so, playerIp), team: perInning(teamMetrics.so, teamIp), lower: false, label: `${perInning(teamMetrics.so, teamIp).toFixed(2)}/IP` },
+    HR: { player: perInning(playerMetrics.hr, playerIp), team: perInning(teamMetrics.hr, teamIp), lower: true, label: `${perInning(teamMetrics.hr, teamIp).toFixed(2)}/IP` },
+  }
+  const hasMinimumSample = playerMetrics.outs >= 3
 
   return (
     <main className="min-w-0 w-full">
@@ -166,12 +175,19 @@ export default function MyPitchingStatsPage({ activePlayer, entries, mode = "pit
               { label: "HR",   value: String(stats.hr) },
             ] as const
           ).map(({ label, value }) => {
-            const s = getPitchingStatCardStyle(label, value, gamesPlayed)
+            const comparison = comparisons[label]
+            const s = getPitchingStatCardStyle(
+              comparison.player,
+              comparison.team,
+              comparison.lower,
+              hasMinimumSample
+            )
             return (
               <div key={label} className={`min-w-0 rounded-2xl p-3 shadow-sm sm:p-4 ${s.bg}`}>
                 <p className={`text-xs font-bold uppercase tracking-widest ${s.label}`}>{label}</p>
                 <p className="mt-0.5 text-xs text-gray-400">{statDescriptions[label]}</p>
                 <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${s.value}`}>{value}</p>
+                <p className="mt-1 text-xs text-gray-400">Team {comparison.label}</p>
               </div>
             )
           })}

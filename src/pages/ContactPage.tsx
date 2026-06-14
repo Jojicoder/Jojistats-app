@@ -3,7 +3,7 @@ import ContactForm from "../components/ContactForm"
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-[#f7f8f3] text-slate-950">
+    <div className="flex flex-1 flex-col bg-[#f7f8f3] text-slate-950">
       <header className="border-b border-slate-200 bg-white px-5 py-3 shadow-sm">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4">
           <Link to="/" className="flex min-w-0 items-center gap-2.5">

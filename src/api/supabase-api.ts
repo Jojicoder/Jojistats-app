@@ -61,6 +61,7 @@ type BattingStatRow = {
   hbp: number | null
   sf: number | null
   so: number | null
+  note: string | null
 }
 
 const validPositions = new Set<Position>([
@@ -373,7 +374,7 @@ export const fetchSavedEntriesByPlayer = async (
         HBP: stat.hbp ?? 0,
         SF: stat.sf ?? 0,
         SO: stat.so ?? 0,
-        note: "",
+        note: stat.note ?? "",
       },
     }
 

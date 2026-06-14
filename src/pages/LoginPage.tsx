@@ -62,7 +62,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f8f3]">
+    <div className="flex flex-1 flex-col bg-[#f7f8f3]">
       <header className="border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex w-full items-center justify-between gap-4">
           <Link to="/stats" className="flex items-center gap-3">
@@ -95,7 +95,7 @@ export default function LoginPage() {
         </div>
       </header>
 
-      <main className="flex min-h-[calc(100vh-73px)] items-center justify-center px-4">
+      <main className="flex flex-1 items-center justify-center px-4 py-10">
         <form
           onSubmit={handleLogin}
           className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-sm"

@@ -240,7 +240,8 @@ type StatCardStyle = { bg: string; label: string; value: string }
 
 function getStatCardStyle(
   playerValue: number,
-  type: "avg" | "obp" | "neutral"
+  teamValue: number,
+  hasMinimumSample: boolean
 ): StatCardStyle {
   const map: Record<string, StatCardStyle> = {
     emerald: { bg: "bg-emerald-50",  label: "text-emerald-700", value: "text-emerald-900" },
@@ -250,22 +251,12 @@ function getStatCardStyle(
     red:     { bg: "bg-red-50",       label: "text-red-600",     value: "text-red-900"     },
   }
 
-  if (type === "avg") {
-    if (playerValue >= 0.33) return map.emerald
-    if (playerValue >= 0.3)  return map.green
-    if (playerValue >= 0.25) return map.neutral
-    if (playerValue >= 0.22) return map.rose
-    return map.red
-  }
-
-  if (type === "obp") {
-    if (playerValue >= 0.4)  return map.emerald
-    if (playerValue >= 0.37) return map.green
-    if (playerValue >= 0.31) return map.neutral
-    if (playerValue >= 0.28) return map.rose
-    return map.red
-  }
-
+  if (!hasMinimumSample || teamValue <= 0) return map.neutral
+  const ratio = playerValue / teamValue
+  if (ratio >= 1.25) return map.emerald
+  if (ratio >= 1.08) return map.green
+  if (ratio < 0.7) return map.red
+  if (ratio < 0.85) return map.rose
   return map.neutral
 }
 
@@ -395,6 +386,19 @@ export default function PerformanceTrendCard({
     () => getSummary(filteredTeamEntries),
     [filteredTeamEntries]
   )
+  const playerPlateAppearances = useMemo(
+    () =>
+      filteredPlayerEntries.reduce(
+        (total, entry) =>
+          total +
+          entry.statLine.AB +
+          entry.statLine.BB +
+          (entry.statLine.HBP ?? 0) +
+          (entry.statLine.SF ?? 0),
+        0
+      ),
+    [filteredPlayerEntries]
+  )
 
   const chartData = useMemo(
     () => buildChartData(filteredPlayerEntries, filteredTeamEntries),
@@ -480,13 +484,13 @@ export default function PerformanceTrendCard({
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
             {(
               [
-                { key: "AVG", type: "avg",     val: playerSummary.avg, teamVal: teamSummary.avg, num: playerSummary.numericAvg },
-                { key: "OBP", type: "obp",     val: playerSummary.obp, teamVal: teamSummary.obp, num: playerSummary.numericObp },
-                { key: "SLG", type: "neutral", val: playerSummary.slg, teamVal: teamSummary.slg, num: playerSummary.numericSlg },
-                { key: "OPS", type: "neutral", val: playerSummary.ops, teamVal: teamSummary.ops, num: playerSummary.numericOps },
+                { key: "AVG", val: playerSummary.avg, teamVal: teamSummary.avg, num: playerSummary.numericAvg, teamNum: teamSummary.numericAvg },
+                { key: "OBP", val: playerSummary.obp, teamVal: teamSummary.obp, num: playerSummary.numericObp, teamNum: teamSummary.numericObp },
+                { key: "SLG", val: playerSummary.slg, teamVal: teamSummary.slg, num: playerSummary.numericSlg, teamNum: teamSummary.numericSlg },
+                { key: "OPS", val: playerSummary.ops, teamVal: teamSummary.ops, num: playerSummary.numericOps, teamNum: teamSummary.numericOps },
               ] as const
-            ).map(({ key, type, val, teamVal, num }) => {
-              const s = getStatCardStyle(num, type)
+            ).map(({ key, val, teamVal, num, teamNum }) => {
+              const s = getStatCardStyle(num, teamNum, playerPlateAppearances >= 5)
               return (
                 <div key={key} className={`rounded-xl p-3 sm:p-4 ${s.bg}`}>
                   <p className={`text-xs font-bold uppercase tracking-widest ${s.label}`}>{key}</p>

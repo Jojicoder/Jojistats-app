@@ -1,4 +1,4 @@
-import type { Player, Position, BattingEntryData, PitchingEntryData, DraftGameMeta, SavedBattingGameEntry, SavedPitchingGameEntry, PendingBattingEntry } from "../types"
+import type { Player, Position, BattingEntryData, PitchingEntryData, DraftGameMeta, SavedBattingGameEntry, SavedPitchingGameEntry, PendingBattingEntry, PendingPitchingEntry } from "../types"
 import ScoreEntryPanel from "./ScoreEntryPanel"
 import PitchingEntryPanel from "./PitchingEntryPanel"
 import SavedEntriesList from "./SavedEntriesList"
@@ -34,9 +34,11 @@ type Props = {
   isPitchingSaveDisabled: boolean
   onCancelEditSavedPitchingEntry?: () => void
   pendingEntries: PendingBattingEntry[]
+  pendingPitchingEntries: PendingPitchingEntry[]
   editingPendingPlayerId?: string | null
   onStartEditPendingEntry?: (entry: PendingBattingEntry) => void
   onRemovePendingEntry?: (playerId: string) => void
+  onRemovePendingPitchingEntry?: (playerId: string) => void
   onCancelEditPendingEntry?: () => void
   isSaving: boolean
   onSave: () => void
@@ -81,9 +83,11 @@ export default function StandardModePanel({
   isPitchingSaveDisabled,
   onCancelEditSavedPitchingEntry,
   pendingEntries,
+  pendingPitchingEntries,
   editingPendingPlayerId = null,
   onStartEditPendingEntry,
   onRemovePendingEntry,
+  onRemovePendingPitchingEntry,
   onCancelEditPendingEntry,
   isSaving,
   onSave,
@@ -108,7 +112,7 @@ export default function StandardModePanel({
     >
       {/* ROSTER PANEL */}
       {showRosterPanel && (
-        <div className="h-fit overflow-visible rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 xl:sticky xl:top-6 xl:max-h-[calc(100vh-8rem)] xl:self-start xl:overflow-y-auto">
+        <div className="h-fit rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4 xl:self-start">
           <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">
             Roster
           </p>
@@ -267,7 +271,7 @@ export default function StandardModePanel({
                 entry={pitchingEntry}
                 onEntryChange={onPitchingEntryChange}
                 onPrimaryAction={onPitchingPrimaryAction}
-                primaryActionLabel={isEditingSavedPitchingEntry ? "Update Pitching" : "Save Pitching"}
+                primaryActionLabel={isEditingSavedPitchingEntry ? "Update Pitching" : "Add Pitching Entry"}
                 primaryActionDisabled={isPitchingSaveDisabled}
               />
               {isEditingSavedPitchingEntry && onCancelEditSavedPitchingEntry && (
@@ -286,8 +290,7 @@ export default function StandardModePanel({
 
       {/* RIGHT */}
       <div className="space-y-4 sm:space-y-6">
-        {recordMode === "batting" && (
-          <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
+        <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
             {pendingEntries.length > 0 && (
               <div className="mb-3 space-y-2">
                 <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
@@ -346,6 +349,35 @@ export default function StandardModePanel({
                 ))}
               </div>
             )}
+            {pendingPitchingEntries.length > 0 && (
+              <div className="mb-3 space-y-2">
+                <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                  Pitching Queue — {pendingPitchingEntries.length}
+                </p>
+                {pendingPitchingEntries.map((entry) => (
+                  <div key={entry.playerId} className="rounded-xl border border-gray-100 px-3 py-2.5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold">{entry.playerName}</p>
+                        <p className="mt-0.5 text-xs text-gray-400">
+                          IP {Math.floor(entry.inningsPitchedOuts / 3)}.{entry.inningsPitchedOuts % 3}
+                          {" · "}ER {entry.earnedRuns} · SO {entry.strikeouts}
+                        </p>
+                      </div>
+                      {onRemovePendingPitchingEntry && (
+                        <button
+                          type="button"
+                          onClick={() => onRemovePendingPitchingEntry(entry.playerId)}
+                          className="shrink-0 rounded-lg bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
+                        >
+                          Undo
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {pendingEntries.length > 0 && gameMeta.teamScore != null && (() => {
               const totalRbi = pendingEntries.reduce((sum, e) => sum + e.RBI, 0)
               const errorRuns = gameMeta.errorRuns ?? 0
@@ -372,10 +404,20 @@ export default function StandardModePanel({
             )}
             <button
               onClick={onSave}
-              disabled={isSaving || pendingEntries.length === 0 || isEditingSavedEntry}
+              disabled={
+                isSaving ||
+                (pendingEntries.length === 0 && pendingPitchingEntries.length === 0) ||
+                isEditingSavedEntry
+              }
               className="w-full rounded-lg bg-green-900 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
             >
-              {isSaving ? "Saving..." : isEditingSavedEntry ? "Finish editing entry first" : pendingEntries.length > 0 ? `Save Game (${pendingEntries.length})` : "Save Game"}
+              {isSaving
+                ? "Saving..."
+                : isEditingSavedEntry
+                  ? "Finish editing entry first"
+                  : pendingEntries.length + pendingPitchingEntries.length > 0
+                    ? `Save Game (${pendingEntries.length + pendingPitchingEntries.length})`
+                    : "Save Game"}
             </button>
             {saveError && (
               <div className="mt-3 flex items-start justify-between gap-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -385,8 +427,7 @@ export default function StandardModePanel({
                 )}
               </div>
             )}
-          </div>
-        )}
+        </div>
 
         {(recordMode === "batting" || isEditingSavedEntry) && (
           <SavedEntriesList
