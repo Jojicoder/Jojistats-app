@@ -9,14 +9,16 @@ import type { MLBTeam } from "../components/mlb/types"
 import { getTeamThemeStyle } from "../components/mlb/teamTheme"
 import TopTabs from "../components/TopTabs"
 
-type MLBView = "today" | "standings" | "players"
+type MLBView = "team" | "today" | "standings" | "players"
 
 export default function MLBPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view")
   const initialView: MLBView =
-    requestedView === "today" || requestedView === "standings" ? requestedView : "players"
+    requestedView === "today" || requestedView === "standings" || requestedView === "players"
+      ? requestedView
+      : "team"
   const initialTeamId = Number(searchParams.get("teamId"))
   const initialPlayerId = Number(searchParams.get("playerId"))
   const [activeView, setActiveView] = useState<MLBView>(initialView)
@@ -30,6 +32,12 @@ export default function MLBPage() {
       .then((data) => setMlbTeams([...data].sort((a, b) => a.name.localeCompare(b.name))))
       .catch(() => {})
   }, [])
+
+  useEffect(() => {
+    if (activeView === "team" && selectedTeamId) {
+      navigate(`/mlb/teams/${selectedTeamId}`, { replace: true })
+    }
+  }, [activeView, selectedTeamId, navigate])
 
   const selectedTeam = mlbTeams.find((team) => team.id === selectedTeamId)
 
@@ -46,12 +54,16 @@ export default function MLBPage() {
   }
 
   const handleChangeView = (view: string) => {
-    if (view === "team") {
-      if (selectedTeamId) navigate(`/mlb/teams/${selectedTeamId}`)
+    const nextView = view as MLBView
+    if (nextView === "team") {
+      if (selectedTeamId) {
+        navigate(`/mlb/teams/${selectedTeamId}`)
+      } else {
+        setActiveView("team")
+      }
       return
     }
 
-    const nextView = view as MLBView
     setActiveView(nextView)
     setSearchParams((current) => {
       const next = new URLSearchParams(current)
@@ -76,8 +88,8 @@ export default function MLBPage() {
         activeView={activeView}
         onChangeView={handleChangeView}
         tabs={[
-          { label: "Players", view: "players" },
           { label: "Team Overview", view: "team" },
+          { label: "Players", view: "players" },
           { label: "Today's Games", view: "today" },
           { label: "Standings", view: "standings" },
           { label: "Back to Your Stats", href: "/stats" },
@@ -85,6 +97,11 @@ export default function MLBPage() {
       />
 
       <div className="mx-auto w-full max-w-screen-2xl flex-1 p-3 lg:p-4">
+        {activeView === "team" && (
+          <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
+            <p className="text-sm text-gray-500">Select a team from the header to view Team Overview.</p>
+          </div>
+        )}
         {activeView === "today" && <TodayGamesTab selectedTeamId={selectedTeamId} />}
         {activeView === "standings" && <StandingsTab selectedTeamId={selectedTeamId} />}
         {activeView === "players" && (

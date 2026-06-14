@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
-import { Link } from "react-router-dom"
+import { Link, useSearchParams } from "react-router-dom"
 import { getGames } from "./api"
 import type { MLBGame } from "./types"
 
@@ -68,8 +68,13 @@ export default function TodayGamesTab({
 }: {
   selectedTeamId?: number | null
 }) {
+  const [searchParams] = useSearchParams()
   const today = formatLocalDate(new Date())
-  const [selectedDate, setSelectedDate] = useState(today)
+  const requestedDate = searchParams.get("date")
+  const initialDate = requestedDate && /^\d{4}-\d{2}-\d{2}$/.test(requestedDate)
+    ? requestedDate
+    : today
+  const [selectedDate, setSelectedDate] = useState(initialDate)
   const [games, setGames] = useState<MLBGame[] | null>(null)
   const [error, setError] = useState("")
 
@@ -311,6 +316,14 @@ export default function TodayGamesTab({
                   </div>
                 </div>
               )}
+              <Link
+                to={`/mlb/games/${game.gamePk}?teamId=${
+                  selectedTeamId ?? game.teams.away.team.id
+                }&date=${selectedDate}&live=${isLive ? "1" : "0"}`}
+                className="mt-4 block w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-center text-sm font-semibold text-green-900 transition hover:bg-gray-50"
+              >
+                View game details
+              </Link>
             </div>
           )
         })}

@@ -27,24 +27,44 @@
   --mlb-secondary: #86efac;
   --mlb-background: #14532d;
   --mlb-on-primary: #ffffff;
+  --mlb-accent-x: 82%;
+  --mlb-accent-y: 8%;
+  --mlb-pattern-angle: 135deg;
   background:
-    radial-gradient(
-      circle at 92% 4%,
-      color-mix(in srgb, var(--mlb-background) 22%, transparent) 0,
-      transparent 38rem
+    /* Two-tone diagonal: primary → secondary across the page */
+    linear-gradient(
+      var(--mlb-pattern-angle),
+      color-mix(in srgb, var(--mlb-primary) 58%, white) 0%,
+      color-mix(in srgb, var(--mlb-primary) 22%, white) 38%,
+      color-mix(in srgb, var(--mlb-secondary) 28%, white) 68%,
+      white 100%
     ),
-    radial-gradient(
-      circle at 0% 36%,
-      color-mix(in srgb, var(--mlb-background) 10%, transparent) 0,
-      transparent 34rem
-    ),
+    /* Vertical fade so bottom of page is always clean white */
     linear-gradient(
       180deg,
-      color-mix(in srgb, var(--mlb-primary) 12%, #f9fafb) 0,
-      color-mix(in srgb, var(--mlb-primary) 5%, #f9fafb) 24rem,
-      #f9fafb 48rem
+      transparent 0,
+      transparent 30rem,
+      white 60rem
     );
   background-attachment: fixed;
+}
+
+/* Header: strong team-color tint + thick top border */
+.mlb-themed header {
+  border-top: 4px solid var(--mlb-primary);
+  background: color-mix(in srgb, var(--mlb-primary) 22%, white) !important;
+  border-bottom-color: color-mix(in srgb, var(--mlb-primary) 35%, white) !important;
+}
+
+/* TopTabs nav: team-tinted background */
+.mlb-themed nav {
+  background: color-mix(in srgb, var(--mlb-primary) 14%, white) !important;
+  border-bottom-color: color-mix(in srgb, var(--mlb-primary) 28%, white) !important;
+}
+
+/* Tab pill container inside nav */
+.mlb-themed nav .bg-\[#f7f8f3\] {
+  background-color: color-mix(in srgb, var(--mlb-primary) 14%, #f4f5f0) !important;
 }
 
 .mlb-themed :is(.text-green-700, .text-green-800, .text-green-900, .text-green-950) {

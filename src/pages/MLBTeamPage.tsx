@@ -16,6 +16,7 @@ import type {
   MLBTeamStats,
   RosterPlayer,
 } from "../components/mlb/types"
+import { getStatColor } from "../components/mlb/playerStats"
 import { getTeamThemeStyle } from "../components/mlb/teamTheme"
 
 const POSITION_ORDER: Record<string, number> = {
@@ -90,6 +91,8 @@ export default function MLBTeamPage() {
   const wins = Number(stats?.pitching.wins ?? 0)
   const losses = Number(stats?.pitching.losses ?? 0)
   const gamesPlayed = Number(stats?.hitting.gamesPlayed ?? wins + losses)
+  const winPercentage = gamesPlayed > 0 ? wins / gamesPlayed : Number.NaN
+  const recordColor = getRecordColor(winPercentage)
   const error = !isValidTeamId
     ? "Invalid MLB team."
     : requestError?.teamId === teamId
@@ -118,8 +121,8 @@ export default function MLBTeamPage() {
         activeView="team"
         onChangeView={() => {}}
         tabs={[
-          { label: "Players", href: `/mlb?teamId=${teamId}&view=players` },
           { label: "Team Overview", view: "team" },
+          { label: "Players", href: `/mlb?teamId=${teamId}&view=players` },
           { label: "Today's Games", href: `/mlb?teamId=${teamId}&view=today` },
           { label: "Standings", href: `/mlb?teamId=${teamId}&view=standings` },
           { label: "Back to Your Stats", href: "/stats" },
@@ -169,9 +172,13 @@ export default function MLBTeamPage() {
                   label="Record"
                   value={`${wins}-${losses}`}
                   detail={`${gamesPlayed} games`}
-                  accent
+                  color={recordColor}
                 />
-                <SummaryCard label="Win PCT" value={String(stats.pitching.winPercentage ?? "—")} />
+                <SummaryCard
+                  label="Win PCT"
+                  value={String(stats.pitching.winPercentage ?? "—")}
+                  color={recordColor}
+                />
                 <SummaryCard label="Games" value={String(gamesPlayed)} />
                 <SummaryCard label="Players" value={String(roster.length)} />
               </div>
@@ -203,7 +210,7 @@ export default function MLBTeamPage() {
 
                 <Card title="Team Batting">
                   <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
-                    <StatTile label="AVG" value={String(stats.hitting.avg ?? "—")} accent />
+                    <StatTile label="AVG" value={String(stats.hitting.avg ?? "—")} />
                     <StatTile label="OBP" value={String(stats.hitting.obp ?? "—")} />
                     <StatTile label="OPS" value={String(stats.hitting.ops ?? "—")} />
                     <StatTile label="HR" value={String(stats.hitting.homeRuns ?? "—")} />
@@ -213,7 +220,7 @@ export default function MLBTeamPage() {
 
                 <Card title="Team Pitching">
                   <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
-                    <StatTile label="ERA" value={String(stats.pitching.era ?? "—")} accent />
+                    <StatTile label="ERA" value={String(stats.pitching.era ?? "—")} />
                     <StatTile label="WHIP" value={String(stats.pitching.whip ?? "—")} />
                     <StatTile label="IP" value={String(stats.pitching.inningsPitched ?? "—")} />
                     <StatTile label="SO" value={String(stats.pitching.strikeOuts ?? "—")} />
@@ -263,33 +270,54 @@ function SummaryCard({
   label,
   value,
   detail,
-  accent = false,
+  color = NEUTRAL_STAT_COLOR,
 }: {
   label: string
   value: string
   detail?: string
-  accent?: boolean
+  color?: StatColor
 }) {
   return (
-    <div className={`rounded-xl p-3 sm:p-4 ${accent ? "bg-green-800 text-white" : "bg-[#f7f8f3]"}`}>
-      <p className={`text-xs font-bold uppercase tracking-widest ${accent ? "text-green-300" : "text-gray-400"}`}>
+    <div className={`rounded-xl p-3 sm:p-4 ${color.bg}`}>
+      <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>
         {label}
       </p>
-      <p className={`mt-2 text-xl font-extrabold sm:text-2xl ${accent ? "text-white" : "text-green-950"}`}>
+      <p className={`mt-2 text-xl font-extrabold sm:text-2xl ${color.val}`}>
         {value}
       </p>
-      {detail && <p className={`mt-0.5 text-xs ${accent ? "text-green-300" : "text-gray-400"}`}>{detail}</p>}
+      {detail && <p className="mt-0.5 text-xs text-gray-400">{detail}</p>}
     </div>
   )
 }
 
-function StatTile({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+type StatColor = ReturnType<typeof getStatColor>
+
+const NEUTRAL_STAT_COLOR: StatColor = {
+  bg: "bg-[#f7f8f3]",
+  lbl: "text-gray-400",
+  val: "text-gray-900",
+}
+
+function getRecordColor(winPercentage: number): StatColor {
+  if (!Number.isFinite(winPercentage)) return NEUTRAL_STAT_COLOR
+  if (winPercentage >= 0.55) {
+    return { bg: "bg-emerald-50", lbl: "text-emerald-700", val: "text-emerald-900" }
+  }
+  if (winPercentage <= 0.45) {
+    return { bg: "bg-rose-50", lbl: "text-rose-600", val: "text-rose-900" }
+  }
+  return NEUTRAL_STAT_COLOR
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  const color = getStatColor(label, value)
+
   return (
-    <div className={`rounded-xl p-3 text-center ${accent ? "bg-green-800 text-white" : "bg-[#f7f8f3]"}`}>
-      <p className={`text-xs font-bold uppercase tracking-widest ${accent ? "text-green-300" : "text-gray-400"}`}>
+    <div className={`rounded-xl p-3 text-center ${color.bg}`}>
+      <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>
         {label}
       </p>
-      <p className={`mt-1.5 text-xl font-extrabold ${accent ? "text-white" : "text-green-950"}`}>
+      <p className={`mt-1.5 text-xl font-extrabold ${color.val}`}>
         {value}
       </p>
     </div>
@@ -306,7 +334,7 @@ function GameResult({ game, teamId }: { game: MLBGame; teamId: number }) {
       <div className="flex items-center gap-3">
         <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${
           result === "W"
-            ? "bg-green-100 text-green-800"
+            ? "bg-emerald-100 text-emerald-800"
             : result === "L"
             ? "bg-red-100 text-red-700"
             : "bg-gray-100 text-gray-500"

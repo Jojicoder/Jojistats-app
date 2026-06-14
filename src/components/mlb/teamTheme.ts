@@ -19,7 +19,7 @@ const MLB_TEAM_THEMES: Record<number, TeamTheme> = {
   111: { primary: "#BD3039", secondary: "#0C2340", background: "#BD3039" }, // Red Sox
   112: { primary: "#0E3386", secondary: "#CC3433", background: "#0E3386" }, // Cubs
   113: { primary: "#C6011F", secondary: "#000000", background: "#C6011F" }, // Reds
-  114: { primary: "#0C2340", secondary: "#E31937", background: "#E31937" }, // Guardians
+  114: { primary: "#0C2340", secondary: "#E31937", background: "#0C2340" }, // Guardians
   115: { primary: "#33006F", secondary: "#C4CED4", background: "#33006F" }, // Rockies
   116: { primary: "#0C2340", secondary: "#FA4616", background: "#0C2340" }, // Tigers
   117: { primary: "#002D62", secondary: "#EB6E1F", background: "#002D62" }, // Astros
@@ -35,12 +35,12 @@ const MLB_TEAM_THEMES: Record<number, TeamTheme> = {
   138: { primary: "#C41E3A", secondary: "#0C2340", background: "#C41E3A" }, // Cardinals
   139: { primary: "#092C5C", secondary: "#8FBCE6", background: "#092C5C" }, // Rays
   140: { primary: "#003278", secondary: "#C0111F", background: "#003278" }, // Rangers
-  141: { primary: "#134A8E", secondary: "#E8291C", background: "#134A8E" }, // Blue Jays
+  141: { primary: "#134A8E", secondary: "#A9CEE3", background: "#134A8E" }, // Blue Jays
   142: { primary: "#002B5C", secondary: "#D31145", background: "#002B5C" }, // Twins
   143: { primary: "#E81828", secondary: "#002D72", background: "#E81828" }, // Phillies
   144: { primary: "#CE1141", secondary: "#13274F", background: "#CE1141" }, // Braves
   145: { primary: "#27251F", secondary: "#C4CED4", background: "#27251F" }, // White Sox
-  146: { primary: "#00A3E0", secondary: "#EF3340", background: "#00A3E0" }, // Marlins
+  146: { primary: "#1A1A1B", secondary: "#EF3340", background: "#1A1A1B" }, // Marlins
   147: { primary: "#0C2340", secondary: "#C4CED4", background: "#0C2340" }, // Yankees
   158: { primary: "#12284B", secondary: "#FFC52F", background: "#12284B" }, // Brewers
 }
@@ -60,10 +60,18 @@ export function getTeamTheme(teamId: number | null | undefined) {
 
 export function getTeamThemeStyle(teamId: number | null | undefined): CSSProperties {
   const theme = getTeamTheme(teamId)
+  const seed = teamId ?? 0
+  const accentX = 18 + (seed * 17) % 64
+  const accentY = 4 + (seed * 11) % 38
+  const patternAngle = 118 + (seed * 13) % 44
+
   return {
     "--mlb-primary": theme.primary,
     "--mlb-secondary": theme.secondary,
     "--mlb-background": theme.background,
     "--mlb-on-primary": readableTextColor(theme.primary),
+    "--mlb-accent-x": `${accentX}%`,
+    "--mlb-accent-y": `${accentY}%`,
+    "--mlb-pattern-angle": `${patternAngle}deg`,
   } as CSSProperties
 }

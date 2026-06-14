@@ -25,6 +25,7 @@ const PlayerPage = lazy(() => import("./pages/PlayerPage"))
 const SeasonArchivePage = lazy(() => import("./pages/SeasonArchivePage"))
 const MLBPage = lazy(() => import("./pages/MLBPage"))
 const MLBTeamPage = lazy(() => import("./pages/MLBTeamPage"))
+const MLBGamePage = lazy(() => import("./pages/MLBGamePage"))
 
 function PageFallback() {
   return <div className="p-6 text-gray-600">Loading...</div>
@@ -80,6 +81,7 @@ export default function App() {
           <Route path="/seasons" element={<SeasonArchivePage />} />
           <Route path="/mlb" element={<MLBPage />} />
           <Route path="/mlb/teams/:teamId" element={<MLBTeamPage />} />
+          <Route path="/mlb/games/:gamePk" element={<MLBGamePage />} />
 
           <Route
             path="/admin"

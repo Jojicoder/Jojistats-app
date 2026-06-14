@@ -2,12 +2,14 @@ import type {
   DivisionRecord,
   GameLogSplit,
   MLBGame,
+  MLBGameLiveFeed,
   MLBTeam,
   MLBTeamStats,
   RosterPlayer,
 } from "./types"
 
 const MLB_API = "https://statsapi.mlb.com/api/v1"
+const MLB_LIVE_API = "https://statsapi.mlb.com/api/v1.1"
 
 export const MLB_SEASON = new Date().getFullYear()
 
@@ -30,6 +32,10 @@ export async function getGames(date: string): Promise<MLBGame[]> {
     "Schedule"
   )
   return json.dates?.[0]?.games ?? []
+}
+
+export async function getGameLiveFeed(gamePk: number): Promise<MLBGameLiveFeed> {
+  return fetchJson(`${MLB_LIVE_API}/game/${gamePk}/feed/live`, "Live game")
 }
 
 export async function getStandings(): Promise<DivisionRecord[]> {
@@ -99,7 +105,7 @@ export async function getTeamSchedule(teamId: number): Promise<MLBGame[]> {
 
 export async function getRoster(teamId: number): Promise<RosterPlayer[]> {
   const json = await fetchJson(
-    `${MLB_API}/teams/${teamId}/roster?season=${MLB_SEASON}&rosterType=active`,
+    `${MLB_API}/teams/${teamId}/roster?season=${MLB_SEASON}&rosterType=active&hydrate=person`,
     "Roster"
   )
   return json.roster ?? []
@@ -125,4 +131,16 @@ export async function getPlayerGameLog(
     "Player game log"
   )
   return json.stats?.[0]?.splits ?? []
+}
+
+export async function getPlayerRecentGamePks(playerId: number, limit = 15): Promise<number[]> {
+  const json = await fetchJson(
+    `${MLB_API}/people/${playerId}/stats?stats=gameLog&season=${MLB_SEASON}&group=hitting`,
+    "Player game log"
+  )
+  const splits: Array<{ game?: { gamePk?: number } }> = json.stats?.[0]?.splits ?? []
+  return splits
+    .slice(-limit)
+    .map((s) => s.game?.gamePk)
+    .filter((pk): pk is number => pk != null)
 }

@@ -6,6 +6,7 @@ import {
   getTeamStats,
   MLB_SEASON,
 } from "./api"
+import BatterZoneMap from "./BatterZoneMap"
 import MLBGameLog from "./MLBGameLog"
 import MLBTrendChart from "./MLBTrendChart"
 import { enrichStats, getStatColor, HITTING_CARDS, PITCHING_CARDS } from "./playerStats"
@@ -248,6 +249,16 @@ export default function PlayersTab({
                   </h1>
                   <p className="mt-0.5 text-sm text-gray-400">
                     {selectedPlayer.position.abbreviation}
+                    {selectedPlayer.person.batSide?.code && (
+                      <span className="ml-2">
+                        · Bats {selectedPlayer.person.batSide.code === "S" ? "Switch" : selectedPlayer.person.batSide.code === "L" ? "Left" : "Right"}
+                      </span>
+                    )}
+                    {selectedPlayer.person.pitchHand?.code && (
+                      <span className="ml-2">
+                        · Throws {selectedPlayer.person.pitchHand.code === "L" ? "Left" : "Right"}
+                      </span>
+                    )}
                   </p>
                   </div>
                 </div>
@@ -334,6 +345,12 @@ export default function PlayersTab({
                   </div>
                 </section>
                 <MLBTrendChart log={gameLog} mode={statsMode} teamStats={teamStats} />
+                {statsMode === "hitting" && (
+                  <BatterZoneMap
+                    playerId={selectedPlayer.person.id}
+                    batSide={selectedPlayer.person.batSide?.code}
+                  />
+                )}
                 <MLBGameLog log={gameLog} mode={statsMode} />
               </>
             )}
