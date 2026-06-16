@@ -71,7 +71,7 @@ export function useEditMode({
           gamePositions: entry.gamePositions.length
             ? entry.gamePositions
             : player
-              ? [player.position]
+              ? [...player.positions]
               : ["UTIL"],
         }
       })
@@ -133,7 +133,7 @@ export function useEditMode({
     if (!player) return
     setEditGameEntries((prev) => [
       ...prev,
-      { ...createEmptyBattingLine(), playerId: player.id, playerName: player.name, gamePositions: [player.position] },
+      { ...createEmptyBattingLine(), playerId: player.id, playerName: player.name, gamePositions: [...player.positions] },
     ])
     setSelectedEditPlayerId(player.id)
     setEditAddPlayerId("")

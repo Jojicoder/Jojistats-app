@@ -68,7 +68,7 @@ export default function PlayerForm({
             id: createPlayerId(),
             teamId,
             name: "",
-            position: "UTIL",
+            positions: ["UTIL" as const],
             jerseyNumber: null,
             seasonYear,
             isArchived: false,

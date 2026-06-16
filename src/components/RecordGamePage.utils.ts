@@ -313,7 +313,7 @@ export function aggregateLivePlays(
     const existing = byPlayer.get(play.playerId)
 
     if (!existing) {
-      const gamePositions = player ? [player.position] : ["UTIL" as Position]
+      const gamePositions = player ? [...player.positions] : ["UTIL" as Position]
       if (pitcherIds.has(play.playerId) && !gamePositions.includes("P")) gamePositions.push("P")
       byPlayer.set(play.playerId, {
         ...createEmptyBattingLine(), ...play.statLine,
@@ -343,7 +343,7 @@ export function aggregateLivePlays(
       return
     }
 
-    const gamePositions = player ? [player.position] : ["UTIL" as Position]
+    const gamePositions = player ? [...player.positions] : ["UTIL" as Position]
     if (!gamePositions.includes("P")) gamePositions.push("P")
     byPlayer.set(pitcherId, {
       ...createEmptyBattingLine(),

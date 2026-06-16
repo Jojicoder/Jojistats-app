@@ -194,7 +194,7 @@ export default function EditModePanel({
                                 {player ? getPlayerLabel(player) : `Player ${entry.playerId}`}
                               </p>
                               <p className="mt-1 text-xs text-gray-500">
-                                {player?.position ?? entry.gamePositions.join(" / ")} · AB {entry.AB} · H {entry.H} · RBI {entry.RBI}
+                                {(player?.positions ?? []).join(" / ") || entry.gamePositions.join(" / ")} · AB {entry.AB} · H {entry.H} · RBI {entry.RBI}
                               </p>
                             </div>
                             <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">
@@ -266,7 +266,7 @@ export default function EditModePanel({
                                 {player ? getPlayerLabel(player) : `Player ${entry.playerId}`}
                               </p>
                               <p className="mt-1 text-xs text-gray-500">
-                                {player?.position ?? "P"} · IP {formatLiveInnings(entry.inningsPitchedOuts)} · ER {entry.earnedRuns} · SO {entry.strikeouts}
+                                {(player?.positions ?? ["P"]).join(" / ")} · IP {formatLiveInnings(entry.inningsPitchedOuts)} · ER {entry.earnedRuns} · SO {entry.strikeouts}
                               </p>
                             </div>
                             <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0">

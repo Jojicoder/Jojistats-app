@@ -28,31 +28,6 @@ const statDescriptions: Record<string, string> = {
   HR:   "Home Runs Allowed",
 }
 
-type StatCardStyle = { bg: string; label: string; value: string }
-
-function getPitchingStatCardStyle(
-  playerValue: number,
-  teamValue: number,
-  lowerIsBetter: boolean,
-  hasMinimumSample: boolean
-): StatCardStyle {
-  const map: Record<string, StatCardStyle> = {
-    emerald: { bg: "bg-emerald-50",  label: "text-emerald-700", value: "text-emerald-900" },
-    green:   { bg: "bg-green-50",    label: "text-green-700",   value: "text-green-900"   },
-    neutral: { bg: "bg-[#f7f8f3]",   label: "text-gray-400",    value: "text-green-950"   },
-    rose:    { bg: "bg-rose-50",      label: "text-rose-600",    value: "text-rose-900"    },
-    red:     { bg: "bg-red-50",       label: "text-red-600",     value: "text-red-900"     },
-  }
-
-  if (!hasMinimumSample || !Number.isFinite(playerValue) || teamValue <= 0) return map.neutral
-  const ratio = lowerIsBetter ? teamValue / playerValue : playerValue / teamValue
-  if (!Number.isFinite(ratio)) return map.emerald
-  if (ratio >= 1.25) return map.emerald
-  if (ratio >= 1.08) return map.green
-  if (ratio < 0.7) return map.red
-  if (ratio < 0.85) return map.rose
-  return map.neutral
-}
 
 function formatResult(entry: SavedPitchingGameEntry) {
   const { result, teamScore, opponentScore } = entry.gameMeta
@@ -104,8 +79,6 @@ export default function MyPitchingStatsPage({
     SO: { player: perInning(playerMetrics.so, playerIp), team: perInning(teamMetrics.so, teamIp), lower: false, label: `${perInning(teamMetrics.so, teamIp).toFixed(2)}/IP` },
     HR: { player: perInning(playerMetrics.hr, playerIp), team: perInning(teamMetrics.hr, teamIp), lower: true, label: `${perInning(teamMetrics.hr, teamIp).toFixed(2)}/IP` },
   }
-  const hasMinimumSample = playerMetrics.outs >= 3
-
   return (
     <main className="min-w-0 w-full">
       <div className="w-full max-w-6xl space-y-5">

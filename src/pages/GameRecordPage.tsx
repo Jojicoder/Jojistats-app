@@ -117,7 +117,7 @@ function mapPlayer(row: {
     id: String(row.id),
     teamId: String(row.team_id),
     name: row.name,
-    position: row.position as Player["position"],
+    positions: [row.position as import("../types").Position],
     jerseyNumber: row.jersey_number,
     seasonYear: row.season_year,
     isArchived: Boolean(row.is_archived),
