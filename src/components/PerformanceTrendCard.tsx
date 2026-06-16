@@ -15,7 +15,7 @@ const statDescriptions: Record<string, string> = {
   OPS: "On-base Plus Slugging",
 }
 
-type TrendTab = "season" | "last5"
+type TrendTab = "season" | "last5" | "last3"
 type ChartMetric = "avg" | "obp" | "ops"
 
 type ChartPoint = {
@@ -149,9 +149,8 @@ function filterPlayerEntriesByTab(
 ) {
   const sortedEntries = sortEntriesByGame(entries)
 
-  if (activeTab === "last5") {
-    return sortedEntries.slice(-5)
-  }
+  if (activeTab === "last5") return sortedEntries.slice(-5)
+  if (activeTab === "last3") return sortedEntries.slice(-3)
 
   const seasonEntries = sortedEntries.filter(
     (entry) => entry.gameMeta.seasonYear === seasonYear
@@ -363,7 +362,7 @@ export default function PerformanceTrendCard({
   teamEntries,
   seasonYear,
 }: PerformanceTrendCardProps) {
-  const [activeTab, setActiveTab] = useState<TrendTab>("season")
+  const [activeTab, setActiveTab] = useState<TrendTab>("last3")
   const [activeMetric, setActiveMetric] = useState<ChartMetric>("avg")
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
@@ -382,9 +381,14 @@ export default function PerformanceTrendCard({
     [filteredPlayerEntries]
   )
 
+  const teamSeasonEntries = useMemo(
+    () => teamEntries.filter((e) => e.gameMeta.seasonYear === seasonYear),
+    [teamEntries, seasonYear]
+  )
+
   const teamSummary = useMemo(
-    () => getSummary(filteredTeamEntries),
-    [filteredTeamEntries]
+    () => getSummary(teamSeasonEntries),
+    [teamSeasonEntries]
   )
   const playerPlateAppearances = useMemo(
     () =>
@@ -447,17 +451,17 @@ export default function PerformanceTrendCard({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 rounded-xl bg-gray-100 p-1 sm:flex sm:items-center sm:gap-2">
+        <div className="grid grid-cols-3 rounded-xl bg-gray-100 p-1 sm:flex sm:items-center sm:gap-2">
           <button
             type="button"
-            onClick={() => setActiveTab("season")}
+            onClick={() => setActiveTab("last3")}
             className={`rounded-lg px-3 py-2 text-sm font-medium ${
-              activeTab === "season"
+              activeTab === "last3"
                 ? "bg-white text-green-900 shadow-sm"
                 : "text-gray-600"
             }`}
           >
-            Seasons
+            Last 3
           </button>
 
           <button
@@ -471,7 +475,18 @@ export default function PerformanceTrendCard({
           >
             Last 5
           </button>
-          
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("season")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              activeTab === "season"
+                ? "bg-white text-green-900 shadow-sm"
+                : "text-gray-600"
+            }`}
+          >
+            Seasons
+          </button>
         </div>
       </div>
 

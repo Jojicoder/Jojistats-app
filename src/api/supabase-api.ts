@@ -11,6 +11,7 @@ export type TeamRow = {
   name: string
   is_archived: boolean | number | null
   current_season_year: number
+  league: "mlb" | "jaa" | null
 }
 
 export type PlayerRow = {
@@ -21,6 +22,7 @@ export type PlayerRow = {
   jersey_number: number | null
   season_year: number
   is_archived: boolean | number | null
+  pitching_role: "starter" | "reliever" | "closer" | null
 }
 
 export type UserAccessRow = {

@@ -147,7 +147,7 @@ export default function EditModePanel({
                       <option value="">All players are in this game</option>
                     ) : (
                       editAvailablePlayers.map((player) => (
-                        <option key={player.id} value={player.id}>{getPlayerLabel(player)} {player.position}</option>
+                        <option key={player.id} value={player.id}>{getPlayerLabel(player)} {player.positions.join(", ")}</option>
                       ))
                     )}
                   </select>
@@ -162,7 +162,7 @@ export default function EditModePanel({
                       <option value="">All pitchers are in this game</option>
                     ) : (
                       editAvailablePitchers.map((player) => (
-                        <option key={player.id} value={player.id}>{getPlayerLabel(player)} {player.position}</option>
+                        <option key={player.id} value={player.id}>{getPlayerLabel(player)} {player.positions.join(", ")}</option>
                       ))
                     )}
                   </select>

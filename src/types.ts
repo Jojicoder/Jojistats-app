@@ -16,16 +16,20 @@ export type Team = {
   name: string
   isArchived?: boolean
   currentSeasonYear: number
+  league: "mlb" | "jaa" | null
 }
+
+export type PitchingRole = "starter" | "reliever" | "closer"
 
 export type Player = {
   id: string
   teamId: string
   name: string
-  position: Position
+  positions: Position[]
   jerseyNumber?: number | null
   seasonYear: number
   isArchived?: boolean
+  pitchingRole?: PitchingRole | null
 }
 
 export type TrendPoint = {

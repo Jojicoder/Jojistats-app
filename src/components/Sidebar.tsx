@@ -67,14 +67,14 @@ export default function Sidebar({
       if (sortBy === "name") return a.name.localeCompare(b.name)
 
       if (sortBy === "position") {
-        const pos = a.position.localeCompare(b.position)
+        const pos = a.positions[0].localeCompare(b.positions[0])
         if (pos !== 0) return pos
         return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
       }
 
       if (mode === "pitching") {
-        const aIsPitcher = a.position === "P"
-        const bIsPitcher = b.position === "P"
+        const aIsPitcher = a.positions.includes("P")
+        const bIsPitcher = b.positions.includes("P")
         const am = playerMetrics[a.id].pitching
         const bm = playerMetrics[b.id].pitching
 
@@ -202,7 +202,7 @@ export default function Sidebar({
                   {player.name}
                 </p>
                 <p className={`mt-0.5 truncate text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
-                  {player.position} · {mode === "pitching" ? pitchingMetrics.games : battingMetrics.games}G
+                  {player.positions.join(", ")} · {mode === "pitching" ? pitchingMetrics.games : battingMetrics.games}G
                 </p>
               </div>
             </button>

@@ -108,6 +108,7 @@ export const createPlayer = async (payload: {
   position?: string | null
   season_year: number
   is_archived?: number
+  pitching_role?: "starter" | "reliever" | "closer" | null
 }) => {
   const { data, error } = await supabase
     .from("players")
@@ -118,6 +119,7 @@ export const createPlayer = async (payload: {
       position: payload.position ?? null,
       season_year: payload.season_year,
       is_archived: Boolean(payload.is_archived ?? 0),
+      pitching_role: payload.pitching_role ?? null,
     })
     .select()
     .single()
@@ -134,6 +136,7 @@ export const updatePlayer = async (
     position?: string | null
     season_year: number
     is_archived?: number
+    pitching_role?: "starter" | "reliever" | "closer" | null
   }
 ) => {
   const { error } = await supabase
@@ -145,6 +148,7 @@ export const updatePlayer = async (
       position: payload.position ?? null,
       season_year: payload.season_year,
       is_archived: Boolean(payload.is_archived ?? 0),
+      pitching_role: payload.pitching_role ?? null,
     })
     .eq("id", playerId)
   if (error) throw new Error(error.message)

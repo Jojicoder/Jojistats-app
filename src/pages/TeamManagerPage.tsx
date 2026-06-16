@@ -29,10 +29,11 @@ function mapPlayer(row: {
     id: String(row.id),
     teamId: String(row.team_id),
     name: row.name,
-    position: row.position as Player["position"],
+    positions: (row.position ?? "UTIL").split(",").map((s) => s.trim()) as Player["positions"],
     jerseyNumber: row.jersey_number,
     seasonYear: row.season_year,
     isArchived: Boolean(row.is_archived),
+    pitchingRole: (row as { pitching_role?: "starter" | "reliever" | "closer" | null }).pitching_role ?? null,
   }
 }
 
@@ -43,7 +44,7 @@ function getPlayerLabel(player: Player) {
     : player.name
 }
 
-function getPositionGroup(position: Player["position"]) {
+function getPositionGroup(position: string) {
   if (position === "P") return "Pitchers"
   if (position === "C") return "Catchers"
   if (position === "LF" || position === "CF" || position === "RF") return "Outfielders"
@@ -161,6 +162,7 @@ export default function TeamManagerPage() {
           name: teamRow.name,
           isArchived: Boolean(teamRow.is_archived),
           currentSeasonYear: teamRow.current_season_year,
+          league: teamRow.league ?? null,
         }
         setDebugMessage(`Team loaded: ${nextTeam.name}`)
 
@@ -264,7 +266,7 @@ export default function TeamManagerPage() {
   const pitchingUsage = useMemo(
     () =>
       [...pitcherSummaries]
-        .filter((summary) => summary.metrics.outs > 0 || summary.player.position === "P")
+        .filter((summary) => summary.metrics.outs > 0 || summary.player.positions.includes("P"))
         .sort((a, b) => b.metrics.outs - a.metrics.outs || b.metrics.so - a.metrics.so)
         .slice(0, 6),
     [pitcherSummaries]
@@ -282,8 +284,8 @@ export default function TeamManagerPage() {
   const pitchingRosterOverview = useMemo(
     () =>
       [...pitcherSummaries].sort((a, b) => {
-        if (a.player.position === "P" && b.player.position !== "P") return -1
-        if (a.player.position !== "P" && b.player.position === "P") return 1
+        if (a.player.positions.includes("P") && !b.player.positions.includes("P")) return -1
+        if (!a.player.positions.includes("P") && b.player.positions.includes("P")) return 1
         return (
           b.metrics.outs - a.metrics.outs ||
           b.metrics.so - a.metrics.so ||
@@ -326,7 +328,7 @@ export default function TeamManagerPage() {
     }
 
     players.forEach((player) => {
-      counts[getPositionGroup(player.position)] += 1
+      counts[getPositionGroup(player.positions[0])] += 1
     })
 
     return counts
@@ -555,7 +557,7 @@ export default function TeamManagerPage() {
                         <p className="text-sm font-semibold text-gray-900">
                           <span className="mr-1.5 text-xs text-gray-400">{index + 1}.</span>
                           {getPlayerLabel(summary.player)}{" "}
-                          <span className="text-xs text-gray-400">{summary.player.position}</span>
+                          <span className="text-xs text-gray-400">{summary.player.positions.join(", ")}</span>
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
                           AVG {fmtRate(summary.metrics.avg)} · OBP {fmtRate(summary.metrics.obp)} · OPS {fmtRate(summary.metrics.ops)}
@@ -593,7 +595,7 @@ export default function TeamManagerPage() {
                                 )}
                                 {player.name}
                               </td>
-                              <td className="px-2 py-3 text-center text-gray-500">{player.position}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{player.positions.join(", ")}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.games}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.ab}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.h}</td>
@@ -641,7 +643,7 @@ export default function TeamManagerPage() {
                           <div key={summary.player.id} className="rounded-xl bg-[#f7f8f3] px-4 py-3">
                             <p className="text-sm font-semibold text-gray-900">
                               {getPlayerLabel(summary.player)}{" "}
-                              <span className="text-xs text-gray-400">{summary.player.position}</span>
+                              <span className="text-xs text-gray-400">{summary.player.positions.join(", ")}</span>
                             </p>
                             <p className="mt-1 text-xs text-gray-400">
                               IP {fmtIp(summary.metrics.outs)} · ERA {fmtDecimal(summary.metrics.era)} · SO {summary.metrics.so}
@@ -724,7 +726,7 @@ export default function TeamManagerPage() {
                               )}
                               {player.name}
                             </td>
-                            <td className="px-2 py-3 text-center text-gray-500">{player.position}</td>
+                            <td className="px-2 py-3 text-center text-gray-500">{player.positions.join(", ")}</td>
                             <td className="px-2 py-3 text-center text-gray-500">{totals.games}</td>
                             <td className="px-2 py-3 text-center text-gray-500">{fmtIp(totals.outs)}</td>
                             <td className="px-2 py-3 text-center font-bold text-green-900">{fmtDecimal(totals.era)}</td>

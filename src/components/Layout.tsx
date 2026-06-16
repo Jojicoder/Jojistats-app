@@ -38,6 +38,7 @@ import {
 import type { GameRow, PlayerRow, TeamRow } from "../api/supabase-api"
 import type {
   Player,
+  Position,
   Team,
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
@@ -55,6 +56,7 @@ function mapTeamRow(team: TeamRow): Team {
     name: team.name,
     isArchived: Boolean(team.is_archived),
     currentSeasonYear: team.current_season_year,
+    league: team.league ?? null,
   }
 }
 
@@ -64,9 +66,10 @@ function mapPlayerRow(player: PlayerRow): Player {
     teamId: String(player.team_id),
     name: player.name,
     jerseyNumber: player.jersey_number,
-    position: player.position as Player["position"],
+    positions: (player.position ?? "UTIL").split(",").map((s) => s.trim()) as Position[],
     seasonYear: player.season_year,
     isArchived: Boolean(player.is_archived),
+    pitchingRole: player.pitching_role ?? null,
   }
 }
 
@@ -235,9 +238,10 @@ export default function Layout() {
       team_id: Number(player.teamId),
       name: player.name,
       jersey_number: player.jerseyNumber ?? null,
-      position: player.position,
+      position: player.positions.join(","),
       season_year: player.seasonYear,
       is_archived: player.isArchived ? 1 : 0,
+      pitching_role: player.pitchingRole ?? null,
     })
     const updated = await fetchPlayers(Number(player.teamId), player.seasonYear)
     setPlayers((prev) =>
@@ -255,9 +259,10 @@ export default function Layout() {
       team_id: Number(player.teamId),
       name: player.name,
       jersey_number: player.jerseyNumber ?? null,
-      position: player.position,
+      position: player.positions.join(","),
       season_year: player.seasonYear,
       is_archived: player.isArchived ? 1 : 0,
+      pitching_role: player.pitchingRole ?? null,
     })
     const updated = await fetchPlayers(Number(player.teamId), player.seasonYear)
     setPlayers((prev) =>
@@ -418,6 +423,7 @@ export default function Layout() {
                 onSelectPlayer={(player) => setActivePlayerId(player.id)}
                 activeView={activeView === "record" ? "record" : "stats"}
                 teamName={activeTeam?.name ?? ""}
+                league={activeTeam?.league ?? null}
                 gameMeta={gameMeta}
                 setGameMeta={setGameMeta}
                 entriesByPlayer={entriesByPlayer}

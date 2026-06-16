@@ -186,71 +186,72 @@ export default function Header({
         </div>
 
         {/* RIGHT */}
-        <div className="flex max-w-[46vw] shrink-0 flex-wrap items-center justify-end gap-1.5 xl:max-w-none xl:flex-nowrap xl:gap-3">
+        <div className="flex max-w-[46vw] shrink-0 flex-wrap items-center justify-end gap-2 xl:max-w-none xl:flex-nowrap xl:gap-3">
 
           {isLoggedIn ? (
             <>
-              <Link
-                to="/mlb"
-                className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
-              >
-                MLB
-              </Link>
-
-              {displayAccessRole === "recorder" && (
+              <div className="flex items-center divide-x divide-gray-300">
                 <Link
-                  to="/record-game"
-                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
+                  to="/mlb"
+                  className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
                 >
-                  Record Game
+                  MLB
                 </Link>
-              )}
 
-              {displayAccessRole === "player" && (
-                <Link
-                  to="/player"
-                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
+                {displayAccessRole === "recorder" && (
+                  <Link
+                    to="/record-game"
+                    className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
+                  >
+                    Record Game
+                  </Link>
+                )}
+
+                {displayAccessRole === "player" && (
+                  <Link
+                    to="/player"
+                    className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
+                  >
+                    My Player
+                  </Link>
+                )}
+
+                {displayAccessRole === "manager" && (
+                  <Link
+                    to="/manager"
+                    className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
+                  >
+                    Manager
+                  </Link>
+                )}
+
+                {displayAccessRole === "admin" && (
+                  <Link
+                    to="/admin"
+                    className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
+                  >
+                    Admin
+                  </Link>
+                )}
+
+                {showAwaitingAccessLink && !displayAccessRole && (
+                  <Link
+                    to="/awaiting-access"
+                    className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
+                  >
+                    Check Access
+                  </Link>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
                 >
-                  My Player
-                </Link>
-              )}
+                  Logout
+                </button>
+              </div>
 
-              {displayAccessRole === "manager" && (
-                <Link
-                  to="/manager"
-                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
-                >
-                  Manager
-                </Link>
-              )}
-
-              {displayAccessRole === "admin" && (
-                <Link
-                  to="/admin"
-                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
-                >
-                  Admin
-                </Link>
-              )}
-
-              {showAwaitingAccessLink && !displayAccessRole && (
-                <Link
-                  to="/awaiting-access"
-                  className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
-                >
-                  Check Access
-                </Link>
-              )}
-
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="whitespace-nowrap rounded-lg bg-green-900 px-2.5 py-2 text-xs font-semibold text-white hover:bg-green-800 xl:px-3 xl:text-sm"
-              >
-                Logout
-              </button>
-
-              {/* 🔥 AVATAR */}
               <img
                 src={avatarUrl || "/logo.png"}
                 alt="avatar"
@@ -259,28 +260,28 @@ export default function Header({
               />
             </>
           ) : (
-            <>
+            <div className="flex items-center divide-x divide-gray-300">
               <Link
                 to="/mlb"
-                className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
+                className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
               >
                 MLB
               </Link>
 
               <Link
                 to="/login"
-                className="whitespace-nowrap rounded-lg bg-green-900 px-2.5 py-2 text-xs font-semibold text-white hover:bg-green-800 xl:px-3 xl:text-sm"
+                className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
               >
                 Login
               </Link>
 
               <Link
                 to="/signup"
-                className="whitespace-nowrap rounded-lg border border-green-900 px-2.5 py-2 text-xs font-semibold text-green-900 hover:bg-green-50 xl:px-3 xl:text-sm"
+                className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
               >
                 Sign Up
               </Link>
-            </>
+            </div>
           )}
 
         </div>

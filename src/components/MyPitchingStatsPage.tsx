@@ -3,12 +3,14 @@ import type { Player, SavedBattingGameEntry, SavedPitchingGameEntry } from "../t
 import { usePitchingStats } from "../hooks/usePitchingStats"
 import PitchingTrendChart from "./PitchingTrendChart"
 import { calcPitchingMetrics } from "../utils/metrics"
+import { getStatColor } from "./mlb/playerStats"
 
 type Props = {
   activePlayer: Player
   entries: SavedPitchingGameEntry[]
   teamEntries?: SavedPitchingGameEntry[]
   battingEntries?: SavedBattingGameEntry[]
+  league?: "mlb" | "jaa" | null
   mode?: "batting" | "pitching"
   onModeChange?: (mode: "batting" | "pitching") => void
 }
@@ -77,6 +79,7 @@ export default function MyPitchingStatsPage({
   activePlayer,
   entries,
   teamEntries = [],
+  league,
   mode = "pitching",
   onModeChange,
 }: Props) {
@@ -117,7 +120,7 @@ export default function MyPitchingStatsPage({
                   ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
                   : activePlayer.name}
               </h1>
-              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
+              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.positions.join(", ")}</p>
             </div>
             {onModeChange && (
               <div className="grid w-full grid-cols-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:inline-flex sm:w-auto sm:shrink-0">
@@ -176,24 +179,23 @@ export default function MyPitchingStatsPage({
             ] as const
           ).map(({ label, value }) => {
             const comparison = comparisons[label]
-            const s = getPitchingStatCardStyle(
-              comparison.player,
-              comparison.team,
-              comparison.lower,
-              hasMinimumSample
-            )
+            const useAbsolute = league && (label === "ERA" || label === "WHIP")
+            const neutral = { bg: "bg-[#f7f8f3]", label: "text-gray-400", value: "text-green-950" }
+            const s = useAbsolute
+              ? (() => { const c = getStatColor(label, value, league, activePlayer.pitchingRole); return { bg: c.bg, label: c.lbl, value: c.val } })()
+              : neutral
             return (
               <div key={label} className={`min-w-0 rounded-2xl p-3 shadow-sm sm:p-4 ${s.bg}`}>
                 <p className={`text-xs font-bold uppercase tracking-widest ${s.label}`}>{label}</p>
                 <p className="mt-0.5 text-xs text-gray-400">{statDescriptions[label]}</p>
                 <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${s.value}`}>{value}</p>
-                <p className="mt-1 text-xs text-gray-400">Team {comparison.label}</p>
+                {!useAbsolute && <p className="mt-1 text-xs text-gray-400">Team {comparison.label}</p>}
               </div>
             )
           })}
         </section>
 
-        <PitchingTrendChart entries={displayedEntries} />
+        <PitchingTrendChart entries={displayedEntries} league={league} pitchingRole={activePlayer.pitchingRole} />
 
         <RecentPitchingGames entries={entries} onSelect={setSelectedEntry} selectedId={selectedEntry?.id ?? null} />
 

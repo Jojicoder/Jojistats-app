@@ -17,7 +17,7 @@ function getPlayerLabel(player: Player) {
   return player.jerseyNumber != null ? `#${player.jerseyNumber} ${player.name}` : player.name
 }
 
-function getPositionGroup(position: Player["position"]) {
+function getPositionGroup(position: string) {
   if (position === "P") return "Pitchers"
   if (position === "C") return "Catchers"
   if (position === "LF" || position === "CF" || position === "RF") return "Outfielders"
@@ -148,7 +148,7 @@ export default function TeamManagerDashboard({
       Utility: 0,
     }
     players.forEach((player) => {
-      counts[getPositionGroup(player.position)] += 1
+      counts[getPositionGroup(player.positions[0])] += 1
     })
     return counts
   }, [players])
@@ -156,8 +156,8 @@ export default function TeamManagerDashboard({
   const pitchingRoster = useMemo(
     () =>
       [...pitchingSummaries].sort((a, b) => {
-        if (a.player.position === "P" && b.player.position !== "P") return -1
-        if (a.player.position !== "P" && b.player.position === "P") return 1
+        if (a.player.positions.includes("P") && b.player!.positions.includes("P")) return -1
+        if (a.player!.positions.includes("P") && b.player.positions.includes("P")) return 1
         return (
           b.metrics.outs - a.metrics.outs ||
           b.metrics.so - a.metrics.so ||
@@ -326,7 +326,7 @@ export default function TeamManagerDashboard({
               {suggestedLineup.map((summary, index) => (
                 <div key={summary.player.id} className="rounded-xl border border-gray-100 px-4 py-3 text-sm">
                   <p className="font-semibold text-gray-900">
-                    {index + 1}. {getPlayerLabel(summary.player)} <span className="text-gray-500">{summary.player.position}</span>
+                    {index + 1}. {getPlayerLabel(summary.player)} <span className="text-gray-500">{summary.player.positions.join(", ")}</span>
                   </p>
                   <p className="mt-1 text-xs text-gray-500">
                     AVG {fmtRate(summary.metrics.avg)} · OBP {fmtRate(summary.metrics.obp)} · OPS {fmtRate(summary.metrics.ops)}
@@ -397,7 +397,7 @@ export default function TeamManagerDashboard({
                   {pitchingRoster.map(({ player, metrics }) => (
                     <tr key={player.id}>
                       <td className="py-3 pr-4 font-semibold text-gray-900">{getPlayerLabel(player)}</td>
-                      <td className="py-3 pr-4 text-gray-600">{player.position}</td>
+                      <td className="py-3 pr-4 text-gray-600">{player.positions.join(", ")}</td>
                       <td className="py-3 pr-4 text-gray-600">{metrics.games}</td>
                       <td className="py-3 pr-4 text-gray-600">{fmtIp(metrics.outs)}</td>
                       <td className="py-3 pr-4 font-bold text-green-900">{fmtDecimal(metrics.era)}</td>

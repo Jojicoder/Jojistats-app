@@ -1,5 +1,5 @@
 import { useState } from "react"
-import type { Player, Position } from "../types"
+import type { Player, PitchingRole, Position } from "../types"
 
 type PlayerFormProps = {
   teamId: string
@@ -38,12 +38,23 @@ export default function PlayerForm({
   onCancel,
 }: PlayerFormProps) {
   const [name, setName] = useState(initialPlayer?.name ?? "")
-  const [position, setPosition] = useState<Position>(
-    initialPlayer?.position ?? "UTIL"
+  const [selectedPositions, setSelectedPositions] = useState<Position[]>(
+    initialPlayer?.positions ?? ["UTIL"]
   )
   const [jerseyNumber, setJerseyNumber] = useState(
     initialPlayer?.jerseyNumber != null ? String(initialPlayer.jerseyNumber) : ""
   )
+  const [pitchingRole, setPitchingRole] = useState<PitchingRole | "">(
+    initialPlayer?.pitchingRole ?? ""
+  )
+
+  const togglePosition = (pos: Position) => {
+    setSelectedPositions((prev) =>
+      prev.includes(pos)
+        ? prev.length > 1 ? prev.filter((p) => p !== pos) : prev
+        : [...prev, pos]
+    )
+  }
 
   const isDisabled = name.trim() === ""
 
@@ -68,15 +79,17 @@ export default function PlayerForm({
       teamId,
       seasonYear: initialPlayer?.seasonYear ?? seasonYear,
       name: name.trim(),
-      position,
+      positions: selectedPositions,
       jerseyNumber: jerseyNumber.trim() === "" ? null : Number(jerseyNumber),
       isArchived: initialPlayer?.isArchived ?? false,
+      pitchingRole: selectedPositions.includes("P") && pitchingRole !== "" ? pitchingRole : null,
     })
 
     if (mode === "add") {
       setName("")
-      setPosition("UTIL")
+      setSelectedPositions(["UTIL"])
       setJerseyNumber("")
+      setPitchingRole("")
     }
   }
 
@@ -112,18 +125,39 @@ export default function PlayerForm({
 
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-medium text-gray-500">Position</label>
-          <select
-            value={position}
-            onChange={(e) => setPosition(e.target.value as Position)}
-            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
-          >
-            {positionOptions.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
+          <div className="flex flex-wrap gap-1.5">
+            {positionOptions.map((pos) => (
+              <button
+                key={pos}
+                type="button"
+                onClick={() => togglePosition(pos)}
+                className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+                  selectedPositions.includes(pos)
+                    ? "bg-green-900 text-white"
+                    : "border border-gray-200 text-gray-600 hover:border-green-900 hover:text-green-900"
+                }`}
+              >
+                {pos}
+              </button>
             ))}
-          </select>
+          </div>
         </div>
+
+        {selectedPositions.includes("P") && (
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-gray-500">Pitching Role</label>
+            <select
+              value={pitchingRole}
+              onChange={(e) => setPitchingRole(e.target.value as PitchingRole | "")}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+            >
+              <option value="">— Not set —</option>
+              <option value="starter">Starter</option>
+              <option value="reliever">Reliever</option>
+              <option value="closer">Closer</option>
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 flex gap-2">

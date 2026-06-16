@@ -268,7 +268,7 @@ function PlayerMatchup({
 
   if (href) {
     return (
-      <Link to={href} className="flex min-w-0 items-center gap-2.5 rounded-xl bg-gray-50 p-2.5 transition hover:bg-gray-100">
+      <Link to={href} target="_blank" rel="noreferrer" className="flex min-w-0 items-center gap-2.5 rounded-xl bg-gray-50 p-2.5 transition hover:bg-gray-100">
         {inner}
       </Link>
     )
@@ -299,11 +299,11 @@ function PitchChart({ events, expanded = false }: { events: MLBPlayEvent[]; expa
   }
 
   return (
-    <div className={`grid gap-5 ${expanded ? "lg:grid-cols-[380px_1fr]" : "md:grid-cols-[320px_1fr]"}`}>
+    <div className={`grid gap-6 ${expanded ? "lg:grid-cols-[420px_1fr]" : "md:grid-cols-[360px_1fr]"}`}>
       <div className={`relative mx-auto overflow-hidden rounded-xl bg-[#1a2e1a] ${
         expanded
-          ? "h-72 w-full max-w-60 md:h-96 md:max-w-84"
-          : "h-64 w-full max-w-56 md:h-80 md:max-w-72"
+          ? "h-80 w-full max-w-80 md:h-105 md:max-w-[22rem]"
+          : "h-64 w-full max-w-64 md:h-80 md:max-w-80"
       }`}>
         {/* Home plate area hint */}
         <div className="absolute bottom-[6%] left-1/2 h-[7%] w-[34%] -translate-x-1/2 rounded-sm bg-[#2a3e2a] opacity-60" />
@@ -314,7 +314,7 @@ function PitchChart({ events, expanded = false }: { events: MLBPlayEvent[]; expa
           <span className="absolute left-0 top-1/3 w-full border-t border-white/25" />
           <span className="absolute left-0 top-2/3 w-full border-t border-white/25" />
         </div>
-        <p className="absolute left-1/2 top-[10%] -translate-x-1/2 text-[9px] font-bold uppercase tracking-widest text-white/40">Strike Zone</p>
+        <p className="absolute left-1/2 top-[10%] -translate-x-1/2 text-xs font-bold uppercase tracking-widest text-white/40">Strike Zone</p>
         {pitches.map((event, index) => {
           const x = Math.max(4, Math.min(96, 50 + (event.pitchData?.coordinates?.pX ?? 0) * 23))
           const z = Math.max(4, Math.min(96, 92 - (event.pitchData?.coordinates?.pZ ?? 0) * 20))
@@ -323,7 +323,7 @@ function PitchChart({ events, expanded = false }: { events: MLBPlayEvent[]; expa
             <span
               key={event.index ?? index}
               title={`${index + 1}. ${event.details?.type?.description ?? "Pitch"} ${event.pitchData?.startSpeed?.toFixed(1) ?? ""} mph`}
-              className="absolute flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 text-[10px] font-extrabold text-white shadow-lg"
+              className="absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 text-sm font-extrabold text-white shadow-lg"
               style={{
                 left: `${x}%`,
                 top: `${z}%`,
@@ -336,19 +336,22 @@ function PitchChart({ events, expanded = false }: { events: MLBPlayEvent[]; expa
         })}
       </div>
 
-      <ol className={expanded ? "grid content-start gap-2 lg:grid-cols-2" : "max-h-128 space-y-2 overflow-y-auto pr-1"}>
+      <ol className={expanded ? "max-h-96 space-y-2 overflow-y-auto pr-1" : "max-h-128 space-y-3 overflow-y-auto pr-1"}>
         {pitches.map((event, index) => (
-          <li key={event.index ?? index} className="flex items-center justify-between gap-3 rounded-xl bg-gray-50 px-3 py-2.5 transition hover:bg-gray-100">
-            <div className="flex min-w-0 items-center gap-2">
+          <li key={event.index ?? index} className="flex items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 py-2.5 transition hover:bg-gray-100">
+            <div className="flex min-w-0 items-center gap-2.5">
               <span
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-extrabold text-white shadow-sm"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white shadow-sm"
                 style={{ backgroundColor: PITCH_COLORS[event.details?.type?.code ?? ""] ?? "#4b5563" }}
               >
                 {index + 1}
               </span>
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-gray-800">
-                  {event.details?.type?.description ?? "Pitch"} · {event.details?.description ?? ""}
+                <p className="text-sm font-semibold text-gray-800">
+                  {event.details?.type?.description ?? "Pitch"}
+                </p>
+                <p className="truncate text-xs text-gray-500">
+                  {event.details?.description ?? ""}
                 </p>
                 <p className="text-xs text-gray-400">
                   {event.pitchData?.startSpeed?.toFixed(1) ?? "—"} mph
@@ -356,7 +359,7 @@ function PitchChart({ events, expanded = false }: { events: MLBPlayEvent[]; expa
                 </p>
               </div>
             </div>
-            <span className="shrink-0 rounded-md bg-white px-2 py-0.5 text-xs font-bold tabular-nums text-gray-500 shadow-sm ring-1 ring-gray-200">
+            <span className="shrink-0 rounded-lg bg-white px-2.5 py-1 text-sm font-bold tabular-nums text-gray-500 shadow-sm ring-1 ring-gray-200">
               {event.count?.balls ?? 0}-{event.count?.strikes ?? 0}
             </span>
           </li>
@@ -554,6 +557,239 @@ function Scoreboard({
   )
 }
 
+function LineupSidebar({ feed, currentBatterId, battingSide }: {
+  feed: MLBGameLiveFeed
+  currentBatterId?: number
+  battingSide: "away" | "home" | null
+}) {
+  const [viewSide, setViewSide] = useState<"away" | "home">(battingSide ?? "away")
+
+  const buildLineup = (side: "away" | "home") => {
+    const team = feed.liveData?.boxscore?.teams?.[side]
+    const order = team?.battingOrder ?? []
+    const players = team?.players ?? {}
+    const teamId = side === "away" ? feed.gameData?.teams?.away?.id : feed.gameData?.teams?.home?.id
+    const lineupBySlot = new Map<number, {
+      id: number
+      lastName: string
+      pos: string
+      avg: string
+      teamId?: number
+      orderNum: number
+    }>()
+
+    const addPlayer = (p: MLBBoxscorePlayer | undefined, fallbackSlot?: number) => {
+      const id = p?.person?.id
+      if (!id) return
+
+      const orderNum = Number(p?.battingOrder ?? "")
+      const slot = Number.isFinite(orderNum) && orderNum > 0
+        ? Math.floor(orderNum / 100)
+        : fallbackSlot
+      if (!slot || slot < 1 || slot > 9) return
+
+      const fullName = p?.person?.fullName ?? "—"
+      const current = lineupBySlot.get(slot)
+      if (current && Number.isFinite(orderNum) && orderNum < current.orderNum) return
+
+      lineupBySlot.set(slot, {
+        id,
+        lastName: fullName.split(" ").slice(1).join(" ") || fullName,
+        pos: p?.position?.abbreviation ?? "",
+        avg: p?.seasonStats?.batting?.avg ?? "",
+        teamId,
+        orderNum: Number.isFinite(orderNum) ? orderNum : fallbackSlot ?? slot,
+      })
+    }
+
+    Object.values(players).forEach((player) => addPlayer(player))
+    order.forEach((id, index) => addPlayer(players[`ID${id}`], index + 1))
+
+    return Array.from(lineupBySlot.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([, player]) => player)
+  }
+
+  const awayAbbr = feed.gameData?.teams?.away?.abbreviation ?? "Away"
+  const homeAbbr = feed.gameData?.teams?.home?.abbreviation ?? "Home"
+  const awayLineup = buildLineup("away")
+  const homeLineup = buildLineup("home")
+
+  if (awayLineup.length === 0 && homeLineup.length === 0) return null
+
+  const lineup = viewSide === "away" ? awayLineup : homeLineup
+
+  return (
+    <section className="flex h-full min-h-0 flex-col rounded-2xl bg-white p-4 shadow-sm">
+      <p className="shrink-0 text-xs font-bold uppercase tracking-widest text-green-700">Lineup</p>
+
+      <div className="mt-2 shrink-0 grid grid-cols-2 rounded-xl bg-gray-100 p-1">
+        <button
+          type="button"
+          onClick={() => setViewSide("away")}
+          className={`rounded-lg py-2 text-sm font-bold transition ${viewSide === "away" ? "bg-white text-green-900 shadow-sm" : "text-gray-500"}`}
+        >
+          {awayAbbr}
+        </button>
+        <button
+          type="button"
+          onClick={() => setViewSide("home")}
+          className={`rounded-lg py-2 text-sm font-bold transition ${viewSide === "home" ? "bg-white text-green-900 shadow-sm" : "text-gray-500"}`}
+        >
+          {homeAbbr}
+        </button>
+      </div>
+
+      <div className="mt-2">
+        {lineup.map((player, index) => {
+          const isCurrent = viewSide === (battingSide ?? "away") && player.id === currentBatterId
+          const href = playerHref(player.teamId, player.id)
+          const inner = (
+            <div className={`flex items-center gap-2 rounded-lg px-2.5 py-2 transition ${
+              isCurrent ? "bg-green-900" : "hover:bg-gray-50"
+            }`}>
+              <span className={`w-5 shrink-0 text-center text-sm font-extrabold ${isCurrent ? "text-green-400" : "text-gray-400"}`}>
+                {index + 1}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className={`truncate text-base font-semibold leading-none ${isCurrent ? "text-white" : "text-gray-800"}`}>
+                  {player.lastName}
+                </p>
+                {player.avg && (
+                  <p className={`text-xs leading-tight ${isCurrent ? "text-green-300" : "text-gray-400"}`}>{player.avg}</p>
+                )}
+              </div>
+              <span className={`shrink-0 text-xs font-bold ${isCurrent ? "text-green-300" : "text-gray-400"}`}>
+                {player.pos}
+              </span>
+            </div>
+          )
+          return href ? (
+            <Link key={player.id} to={href} target="_blank" rel="noreferrer">{inner}</Link>
+          ) : (
+            <div key={player.id}>{inner}</div>
+          )
+        })}
+      </div>
+    </section>
+  )
+}
+
+function LineupCard({ feed, finalStatus }: { feed: MLBGameLiveFeed; finalStatus: boolean }) {
+  const boxTeams = feed.liveData?.boxscore?.teams
+  const [activeTab, setActiveTab] = useState<"away" | "home">("away")
+
+  const buildLineup = (side: "away" | "home") => {
+    const team = boxTeams?.[side]
+    const order = team?.battingOrder ?? []
+    const players = team?.players ?? {}
+    return order.map((id) => {
+      const p = players[`ID${id}`]
+      return {
+        id,
+        name: p?.person?.fullName ?? "—",
+        jersey: p?.jerseyNumber ?? "",
+        pos: p?.position?.abbreviation ?? "",
+        battingOrder: p?.battingOrder ?? "",
+        avg: p?.seasonStats?.batting?.avg ?? "—",
+        stats: p?.stats?.batting,
+      }
+    })
+  }
+
+  const awayLineup = buildLineup("away")
+  const homeLineup = buildLineup("home")
+  const lineup = activeTab === "away" ? awayLineup : homeLineup
+
+  if (awayLineup.length === 0 && homeLineup.length === 0) return null
+
+  const awayTeam = feed.gameData?.teams?.away
+  const homeTeam = feed.gameData?.teams?.home
+
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-widest text-green-700">Batting Order</p>
+          <h2 className="mt-0.5 text-base font-extrabold text-gray-900">Lineup</h2>
+        </div>
+        <div className="flex rounded-xl bg-gray-100 p-1">
+          <button
+            type="button"
+            onClick={() => setActiveTab("away")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "away" ? "bg-white text-green-900 shadow-sm" : "text-gray-500"}`}
+          >
+            {awayTeam?.abbreviation ?? "Away"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("home")}
+            className={`rounded-lg px-3 py-1.5 text-xs font-bold transition ${activeTab === "home" ? "bg-white text-green-900 shadow-sm" : "text-gray-500"}`}
+          >
+            {homeTeam?.abbreviation ?? "Home"}
+          </button>
+        </div>
+      </div>
+
+      {lineup.length === 0 ? (
+        <p className="mt-4 text-center text-sm text-gray-400">Lineup not yet posted.</p>
+      ) : (
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full min-w-80 text-sm">
+            <thead>
+              <tr className="border-b border-gray-100 text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                <th className="pb-2 pl-1 pr-3 text-left">#</th>
+                <th className="pb-2 pr-3 text-left">Player</th>
+                <th className="pb-2 pr-3 text-left">Pos</th>
+                <th className="pb-2 pr-3 text-right">AVG</th>
+                {finalStatus && <th className="pb-2 pr-1 text-right">AB</th>}
+                {finalStatus && <th className="pb-2 pr-1 text-right">H</th>}
+                {finalStatus && <th className="pb-2 pr-1 text-right">RBI</th>}
+                {finalStatus && <th className="pb-2 pr-1 text-right">K</th>}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {lineup.map((player, index) => {
+                const order = Number(player.battingOrder)
+                const isSubstitute = !isNaN(order) && order % 100 !== 0
+                const teamId = activeTab === "away" ? awayTeam?.id : homeTeam?.id
+                const href = playerHref(teamId, player.id)
+                const inner = (
+                  <>
+                    <td className="py-2.5 pl-1 pr-3 font-extrabold text-gray-400">{index + 1}</td>
+                    <td className="py-2.5 pr-3">
+                      <div className="flex items-center gap-2">
+                        <PlayerHeadshot id={player.id} name={player.name} className="h-7 w-7 shrink-0 rounded-full object-cover object-[50%_35%]" />
+                        <span className={`font-semibold ${isSubstitute ? "text-gray-400" : "text-gray-900"}`}>
+                          {player.name}
+                          {isSubstitute && <span className="ml-1 text-[10px] text-gray-400">(sub)</span>}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="py-2.5 pr-3 font-mono text-xs text-gray-500">{player.pos}</td>
+                    <td className="py-2.5 pr-3 text-right font-bold text-gray-700">{player.avg}</td>
+                    {finalStatus && <td className="py-2.5 pr-1 text-right text-gray-500">{player.stats?.atBats ?? "—"}</td>}
+                    {finalStatus && <td className="py-2.5 pr-1 text-right font-bold text-gray-700">{player.stats?.hits ?? "—"}</td>}
+                    {finalStatus && <td className="py-2.5 pr-1 text-right text-gray-500">{player.stats?.rbi ?? "—"}</td>}
+                    {finalStatus && <td className="py-2.5 pr-1 text-right text-gray-500">{player.stats?.strikeOuts ?? "—"}</td>}
+                  </>
+                )
+                return href ? (
+                  <tr key={player.id} className="transition hover:bg-gray-50">
+                    <Link to={href} target="_blank" rel="noreferrer" className="contents">{inner}</Link>
+                  </tr>
+                ) : (
+                  <tr key={player.id}>{inner}</tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function PreGameSummary({ feed }: { feed: MLBGameLiveFeed }) {
   const start = feed.gameData?.datetime?.dateTime
   const probable = feed.gameData?.probablePitchers
@@ -639,7 +875,7 @@ function Decisions({ feed }: { feed: MLBGameLiveFeed }) {
             </>
           )
           return href ? (
-            <Link key={label} to={href} className="flex items-center gap-3 rounded-xl bg-gray-50 p-3 transition hover:bg-gray-100">
+            <Link key={label} to={href} target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl bg-gray-50 p-3 transition hover:bg-gray-100">
               {inner}
             </Link>
           ) : (
@@ -993,9 +1229,22 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
       {(liveStatus || pitchEvents.length > 0) && (
         <div className={`grid gap-4 ${
           liveStatus || viewingHistoricalAtBat
-            ? "xl:grid-cols-[minmax(360px,0.8fr)_minmax(0,1.4fr)] xl:items-stretch"
+            ? "xl:grid-cols-[180px_minmax(320px,0.8fr)_minmax(0,1.4fr)] xl:items-stretch"
             : "grid-cols-1"
         }`}>
+          {(liveStatus || viewingHistoricalAtBat) && (() => {
+            const inningHalf = liveStatus
+              ? (feed.liveData?.linescore?.inningHalf?.toLowerCase() === "bottom" ? "bottom" : "top")
+              : selectedHalf
+            const battingSide: "away" | "home" | null = inningHalf === "top" ? "away" : inningHalf === "bottom" ? "home" : null
+            return (
+              <LineupSidebar
+                feed={feed}
+                currentBatterId={batter?.id}
+                battingSide={battingSide}
+              />
+            )
+          })()}
           {(liveStatus || viewingHistoricalAtBat) && (
             <section className="h-full rounded-2xl bg-white p-3 shadow-sm sm:p-4">
               <div className="flex flex-wrap items-start justify-between gap-2">
@@ -1070,15 +1319,15 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
           )}
 
           {pitchEvents.length > 0 && (
-            <section className="h-full rounded-2xl bg-white p-3 shadow-sm sm:p-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-green-700">
+            <section className="h-full rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">
                 {viewingHistoricalAtBat
                   ? `${selectedHalf === "top" ? "Top" : "Bottom"} ${selectedInning} · At-Bat ${selectedPlayPosition + 1}`
                   : liveStatus ? "Current At-Bat" : "Final At-Bat"}
               </p>
-              <h2 className="mt-0.5 text-lg font-extrabold text-gray-900">Pitch Location</h2>
-              <div className="mt-3">
-                <PitchChart events={pitchEvents} expanded={!liveStatus} />
+              <h2 className="mt-1 text-2xl font-extrabold text-gray-900">Pitch Location</h2>
+              <div className="mt-5">
+                <PitchChart events={pitchEvents} expanded={viewingHistoricalAtBat || !liveStatus} />
               </div>
             </section>
           )}

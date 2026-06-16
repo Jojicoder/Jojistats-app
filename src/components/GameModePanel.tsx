@@ -198,7 +198,7 @@ export default function GameModePanel({
                 {currentLiveBatter ? (
                   <>
                     <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">{getPlayerLabel(currentLiveBatter)}</h2>
-                    <p className="mt-0.5 text-sm text-gray-500">{currentLiveBatter.position}</p>
+                    <p className="mt-0.5 text-sm text-gray-500">{currentLiveBatter.positions.join(", ")}</p>
                   </>
                 ) : (
                   <p className="mt-2 text-sm text-red-700">Add at least one player to the lineup.</p>
@@ -281,7 +281,7 @@ export default function GameModePanel({
               <div className="min-w-0 flex-1">
                 <p className="text-xs font-bold uppercase tracking-widest text-green-700">Current Pitcher</p>
                 <h2 className="mt-2 text-2xl font-bold sm:text-3xl">{getPlayerLabel(livePitcher)}</h2>
-                <p className="mt-1 text-sm text-gray-500">{livePitcher.position} · {liveHalf} {liveInning} · {liveOuts} outs</p>
+                <p className="mt-1 text-sm text-gray-500">{livePitcher.positions.join(", ")} · {liveHalf} {liveInning} · {liveOuts} outs</p>
               </div>
 
               <div className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[230px]">

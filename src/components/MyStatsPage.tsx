@@ -18,6 +18,7 @@ type MyStatsPageProps = {
   teamSavedEntries: SavedBattingGameEntry[]
   gamesPlayed: number
   seasonYear: number
+  league?: "mlb" | "jaa" | null
   mode?: "batting" | "pitching"
   onModeChange?: (mode: "batting" | "pitching") => void
 }
@@ -80,6 +81,7 @@ export default function MyStatsPage({
   teamSavedEntries,
   gamesPlayed,
   seasonYear,
+  league,
   mode = "batting",
   onModeChange,
 }: MyStatsPageProps) {
@@ -144,7 +146,7 @@ export default function MyStatsPage({
                   ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
                   : activePlayer.name}
               </h1>
-              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.position}</p>
+              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.positions.join(", ")}</p>
             </div>
             {onModeChange && (
               <div className="grid w-full grid-cols-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:inline-flex sm:w-auto sm:shrink-0">
@@ -192,8 +194,8 @@ export default function MyStatsPage({
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {displayedStats.map((stat) => {
             const comparison = statComparisons[stat.label]
-            const jaaOverride = stat.label === "HR"
-              ? (() => { const c = getStatColor("HR", stat.value, "jaa"); return { bg: c.bg, label: c.lbl, value: c.val } })()
+            const jaaOverride = league && stat.label === "HR"
+              ? (() => { const c = getStatColor("HR", stat.value, league); return { bg: c.bg, label: c.lbl, value: c.val } })()
               : null
             const style = jaaOverride ?? (comparison
               ? getStatCardStyle(comparison.player, comparison.team, hasMinimumSample)

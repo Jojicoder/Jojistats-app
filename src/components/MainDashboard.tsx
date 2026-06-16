@@ -44,6 +44,7 @@ type MainDashboardProps = {
   onSelectPlayer: (player: Player) => void
   activeView: "stats" | "record"
   teamName: string
+  league?: "mlb" | "jaa" | null
   gameMeta: DraftGameMeta
   setGameMeta: Dispatch<SetStateAction<DraftGameMeta>>
   entriesByPlayer: Record<string, BattingEntryData>
@@ -87,6 +88,7 @@ export default function MainDashboard({
   onSelectPlayer,
   activeView,
   teamName,
+  league,
   gameMeta,
   setGameMeta,
   entriesByPlayer,
@@ -567,6 +569,7 @@ export default function MainDashboard({
         entries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
         teamEntries={teamSavedPitchingEntries}
         battingEntries={savedEntries}
+        league={league}
         mode={mode}
         onModeChange={onModeChange}
       />
@@ -627,6 +630,7 @@ export default function MainDashboard({
         teamSavedEntries={teamSavedEntries}
         gamesPlayed={kpi.gamesPlayed}
         seasonYear={gameMeta.seasonYear}
+        league={league}
         mode={mode}
         onModeChange={onModeChange}
       />

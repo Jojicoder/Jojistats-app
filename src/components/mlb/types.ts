@@ -194,6 +194,25 @@ export type MLBOffense = {
 
 export type MLBBoxscorePlayer = {
   person?: { id?: number; fullName?: string }
+  jerseyNumber?: string
+  position?: { abbreviation?: string }
+  battingOrder?: string
+  stats?: {
+    batting?: {
+      atBats?: number
+      hits?: number
+      rbi?: number
+      baseOnBalls?: number
+      strikeOuts?: number
+      homeRuns?: number
+    }
+    pitching?: {
+      inningsPitched?: string
+      earnedRuns?: number
+      strikeOuts?: number
+      baseOnBalls?: number
+    }
+  }
   seasonStats?: {
     batting?: {
       avg?: string
@@ -281,8 +300,8 @@ export type MLBGameLiveFeed = {
     }
     boxscore?: {
       teams?: {
-        away?: { players?: Record<string, MLBBoxscorePlayer> }
-        home?: { players?: Record<string, MLBBoxscorePlayer> }
+        away?: { players?: Record<string, MLBBoxscorePlayer>; battingOrder?: number[] }
+        home?: { players?: Record<string, MLBBoxscorePlayer>; battingOrder?: number[] }
       }
     }
   }

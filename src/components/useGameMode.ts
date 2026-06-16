@@ -49,7 +49,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
   const [livePitchPlays, setLivePitchPlays] = useState<LivePitchPlay[]>([])
   const [livePitchingEntry, setLivePitchingEntry] = useState<LivePitchingStats>(emptyPitchingStats)
   const [livePitcherId, setLivePitcherId] = useState(
-    allPlayers.find((p) => p.position === "P")?.id ?? activePlayer.id
+    allPlayers.find((p) => p.positions.includes("P"))?.id ?? activePlayer.id
   )
   const [pendingSyncConfirm, setPendingSyncConfirm] = useState(false)
   const [editingLiveEventId, setEditingLiveEventId] = useState<string | null>(null)
@@ -194,7 +194,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
 
   const livePitcher =
     allPlayers.find((p) => p.id === livePitcherId) ??
-    allPlayers.find((p) => p.position === "P") ??
+    allPlayers.find((p) => p.positions.includes("P")) ??
     activePlayer
 
   const currentLivePitchPlays = useMemo(

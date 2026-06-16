@@ -69,11 +69,42 @@ const JAA_THRESHOLDS: StatConfig = {
   "HR/9": { hi: 1.00,  lo: 2.00,  lowerBetter: true },
 }
 
-export function getStatColor(label: string, value: string, league: "mlb" | "jaa" = "mlb") {
+const JAA_STARTER_THRESHOLDS: StatConfig = {
+  ...JAA_THRESHOLDS,
+  ERA:  { hi: 4.00, lo: 7.00, lowerBetter: true },
+  WHIP: { hi: 1.40, lo: 2.00, lowerBetter: true },
+}
+
+const JAA_RELIEVER_THRESHOLDS: StatConfig = {
+  ...JAA_THRESHOLDS,
+  ERA:  { hi: 3.00, lo: 6.00, lowerBetter: true },
+  WHIP: { hi: 1.20, lo: 1.70, lowerBetter: true },
+}
+
+const JAA_CLOSER_THRESHOLDS: StatConfig = {
+  ...JAA_THRESHOLDS,
+  ERA:  { hi: 2.50, lo: 5.00, lowerBetter: true },
+  WHIP: { hi: 1.10, lo: 1.60, lowerBetter: true },
+}
+
+export function getStatColor(
+  label: string,
+  value: string,
+  league: "mlb" | "jaa" = "mlb",
+  pitchingRole?: "starter" | "reliever" | "closer" | null
+) {
   const num = parseFloat(value)
   if (isNaN(num)) return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
 
-  const cfg = league === "jaa" ? JAA_THRESHOLDS : MLB_THRESHOLDS
+  let cfg: StatConfig
+  if (league === "jaa") {
+    if (pitchingRole === "starter") cfg = JAA_STARTER_THRESHOLDS
+    else if (pitchingRole === "reliever") cfg = JAA_RELIEVER_THRESHOLDS
+    else if (pitchingRole === "closer") cfg = JAA_CLOSER_THRESHOLDS
+    else cfg = JAA_THRESHOLDS
+  } else {
+    cfg = MLB_THRESHOLDS
+  }
   const c = cfg[label]
   if (!c) return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
 

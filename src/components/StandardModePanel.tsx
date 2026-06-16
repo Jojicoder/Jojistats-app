@@ -135,7 +135,7 @@ export default function StandardModePanel({
                   ) : null}
                   <span className="min-w-0 flex-1 truncate">{player.name}</span>
                   <span className={`ml-1.5 shrink-0 text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
-                    {player.position}
+                    {player.positions.join(", ")}
                   </span>
                 </button>
               )

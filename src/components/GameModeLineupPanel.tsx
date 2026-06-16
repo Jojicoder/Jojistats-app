@@ -109,7 +109,7 @@ export default function GameModeLineupPanel({
                 >
                   {allPlayers.map((player) => (
                     <option key={player.id} value={player.id}>
-                      {getPlayerLabel(player)} {player.position}
+                      {getPlayerLabel(player)} {player.positions.join(", ")}
                     </option>
                   ))}
                 </select>
@@ -144,7 +144,7 @@ export default function GameModeLineupPanel({
               </div>
               {replacedPlayer && (
                 <p className="ml-9 mt-1 text-[10px] font-medium text-gray-400">
-                  PH for {getPlayerLabel(replacedPlayer)} {replacedPlayer.position}
+                  PH for {getPlayerLabel(replacedPlayer)} {replacedPlayer.positions.join(", ")}
                 </p>
               )}
               {pinhitters[index] !== undefined && (
@@ -157,7 +157,7 @@ export default function GameModeLineupPanel({
                   >
                     {allPlayers.map((player) => (
                       <option key={player.id} value={player.id}>
-                        {getPlayerLabel(player)} {player.position}
+                        {getPlayerLabel(player)} {player.positions.join(", ")}
                       </option>
                     ))}
                   </select>
@@ -185,8 +185,8 @@ export default function GameModeLineupPanel({
           {allPlayers
             .slice()
             .sort((a, b) => {
-              if (a.position === "P" && b.position !== "P") return -1
-              if (a.position !== "P" && b.position === "P") return 1
+              if (a.positions.includes("P") && b!.positions.includes("P")) return -1
+              if (a!.positions.includes("P") && b.positions.includes("P")) return 1
               return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
             })
             .map((player) => (

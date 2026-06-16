@@ -55,13 +55,13 @@ export function useStandardMode({
     const base =
       isEditingSavedEntry && editingGamePositions?.length
         ? [...editingGamePositions]
-        : [activePlayer.position]
+        : [activePlayer.positions[0]]
     if (isEditingSavedPitchingEntry && !base.includes("P")) {
       return [...base, "P" as Position]
     }
     return [...base]
   }, [
-    activePlayer.position,
+    activePlayer.positions[0],
     editingGamePositions,
     isEditingSavedEntry,
     isEditingSavedPitchingEntry,
@@ -128,12 +128,10 @@ export function useStandardMode({
 
   useEffect(() => {
     if (isEditingSavedEntry || editingPendingPlayerId) return
-    setGamePositions([activePlayer.position])
-  }, [activePlayer.id, activePlayer.position, editingPendingPlayerId, isEditingSavedEntry])
+    setGamePositions([activePlayer.positions[0]])
+  }, [activePlayer.id, activePlayer.positions[0], editingPendingPlayerId, isEditingSavedEntry])
 
-  const hasInvalidStats =
-    currentEntry.H > currentEntry.AB ||
-    currentEntry.doubles + currentEntry.triples + currentEntry.HR > currentEntry.H
+  const hasInvalidStats = currentEntry.H > currentEntry.AB
   const isEditingPendingEntry = editingPendingPlayerId != null
   const isPlayerAlreadyAdded = pendingEntries.some(
     (e) => e.playerId === activePlayer.id && e.playerId !== editingPendingPlayerId
@@ -144,7 +142,7 @@ export function useStandardMode({
       ? !isMetaComplete || hasInvalidStats
       : !canAdd
 
-  const addGamePosition = () => setGamePositions((prev) => [...prev, activePlayer.position])
+  const addGamePosition = () => setGamePositions((prev) => [...prev, activePlayer.positions[0]])
   const updateGamePosition = (index: number, next: Position) =>
     setGamePositions((prev) => prev.map((pos, i) => (i === index ? next : pos)))
   const removeGamePosition = (index: number) =>
@@ -172,7 +170,7 @@ export function useStandardMode({
 
   const handleStartEditPendingEntry = (entry: PendingBattingEntry) => {
     setEditingPendingPlayerId(entry.playerId)
-    setGamePositions(entry.gamePositions.length ? entry.gamePositions : [activePlayer.position])
+    setGamePositions(entry.gamePositions.length ? entry.gamePositions : [activePlayer.positions[0]])
     onEntryChange({
       AB: entry.AB,
       H: entry.H,
@@ -213,7 +211,7 @@ export function useStandardMode({
   }
 
   const handleCancelEditSavedEntry = () => {
-    setGamePositions([activePlayer.position])
+    setGamePositions([activePlayer.positions[0]])
     setRecordMode("batting")
     onCancelEditSavedEntry()
   }
@@ -284,7 +282,7 @@ export function useStandardMode({
     setPendingEntries([])
     setPendingPitchingEntries([])
     setEditingPendingPlayerId(null)
-    setGamePositions([activePlayer.position])
+    setGamePositions([activePlayer.positions[0]])
     setRecordMode("batting")
     localStorage.removeItem(pendingDraftKey)
     localStorage.removeItem(pendingPitchingDraftKey)

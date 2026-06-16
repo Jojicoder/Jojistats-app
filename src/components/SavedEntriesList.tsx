@@ -182,7 +182,7 @@ export default function SavedEntriesList({
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         {[
                           ["AB", entry.statLine.AB],
-                          ["H",  entry.statLine.H],
+                          ["1B", Math.max(0, entry.statLine.H - entry.statLine.doubles - entry.statLine.triples - entry.statLine.HR)],
                           ["2B", entry.statLine.doubles],
                           ["3B", entry.statLine.triples],
                           ["HR", entry.statLine.HR],

@@ -1,11 +1,44 @@
 import { useMemo, useState } from "react"
 import type { SavedPitchingGameEntry } from "../types"
+import { getStatColor } from "./mlb/playerStats"
 
 const chartWidth = 640
 const chartHeight = 240
 const chartPad = { top: 20, right: 24, bottom: 40, left: 48 }
 
-type TrendTab = "all" | "last5"
+function formatIP(outs: number) {
+  const whole = Math.floor(outs / 3)
+  const rem = outs % 3
+  return rem === 0 ? `${whole}.0` : `${whole}.${rem}`
+}
+
+function buildSummary(entries: SavedPitchingGameEntry[]) {
+  let outs = 0, er = 0, bb = 0, h = 0, so = 0
+  for (const e of entries) {
+    outs += e.statLine.inningsPitchedOuts
+    er += e.statLine.earnedRuns
+    bb += e.statLine.walks
+    h += e.statLine.hitsAllowed
+    so += e.statLine.strikeouts
+  }
+  const ip = outs / 3
+  return {
+    ip: formatIP(outs),
+    era: ip > 0 ? (er * 9) / ip : 0,
+    whip: ip > 0 ? (bb + h) / ip : 0,
+    k9: ip > 0 ? (so * 9) / ip : 0,
+    outs,
+  }
+}
+
+const statDescriptions: Record<string, string> = {
+  ERA:  "Earned Run Average",
+  WHIP: "Walks + Hits per Inning",
+  "K/9": "Strikeouts per 9 Inn",
+  IP:   "Innings Pitched",
+}
+
+type TrendTab = "season" | "last5" | "last3"
 type TrendMetric = "era" | "whip" | "k9"
 
 function sortByGame(entries: SavedPitchingGameEntry[]) {
@@ -50,19 +83,25 @@ function buildChartData(entries: SavedPitchingGameEntry[]) {
 
 export default function PitchingTrendChart({
   entries,
+  league,
+  pitchingRole,
 }: {
   entries: SavedPitchingGameEntry[]
+  league?: "mlb" | "jaa" | null
+  pitchingRole?: "starter" | "reliever" | "closer" | null
 }) {
-  const [activeTab, setActiveTab] = useState<TrendTab>("all")
+  const [activeTab, setActiveTab] = useState<TrendTab>("last3")
   const [activeMetric, setActiveMetric] = useState<TrendMetric>("era")
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
   const sorted = useMemo(() => sortByGame(entries), [entries])
 
   const filtered = useMemo(
-    () => (activeTab === "last5" ? sorted.slice(-5) : sorted),
+    () => activeTab === "last3" ? sorted.slice(-3) : activeTab === "last5" ? sorted.slice(-5) : sorted,
     [sorted, activeTab]
   )
+
+  const summary = useMemo(() => buildSummary(filtered), [filtered])
 
   const chartData = useMemo(() => buildChartData(filtered), [filtered])
 
@@ -103,17 +142,17 @@ export default function PitchingTrendChart({
           </p>
         </div>
 
-        <div className="grid grid-cols-2 rounded-xl bg-gray-100 p-1 sm:flex">
+        <div className="grid grid-cols-3 rounded-xl bg-gray-100 p-1 sm:flex">
           <button
             type="button"
-            onClick={() => setActiveTab("all")}
+            onClick={() => setActiveTab("last3")}
             className={`rounded-lg px-3 py-2 text-sm font-medium ${
-              activeTab === "all"
+              activeTab === "last3"
                 ? "bg-white text-green-900 shadow-sm"
                 : "text-gray-600"
             }`}
           >
-            All
+            Last 3
           </button>
           <button
             type="button"
@@ -126,6 +165,17 @@ export default function PitchingTrendChart({
           >
             Last 5
           </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("season")}
+            className={`rounded-lg px-3 py-2 text-sm font-medium ${
+              activeTab === "season"
+                ? "bg-white text-green-900 shadow-sm"
+                : "text-gray-600"
+            }`}
+          >
+            Seasons
+          </button>
         </div>
       </div>
 
@@ -135,24 +185,54 @@ export default function PitchingTrendChart({
         </div>
       ) : (
         <>
-          <div className="mt-4 flex gap-2 sm:mt-6">
-            {(["era", "whip", "k9"] as TrendMetric[]).map((m) => (
-              <button
-                key={m}
-                type="button"
-                onClick={() => setActiveMetric(m)}
-                className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                  activeMetric === m
-                    ? "bg-green-900 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-600"
-                }`}
-              >
-                {m === "k9" ? "K/9" : m.toUpperCase()}
-              </button>
-            ))}
+          {/* Summary stat cards */}
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {(
+              [
+                { key: "ERA",  val: summary.era.toFixed(2) },
+                { key: "WHIP", val: summary.whip.toFixed(2) },
+                { key: "K/9",  val: summary.k9.toFixed(2) },
+                { key: "IP",   val: summary.ip },
+              ] as const
+            ).map(({ key, val }) => {
+              const useAbsolute = league && (key === "ERA" || key === "WHIP")
+              const neutral = { bg: "bg-[#f7f8f3]", label: "text-gray-400", value: "text-green-950" }
+              const s = useAbsolute
+                ? (() => { const c = getStatColor(key, val, league, pitchingRole); return { bg: c.bg, label: c.lbl, value: c.val } })()
+                : neutral
+              return (
+                <div key={key} className={`rounded-xl p-3 sm:p-4 ${s.bg}`}>
+                  <p className={`text-xs font-bold uppercase tracking-widest ${s.label}`}>{key}</p>
+                  <p className="text-[11px] text-gray-400">{statDescriptions[key]}</p>
+                  <p className={`mt-2 text-2xl font-extrabold ${s.value}`}>{val}</p>
+                </div>
+              )
+            })}
           </div>
 
-          <div className="mt-4 rounded-xl bg-[#f7f8f3] p-4 overflow-x-auto">
+          <div className="mt-4 rounded-xl bg-[#f7f8f3] p-4">
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-gray-700">
+                Cumulative {activeMetric === "k9" ? "K/9" : activeMetric.toUpperCase()} over time
+              </p>
+              <div className="grid grid-cols-3 rounded-xl bg-white p-1 sm:flex sm:items-center sm:gap-1">
+                {(["era", "whip", "k9"] as TrendMetric[]).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setActiveMetric(m)}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                      activeMetric === m
+                        ? "bg-green-900 text-white shadow-sm"
+                        : "text-gray-600"
+                    }`}
+                  >
+                    {m === "k9" ? "K/9" : m.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-4 overflow-x-auto">
             <svg
               className="h-60 min-w-105 w-full"
               viewBox={`0 0 ${chartWidth} ${chartHeight}`}
@@ -276,6 +356,7 @@ export default function PitchingTrendChart({
                 )
               })}
             </svg>
+            </div>
           </div>
         </>
       )}

@@ -56,10 +56,11 @@ function mapPlayer(row: {
     id: String(row.id),
     teamId: String(row.team_id),
     name: row.name,
-    position: row.position as Player["position"],
+    positions: (row.position ?? "UTIL").split(",").map((s) => s.trim()) as Player["positions"],
     jerseyNumber: row.jersey_number,
     seasonYear: row.season_year,
     isArchived: Boolean(row.is_archived),
+    pitchingRole: (row as { pitching_role?: "starter" | "reliever" | "closer" | null }).pitching_role ?? null,
   }
 }
 
@@ -155,6 +156,7 @@ export default function PlayerPage() {
           name: teamRow.name,
           isArchived: Boolean(teamRow.is_archived),
           currentSeasonYear: teamRow.current_season_year,
+          league: teamRow.league ?? null,
         }
 
         const playerRows = await fetchPlayers(
@@ -352,7 +354,7 @@ export default function PlayerPage() {
                 {player.name}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                {player.position} · {team.name} · {team.currentSeasonYear} Season
+                {player.positions.join(", ")} · {team.name} · {team.currentSeasonYear} Season
               </p>
               <p className="mt-4 rounded-xl bg-[#f7f8f3] px-4 py-3 text-sm font-medium text-green-900">
                 Goal: {goals.seasonGoal || "Not set"}

@@ -72,7 +72,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
 
   const sortedRoster = useMemo(
     () => [...players].sort((a, b) => {
-      const posDiff = (positionOrder[a.position] ?? 99) - (positionOrder[b.position] ?? 99)
+      const posDiff = (positionOrder[a.positions[0]] ?? 99) - (positionOrder[b.positions[0]] ?? 99)
       if (posDiff !== 0) return posDiff
       return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
     }),
@@ -144,7 +144,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
                       </div>
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold text-gray-800">{player.name}</p>
-                        <p className="text-xs text-gray-400">{player.position}</p>
+                        <p className="text-xs text-gray-400">{player.positions.join(", ")}</p>
                       </div>
                     </div>
                   ))}
@@ -207,7 +207,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
                             )}
                             {player.name}
                           </span>
-                          <span className="ml-1.5 text-xs text-gray-400">{player.position}</span>
+                          <span className="ml-1.5 text-xs text-gray-400">{player.positions.join(", ")}</span>
                         </td>
                         <td className="px-2 py-3 text-center text-gray-500">{metrics.games}</td>
                         <td className="px-2 py-3 text-center font-bold text-green-900">{metrics.ab > 0 ? fmtRate(metrics.avg) : "—"}</td>
@@ -250,7 +250,7 @@ export default function MyTeamPage({ team, players, savedEntriesByPlayer, pitchi
                               )}
                               {player.name}
                             </span>
-                            <span className="ml-1.5 text-xs text-gray-400">{player.position}</span>
+                            <span className="ml-1.5 text-xs text-gray-400">{player.positions.join(", ")}</span>
                           </td>
                           <td className="px-2 py-3 text-center text-gray-500">{metrics.games}</td>
                           <td className="px-2 py-3 text-center text-gray-600">{fmtIp(metrics.outs)}</td>

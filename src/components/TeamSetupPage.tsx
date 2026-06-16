@@ -140,7 +140,7 @@ export default function TeamSetupPage({
       if (sortBy === "name") return a.name.localeCompare(b.name)
 
       if (sortBy === "position") {
-        const positionCompare = a.position.localeCompare(b.position)
+        const positionCompare = a.positions[0].localeCompare(b.positions[0])
         if (positionCompare !== 0) return positionCompare
         return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
       }
@@ -441,7 +441,7 @@ export default function TeamSetupPage({
                               </p>
 
                               <p className="mt-1 text-xs text-gray-400">
-                                {player.position} · G {metrics.games} · PA{" "}
+                                {player.positions.join(", ")} · G {metrics.games} · PA{" "}
                                 {metrics.pa} · AVG {fmtRate(metrics.avg)}
                               </p>
 
