@@ -14,9 +14,11 @@ export function calcBattingMetrics(entries: SavedBattingGameEntry[]) {
       acc.hbp += e.statLine.HBP ?? 0
       acc.sf += e.statLine.SF ?? 0
       acc.so += e.statLine.SO
+      acc.sb += e.statLine.SB ?? 0
+      acc.cs += e.statLine.CS ?? 0
       return acc
     },
-    { games: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0, sf: 0, so: 0 }
+    { games: 0, ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, rbi: 0, bb: 0, hbp: 0, sf: 0, so: 0, sb: 0, cs: 0 }
   )
   const singles = Math.max(t.h - t.doubles - t.triples - t.hr, 0)
   const totalBases = singles + t.doubles * 2 + t.triples * 3 + t.hr * 4
@@ -24,7 +26,9 @@ export function calcBattingMetrics(entries: SavedBattingGameEntry[]) {
   const avg = t.ab > 0 ? t.h / t.ab : 0
   const obp = pa > 0 ? (t.h + t.bb + t.hbp) / pa : 0
   const slg = t.ab > 0 ? totalBases / t.ab : 0
-  return { ...t, pa, avg, obp, ops: obp + slg }
+  const stolenBaseAttempts = t.sb + t.cs
+  const sbPct = stolenBaseAttempts > 0 ? t.sb / stolenBaseAttempts : null
+  return { ...t, pa, avg, obp, ops: obp + slg, sbPct }
 }
 
 export function calcPitchingMetrics(entries: SavedPitchingGameEntry[]) {

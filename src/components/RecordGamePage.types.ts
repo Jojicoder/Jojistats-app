@@ -48,6 +48,7 @@ export type RecordGamePageProps = {
   isEditingSavedEntry: boolean
   isEditingSavedPitchingEntry?: boolean
   editingSavedEntryId: string | null
+  editingSavedPitchingEntryId?: string | null
   onStartEditSavedEntry: (savedEntry: SavedBattingGameEntry) => void
   onUpdateSavedEntry: (nextGameMeta: DraftGameMeta, nextStatLine: BattingEntryData, gamePositions?: Position[]) => void
   onUpdateSavedGame?: (
@@ -74,13 +75,14 @@ export type RecordGamePageProps = {
   onSavePitchingGame: (entry?: PitchingEntryData, playerId?: string) => void | Promise<void>
   isPitchingSaveDisabled: boolean
   saveError?: string
+  saveSuccess?: string
   onClearSaveError?: () => void
   onGameModeChange?: (isGameMode: boolean) => void
   onNewGame?: () => void
 }
 
 export type GameHalf = "Top" | "Bottom"
-export type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "HBP" | "SF" | "SO" | "OUT" | "E" | "FC" | "FC_OUT"
+export type LivePlayResult = "1B" | "2B" | "3B" | "HR" | "BB" | "HBP" | "SF" | "SO" | "OUT" | "E" | "FC" | "FC_OUT_2B" | "FC_OUT_3B"
 export type LiveGameTab = "batting" | "pitching"
 export type InputStyle = "standard" | "game" | "edit"
 export type EditGameTab = "batting" | "pitching"
@@ -101,6 +103,7 @@ export type LivePitchingStats = {
   hitBatters: number
   strikeouts: number
   homeRunsAllowed: number
+  note: string
 }
 
 export type LivePlay = {

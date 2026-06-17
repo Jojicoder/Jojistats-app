@@ -158,6 +158,12 @@ export default function StatsPage() {
   }, [players, activePlayerId])
 
   useEffect(() => {
+    if (!activePlayer) return
+    const nextMode = activePlayer.positions.length === 1 && activePlayer.positions[0] === "P" ? "pitching" : "batting"
+    if (mode !== nextMode) setMode(nextMode)
+  }, [activePlayer?.id])
+
+  useEffect(() => {
     if (!activeTeam || lastSetupTeamIdRef.current === activeTeam.id) return
     lastSetupTeamIdRef.current = activeTeam.id
     setSetupSeasonYear(activeTeam.currentSeasonYear)
@@ -190,6 +196,9 @@ export default function StatsPage() {
     { label: "HR", value: String(kpi.hr) },
     { label: "RBI", value: String(kpi.rbi) },
     { label: "HBP", value: String(kpi.hbp) },
+    { label: "SB", value: String(kpi.sb) },
+    { label: "CS", value: String(kpi.cs) },
+    { label: "SB%", value: kpi.sbPct },
   ]
 
   const tabs: TabItem[] = useMemo(() => {
@@ -540,7 +549,6 @@ export default function StatsPage() {
                     savedEntries={savedEntries}
                     pitchingEntries={pitchingEntriesByPlayer[activePlayer.id] ?? []}
                     teamSavedEntries={allTeamEntries}
-                    gamesPlayed={kpi.gamesPlayed}
                     seasonYear={activeTeam?.currentSeasonYear ?? 0}
                     league={activeTeam?.league ?? null}
                     mode={mode}

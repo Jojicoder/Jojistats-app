@@ -1,5 +1,6 @@
 import type {
   DisplayStat,
+  LeagueKey,
   Player,
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
@@ -16,9 +17,8 @@ type MyStatsPageProps = {
   savedEntries: SavedBattingGameEntry[]
   pitchingEntries?: SavedPitchingGameEntry[]
   teamSavedEntries: SavedBattingGameEntry[]
-  gamesPlayed: number
   seasonYear: number
-  league?: "mlb" | "jaa" | null
+  league?: LeagueKey | null
   mode?: "batting" | "pitching"
   onModeChange?: (mode: "batting" | "pitching") => void
 }
@@ -30,6 +30,9 @@ const statDescriptions: Record<string, string> = {
   "BB/K": "Walks / Strikeouts",
   HR: "Home Runs",
   RBI: "Runs Batted In",
+  SB: "Stolen Bases",
+  CS: "Caught Stealing",
+  "SB%": "Stolen Base Percentage",
   HBP: "Hit By Pitch",
 }
 
@@ -64,6 +67,8 @@ function buildBattingStats(entry: SavedBattingGameEntry): DisplayStat[] {
   const obp = obpDenominator > 0 ? (statLine.H + statLine.BB + hbp) / obpDenominator : 0
   const slg = statLine.AB > 0 ? totalBases / statLine.AB : 0
   const bbPerK = statLine.SO > 0 ? formatRatio(statLine.BB / statLine.SO) : "--"
+  const stealAttempts = (statLine.SB ?? 0) + (statLine.CS ?? 0)
+  const sbPct = stealAttempts > 0 ? fmtRate((statLine.SB ?? 0) / stealAttempts) : "--"
   return [
     { label: "AVG",  value: fmtRate(avg) },
     { label: "OBP",  value: fmtRate(obp) },
@@ -71,6 +76,9 @@ function buildBattingStats(entry: SavedBattingGameEntry): DisplayStat[] {
     { label: "BB/K", value: bbPerK },
     { label: "HR",   value: String(statLine.HR) },
     { label: "RBI",  value: String(statLine.RBI) },
+    { label: "SB",   value: String(statLine.SB ?? 0) },
+    { label: "CS",   value: String(statLine.CS ?? 0) },
+    { label: "SB%",  value: sbPct },
   ]
 }
 
@@ -79,7 +87,6 @@ export default function MyStatsPage({
   calculatedStats,
   savedEntries,
   teamSavedEntries,
-  gamesPlayed,
   seasonYear,
   league,
   mode = "batting",
@@ -96,7 +103,6 @@ export default function MyStatsPage({
     () => (selectedEntry ? [selectedEntry] : savedEntries),
     [savedEntries, selectedEntry]
   )
-  const displayedGamesPlayed = selectedEntry ? 1 : gamesPlayed
   const totalPlateAppearances = displayedEntries.reduce(
     (total, entry) =>
       total +
@@ -129,6 +135,11 @@ export default function MyStatsPage({
       team: teamMetrics.rbi / teamGames,
       teamLabel: `${(teamMetrics.rbi / teamGames).toFixed(2)}/G`,
     },
+    SB: {
+      player: playerMetrics.sb / playerGames,
+      team: teamMetrics.sb / teamGames,
+      teamLabel: `${(teamMetrics.sb / teamGames).toFixed(2)}/G`,
+    },
   }
   const hasMinimumSample = totalPlateAppearances >= 5
 
@@ -146,7 +157,7 @@ export default function MyStatsPage({
                   ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
                   : activePlayer.name}
               </h1>
-              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.positions.join(", ")}</p>
+              <p className="mt-0.5 text-sm text-gray-400">{formatPlayerPositions(activePlayer)}</p>
             </div>
             {onModeChange && (
               <div className="grid w-full grid-cols-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:inline-flex sm:w-auto sm:shrink-0">
@@ -177,11 +188,7 @@ export default function MyStatsPage({
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="min-w-0 rounded-xl bg-[#f7f8f3] px-3 py-3 sm:px-4">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Games Played</p>
-              <p className="mt-2 text-2xl font-extrabold text-green-950">{displayedGamesPlayed}</p>
-            </div>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="min-w-0 rounded-xl bg-[#f7f8f3] px-3 py-3 sm:px-4">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Plate Apps</p>
               <p className="mt-2 text-2xl font-extrabold text-green-950">{totalPlateAppearances}</p>
@@ -194,10 +201,14 @@ export default function MyStatsPage({
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {displayedStats.map((stat) => {
             const comparison = statComparisons[stat.label]
-            const jaaOverride = league && stat.label === "HR"
-              ? (() => { const c = getStatColor("HR", stat.value, league); return { bg: c.bg, label: c.lbl, value: c.val } })()
+            const noColor = stat.label === "SB" || stat.label === "CS"
+            const usesLeagueStandard = Boolean(
+              !noColor && league && ["AVG", "OBP", "OPS", "BB/K", "HR"].includes(stat.label)
+            )
+            const leagueStyle = usesLeagueStandard
+              ? (() => { const c = getStatColor(stat.label, stat.value, league); return { bg: c.bg, label: c.lbl, value: c.val } })()
               : null
-            const style = jaaOverride ?? (comparison
+            const style = leagueStyle ?? ((!noColor && comparison)
               ? getStatCardStyle(comparison.player, comparison.team, hasMinimumSample)
               : getStatCardStyle(0, 0, false))
             return (
@@ -209,7 +220,7 @@ export default function MyStatsPage({
                 <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${style.value}`}>
                   {stat.value}
                 </p>
-                {comparison && !jaaOverride && (
+                {comparison && !leagueStyle && (
                   <p className="mt-1 text-xs text-gray-400">Team {comparison.teamLabel}</p>
                 )}
               </div>
@@ -232,4 +243,18 @@ export default function MyStatsPage({
       </div>
     </main>
   )
+}
+
+function formatPitchingRole(role: Player["pitchingRole"]) {
+  if (role === "starter") return "SP"
+  if (role === "reliever") return "RP"
+  if (role === "closer") return "CL"
+  return null
+}
+
+function formatPlayerPositions(player: Player) {
+  const role = formatPitchingRole(player.pitchingRole)
+  return player.positions
+    .map((position) => position === "P" ? `P / ${role ?? "RP"}` : position)
+    .join(", ")
 }

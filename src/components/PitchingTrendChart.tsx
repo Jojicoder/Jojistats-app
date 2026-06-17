@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react"
-import type { SavedPitchingGameEntry } from "../types"
+import type { LeagueKey, SavedPitchingGameEntry } from "../types"
 import { getStatColor } from "./mlb/playerStats"
 
 const chartWidth = 640
@@ -87,7 +87,7 @@ export default function PitchingTrendChart({
   pitchingRole,
 }: {
   entries: SavedPitchingGameEntry[]
-  league?: "mlb" | "jaa" | null
+  league?: LeagueKey | null
   pitchingRole?: "starter" | "reliever" | "closer" | null
 }) {
   const [activeTab, setActiveTab] = useState<TrendTab>("last3")

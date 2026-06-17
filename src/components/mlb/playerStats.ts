@@ -1,3 +1,6 @@
+import type { LeagueKey, PitchingRoleKey } from "../../config/leagueConfig"
+import { getLeagueStatConfig } from "../../config/leagueConfig"
+
 export const HITTING_CARDS = [
   // rate stats
   { key: "avg",          label: "AVG",   desc: "Batting Average" },
@@ -35,76 +38,41 @@ export const PITCHING_CARDS = [
   { key: "inningsPitched",     label: "IP",   desc: "Innings Pitched" },
 ]
 
-type StatThreshold = { hi: number; lo: number; lowerBetter?: boolean }
-type StatConfig = Record<string, StatThreshold>
+// 先発 — IP/W を優先、SV/HLD は省く
+export const SP_PITCHING_CARDS = [
+  { key: "era",                label: "ERA",  desc: "Earned Run Average" },
+  { key: "whip",               label: "WHIP", desc: "Walks + Hits / IP" },
+  { key: "inningsPitched",     label: "IP",   desc: "Innings Pitched" },
+  { key: "strikeoutsPer9Inn",  label: "K/9",  desc: "Strikeouts per 9 Inn." },
+  { key: "wins",               label: "W",    desc: "Wins" },
+]
 
-const MLB_THRESHOLDS: StatConfig = {
-  AVG:    { hi: 0.300, lo: 0.240 },
-  OBP:    { hi: 0.370, lo: 0.300 },
-  SLG:    { hi: 0.500, lo: 0.380 },
-  OPS:    { hi: 0.850, lo: 0.650 },
-  "BB/K": { hi: 0.50,  lo: 0.25 },
-  ISO:    { hi: 0.200, lo: 0.100 },
-  ERA:    { hi: 3.00,  lo: 4.50,  lowerBetter: true },
-  WHIP:   { hi: 1.10,  lo: 1.35,  lowerBetter: true },
-  "K/9":  { hi: 10.0,  lo: 7.0 },
-  "BB/9": { hi: 2.50,  lo: 4.00,  lowerBetter: true },
-  "K/BB": { hi: 3.00,  lo: 1.50 },
-  "HR/9": { hi: 0.90,  lo: 1.50,  lowerBetter: true },
-}
+// 中継ぎ — HLD を優先
+export const RP_PITCHING_CARDS = [
+  { key: "era",                label: "ERA",  desc: "Earned Run Average" },
+  { key: "whip",               label: "WHIP", desc: "Walks + Hits / IP" },
+  { key: "holds",              label: "HLD",  desc: "Holds" },
+  { key: "strikeoutsPer9Inn",  label: "K/9",  desc: "Strikeouts per 9 Inn." },
+]
 
-const JAA_THRESHOLDS: StatConfig = {
-  AVG:    { hi: 0.380, lo: 0.220 },
-  OBP:    { hi: 0.450, lo: 0.300 },
-  SLG:    { hi: 0.600, lo: 0.380 },
-  OPS:    { hi: 0.950, lo: 0.680 },
-  "BB/K": { hi: 0.70,  lo: 0.25 },
-  ISO:    { hi: 0.250, lo: 0.120 },
-  HR:     { hi: 3,     lo: -1 },
-  ERA:    { hi: 4.00,  lo: 7.00,  lowerBetter: true },
-  WHIP:   { hi: 1.30,  lo: 1.80,  lowerBetter: true },
-  "K/9":  { hi: 9.0,   lo: 5.0 },
-  "BB/9": { hi: 3.00,  lo: 5.00,  lowerBetter: true },
-  "K/BB": { hi: 2.50,  lo: 1.20 },
-  "HR/9": { hi: 1.00,  lo: 2.00,  lowerBetter: true },
-}
-
-const JAA_STARTER_THRESHOLDS: StatConfig = {
-  ...JAA_THRESHOLDS,
-  ERA:  { hi: 4.00, lo: 7.00, lowerBetter: true },
-  WHIP: { hi: 1.40, lo: 2.00, lowerBetter: true },
-}
-
-const JAA_RELIEVER_THRESHOLDS: StatConfig = {
-  ...JAA_THRESHOLDS,
-  ERA:  { hi: 3.00, lo: 6.00, lowerBetter: true },
-  WHIP: { hi: 1.20, lo: 1.70, lowerBetter: true },
-}
-
-const JAA_CLOSER_THRESHOLDS: StatConfig = {
-  ...JAA_THRESHOLDS,
-  ERA:  { hi: 2.50, lo: 5.00, lowerBetter: true },
-  WHIP: { hi: 1.10, lo: 1.60, lowerBetter: true },
-}
+// 抑え — SV を最優先
+export const CL_PITCHING_CARDS = [
+  { key: "saves",              label: "SV",   desc: "Saves" },
+  { key: "era",                label: "ERA",  desc: "Earned Run Average" },
+  { key: "whip",               label: "WHIP", desc: "Walks + Hits / IP" },
+  { key: "strikeoutsPer9Inn",  label: "K/9",  desc: "Strikeouts per 9 Inn." },
+]
 
 export function getStatColor(
   label: string,
   value: string,
-  league: "mlb" | "jaa" = "mlb",
-  pitchingRole?: "starter" | "reliever" | "closer" | null
+  league: LeagueKey | null | undefined = "mlb",
+  pitchingRole?: PitchingRoleKey | null
 ) {
   const num = parseFloat(value)
   if (isNaN(num)) return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
 
-  let cfg: StatConfig
-  if (league === "jaa") {
-    if (pitchingRole === "starter") cfg = JAA_STARTER_THRESHOLDS
-    else if (pitchingRole === "reliever") cfg = JAA_RELIEVER_THRESHOLDS
-    else if (pitchingRole === "closer") cfg = JAA_CLOSER_THRESHOLDS
-    else cfg = JAA_THRESHOLDS
-  } else {
-    cfg = MLB_THRESHOLDS
-  }
+  const cfg = getLeagueStatConfig(league, pitchingRole)
   const c = cfg[label]
   if (!c) return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
 
@@ -146,4 +114,3 @@ export function enrichStats(
     homeRunsPer9:       raw.homeRunsPer9       ?? (ip > 0 ? ((hr / ip) * 9).toFixed(2) : "—"),
   }
 }
-

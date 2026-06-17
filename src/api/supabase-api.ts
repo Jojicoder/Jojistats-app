@@ -1,5 +1,6 @@
 import { supabase } from "./supabase-client"
 import type {
+  LeagueKey,
   Position,
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
@@ -11,7 +12,7 @@ export type TeamRow = {
   name: string
   is_archived: boolean | number | null
   current_season_year: number
-  league: "mlb" | "jaa" | null
+  league: LeagueKey | null
 }
 
 export type PlayerRow = {
@@ -63,6 +64,8 @@ type BattingStatRow = {
   hbp: number | null
   sf: number | null
   so: number | null
+  sb: number | null
+  cs: number | null
   note: string | null
 }
 
@@ -99,6 +102,7 @@ type PitchingStatRow = {
   hbp: number | null
   strikeouts: number | null
   home_runs_allowed: number | null
+  note: string | null
   games: GameRow
 }
 
@@ -255,8 +259,18 @@ export async function fetchPitchingEntriesByPlayer(
       hitBatters: row.hbp ?? 0,
       strikeouts: row.strikeouts ?? 0,
       homeRunsAllowed: row.home_runs_allowed ?? 0,
+      note: row.note ?? "",
     }
-    const hasPitchingActivity = Object.values(statLine).some((value) => value > 0)
+    const hasPitchingActivity =
+      statLine.inningsPitchedOuts > 0 ||
+      statLine.hitsAllowed > 0 ||
+      statLine.runsAllowed > 0 ||
+      statLine.earnedRuns > 0 ||
+      statLine.walks > 0 ||
+      statLine.hitBatters > 0 ||
+      statLine.strikeouts > 0 ||
+      statLine.homeRunsAllowed > 0 ||
+      statLine.note.trim() !== ""
     if (!hasPitchingActivity) return
 
     const playerId = String(row.player_id)
@@ -376,6 +390,8 @@ export const fetchSavedEntriesByPlayer = async (
         HBP: stat.hbp ?? 0,
         SF: stat.sf ?? 0,
         SO: stat.so ?? 0,
+        SB: stat.sb ?? 0,
+        CS: stat.cs ?? 0,
         note: stat.note ?? "",
       },
     }

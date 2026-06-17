@@ -180,6 +180,8 @@ type BattingGameStatPayload = {
   so?: number
   hbp?: number
   sf?: number
+  sb?: number
+  cs?: number
   note?: string | null
 }
 
@@ -197,6 +199,7 @@ type PitchingGameStatPayload = {
   loss_flag?: boolean
   save_flag?: boolean
   hold_flag?: boolean
+  note?: string | null
 }
 
 export type FullGamePayload = {
@@ -243,6 +246,8 @@ const toBattingStatRow = (s: BattingGameStatPayload, gameId?: number) => ({
   so: s.so ?? 0,
   hbp: s.hbp ?? 0,
   sf: s.sf ?? 0,
+  sb: s.sb ?? 0,
+  cs: s.cs ?? 0,
   note: s.note?.trim() || null,
 })
 
@@ -261,6 +266,7 @@ const toPitchingStatRow = (
   hbp: s.hbp ?? 0,
   strikeouts: s.strikeouts ?? 0,
   home_runs_allowed: s.home_runs_allowed ?? 0,
+  note: s.note?.trim() || null,
   ...(includeDecisionFlags
     ? {
         win_flag: s.win_flag ?? false,
@@ -300,17 +306,37 @@ const getNextAvailableMatchNumber = async (
 }
 
 const deleteRowsByGameId = async (gameId: number) => {
-  const { error: battingError } = await supabase
+  const { data: existingBattingRows, error: existingBattingError } = await supabase
+    .from("batting_game_stats")
+    .select("id")
+    .eq("game_id", gameId)
+  if (existingBattingError) throw new Error(existingBattingError.message)
+
+  const { data: deletedBattingRows, error: battingError } = await supabase
     .from("batting_game_stats")
     .delete()
     .eq("game_id", gameId)
+    .select("id")
   if (battingError) throw new Error(battingError.message)
+  if ((existingBattingRows?.length ?? 0) > 0 && (deletedBattingRows?.length ?? 0) === 0) {
+    throw new Error("Batting stats could not be deleted. Check database delete policy for this team.")
+  }
 
-  const { error: pitchingError } = await supabase
+  const { data: existingPitchingRows, error: existingPitchingError } = await supabase
+    .from("pitching_game_stats")
+    .select("id")
+    .eq("game_id", gameId)
+  if (existingPitchingError) throw new Error(existingPitchingError.message)
+
+  const { data: deletedPitchingRows, error: pitchingError } = await supabase
     .from("pitching_game_stats")
     .delete()
     .eq("game_id", gameId)
+    .select("id")
   if (pitchingError) throw new Error(pitchingError.message)
+  if ((existingPitchingRows?.length ?? 0) > 0 && (deletedPitchingRows?.length ?? 0) === 0) {
+    throw new Error("Pitching stats could not be deleted. Check database delete policy for this team.")
+  }
 }
 
 const deleteGameIfNoStats = async (gameId: number) => {
@@ -625,7 +651,7 @@ export const deletePitchingStatEntry = async (statId: number, gameId: number) =>
   if (pitchingError) throw new Error(pitchingError.message)
   assertRowsChanged(
     deletedPitchingRows,
-    `No pitching entry was deleted for stat ${statId}. The database delete policy is not allowing this user to delete that row.`
+    `Pitching entry could not be deleted. Check database delete policy for stat ${statId}.`
   )
 
   await deleteGameIfNoStats(gameId)

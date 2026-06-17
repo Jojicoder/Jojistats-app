@@ -127,7 +127,6 @@ export default function SavedEntriesList({
             const isEditing = editingSavedEntryId === entry.id
             const score = formatScore(entry)
             const result = formatResult(entry)
-
             return (
               <div
                 key={entry.id}
@@ -189,6 +188,8 @@ export default function SavedEntriesList({
                           ["RBI",entry.statLine.RBI],
                           ["BB", entry.statLine.BB],
                           ["SO", entry.statLine.SO],
+                          ["SB", entry.statLine.SB ?? 0],
+                          ["CS", entry.statLine.CS ?? 0],
                         ].map(([label, val]) => (
                           <span key={String(label)} className="rounded-md border border-gray-200 bg-white px-2 py-0.5 text-xs text-gray-600">
                             <span className="font-bold text-gray-400">{label}</span> {val}

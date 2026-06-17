@@ -4,23 +4,8 @@ import type {
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
 } from "../types"
-import { calcBattingMetrics, calcPitchingMetrics } from "../utils/metrics"
 
-type SidebarSortKey =
-  | "jersey"
-  | "name"
-  | "position"
-  | "games"
-  | "pa"
-  | "avg"
-  | "ops"
-  | "hr"
-  | "rbi"
-  | "era"
-  | "whip"
-  | "ip"
-  | "so"
-  | "bb"
+type SidebarSortKey = "jersey" | "name" | "position"
 
 type SidebarProps = {
   players: Player[]
@@ -31,100 +16,24 @@ type SidebarProps = {
   mode?: "batting" | "pitching"
 }
 
-
 export default function Sidebar({
   players,
   activePlayerId,
   setActivePlayerId,
-  savedEntriesByPlayer = {},
-  pitchingEntriesByPlayer = {},
-  mode = "batting",
 }: SidebarProps) {
-  const [sortByByMode, setSortByByMode] = useState<Record<"batting" | "pitching", SidebarSortKey>>({
-    batting: "jersey",
-    pitching: "games",
-  })
-  const sortBy = sortByByMode[mode]
-
-  const playerMetrics = useMemo(() => {
-    const map: Record<string, {
-      batting: ReturnType<typeof calcBattingMetrics>
-      pitching: ReturnType<typeof calcPitchingMetrics>
-    }> = {}
-    for (const player of players) {
-      map[player.id] = {
-        batting: calcBattingMetrics(savedEntriesByPlayer[player.id] ?? []),
-        pitching: calcPitchingMetrics(pitchingEntriesByPlayer[player.id] ?? []),
-      }
-    }
-    return map
-  }, [players, savedEntriesByPlayer, pitchingEntriesByPlayer])
+  const [sortBy, setSortBy] = useState<SidebarSortKey>("jersey")
 
   const sortedPlayers = useMemo(() => {
-    const nextPlayers = [...players]
-
-    nextPlayers.sort((a, b) => {
+    return [...players].sort((a, b) => {
       if (sortBy === "name") return a.name.localeCompare(b.name)
-
       if (sortBy === "position") {
         const pos = a.positions[0].localeCompare(b.positions[0])
         if (pos !== 0) return pos
         return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
       }
-
-      if (mode === "pitching") {
-        const aIsPitcher = a.positions.includes("P")
-        const bIsPitcher = b.positions.includes("P")
-        const am = playerMetrics[a.id].pitching
-        const bm = playerMetrics[b.id].pitching
-
-        if (sortBy === "jersey") {
-          if (am.games > 0 && bm.games === 0) return -1
-          if (am.games === 0 && bm.games > 0) return 1
-          if (aIsPitcher && !bIsPitcher) return -1
-          if (!aIsPitcher && bIsPitcher) return 1
-          return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-        }
-
-        if (sortBy === "games") {
-          const games = bm.games - am.games
-          if (games !== 0) return games
-          if (aIsPitcher && !bIsPitcher) return -1
-          if (!aIsPitcher && bIsPitcher) return 1
-          return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-        }
-        if (sortBy === "era") {
-          const aEra = am.ip > 0 ? am.era : Infinity
-          const bEra = bm.ip > 0 ? bm.era : Infinity
-          return aEra - bEra
-        }
-        if (sortBy === "whip") {
-          const aWhip = am.ip > 0 ? am.whip : Infinity
-          const bWhip = bm.ip > 0 ? bm.whip : Infinity
-          return aWhip - bWhip
-        }
-        if (sortBy === "ip") return bm.ip - am.ip
-        if (sortBy === "so") return bm.so - am.so
-        if (sortBy === "bb") return am.bb - bm.bb
-
-        return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
-      }
-
-      const am = playerMetrics[a.id].batting
-      const bm = playerMetrics[b.id].batting
-
-      if (sortBy === "games") return bm.games - am.games
-      if (sortBy === "pa") return bm.pa - am.pa
-      if (sortBy === "avg") return bm.avg - am.avg
-      if (sortBy === "ops") return bm.ops - am.ops
-      if (sortBy === "hr") return bm.hr - am.hr
-      if (sortBy === "rbi") return bm.rbi - am.rbi
-
       return (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
     })
-
-    return nextPlayers
-  }, [players, playerMetrics, sortBy, mode])
+  }, [players, sortBy])
 
   return (
     <aside className="h-fit w-full shrink-0 rounded-2xl bg-white p-4 shadow-sm lg:w-72 lg:max-w-72">
@@ -138,36 +47,12 @@ export default function Sidebar({
           <label className="block text-xs font-bold uppercase tracking-widest text-gray-400">Sort by</label>
           <select
             value={sortBy}
-            onChange={(e) =>
-              setSortByByMode((prev) => ({
-                ...prev,
-                [mode]: e.target.value as SidebarSortKey,
-              }))
-            }
+            onChange={(e) => setSortBy(e.target.value as SidebarSortKey)}
             className="mt-1 w-full min-w-0 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600"
           >
             <option value="jersey">Jersey Number</option>
             <option value="name">Name</option>
             <option value="position">Position</option>
-            <option value="games">Games Played</option>
-
-            {mode === "batting" ? (
-              <>
-                <option value="pa">PA</option>
-                <option value="avg">AVG</option>
-                <option value="ops">OPS</option>
-                <option value="hr">HR</option>
-                <option value="rbi">RBI</option>
-              </>
-            ) : (
-              <>
-                <option value="era">ERA</option>
-                <option value="whip">WHIP</option>
-                <option value="ip">IP</option>
-                <option value="so">SO</option>
-                <option value="bb">BB</option>
-              </>
-            )}
           </select>
         </div>
       </div>
@@ -175,8 +60,6 @@ export default function Sidebar({
       <div className="mt-3 flex flex-col gap-2">
         {sortedPlayers.map((player) => {
           const isActive = player.id === activePlayerId
-          const battingMetrics = playerMetrics[player.id].batting
-          const pitchingMetrics = playerMetrics[player.id].pitching
 
           return (
             <button
@@ -202,7 +85,7 @@ export default function Sidebar({
                   {player.name}
                 </p>
                 <p className={`mt-0.5 truncate text-xs ${isActive ? "text-green-200" : "text-gray-400"}`}>
-                  {player.positions.join(", ")} · {mode === "pitching" ? pitchingMetrics.games : battingMetrics.games}G
+                  {formatPlayerPositions(player)}
                 </p>
               </div>
             </button>
@@ -211,4 +94,18 @@ export default function Sidebar({
       </div>
     </aside>
   )
+}
+
+function formatPitchingRole(role: Player["pitchingRole"]) {
+  if (role === "starter") return "SP"
+  if (role === "reliever") return "RP"
+  if (role === "closer") return "CL"
+  return null
+}
+
+function formatPlayerPositions(player: Player) {
+  const role = formatPitchingRole(player.pitchingRole)
+  return player.positions
+    .map((position) => position === "P" ? `P / ${role ?? "RP"}` : position)
+    .join(", ")
 }

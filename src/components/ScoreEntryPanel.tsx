@@ -9,6 +9,7 @@ type ScoreEntryPanelProps = {
   primaryActionDisabled: boolean
   calculatedAvg: string
   saveSuccessMessage?: string
+  saveErrorMessage?: string
   showCancelEdit?: boolean
   onCancelEdit?: () => void
 }
@@ -21,6 +22,7 @@ export default function ScoreEntryPanel({
   primaryActionDisabled,
   calculatedAvg,
   saveSuccessMessage,
+  saveErrorMessage,
   showCancelEdit = false,
   onCancelEdit,
 }: ScoreEntryPanelProps) {
@@ -40,6 +42,12 @@ export default function ScoreEntryPanel({
       {saveSuccessMessage && (
         <p className="mt-3 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-700">
           {saveSuccessMessage}
+        </p>
+      )}
+
+      {saveErrorMessage && (
+        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {saveErrorMessage}
         </p>
       )}
 

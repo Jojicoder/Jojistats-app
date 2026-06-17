@@ -35,6 +35,7 @@ export default function RecordGamePage({
   isEditingSavedEntry,
   isEditingSavedPitchingEntry = false,
   editingSavedEntryId,
+  editingSavedPitchingEntryId = null,
   onStartEditSavedEntry,
   onUpdateSavedEntry,
   onUpdateSavedGame,
@@ -53,6 +54,7 @@ export default function RecordGamePage({
   onPitchingEntryChange,
   isPitchingSaveDisabled,
   saveError = "",
+  saveSuccess = "",
   onClearSaveError,
   onGameModeChange,
   onNewGame,
@@ -118,6 +120,13 @@ export default function RecordGamePage({
     savedEntries.find((e) => e.id === editingSavedEntryId) ??
     null
 
+  const activeEditingSavedEntry =
+    (teamSavedEntries ?? savedEntries).find((e) => e.id === editingSavedEntryId) ??
+    savedEntries.find((e) => e.id === editingSavedEntryId) ??
+    null
+  const isEditingActiveSavedEntry =
+    isEditingSavedEntry && activeEditingSavedEntry?.playerId === activePlayer.id
+
   const gameEntriesForEditing = useMemo(
     () =>
       selectedGameEntry
@@ -164,10 +173,11 @@ export default function RecordGamePage({
   /* ---------------- HOOKS ---------------- */
 
   const standard = useStandardMode({
-    activePlayer, currentEntry, onEntryChange, gameMeta, isMetaComplete,
-    isEditingSavedEntry, isEditingSavedPitchingEntry, editingGamePositions,
-    recordMode, setRecordMode, onSaveGame, onUpdateSavedEntry,
-    onCancelEditSavedEntry, pitchingEntry, onPitchingEntryChange, onUpdateSavedPitchingEntry,
+    activePlayer, allPlayers, currentEntry, onEntryChange, gameMeta, isMetaComplete,
+    isEditingSavedEntry: isEditingActiveSavedEntry, isEditingSavedPitchingEntry, editingGamePositions,
+    recordMode, setRecordMode, onSaveGame, onUpdateSavedEntry, onUpdateSavedGame,
+    onCancelEditSavedEntry, gameEntriesForEditing, pitchingEntriesForEditing,
+    pitchingEntry, onPitchingEntryChange, onUpdateSavedPitchingEntry,
     onNewGame,
   })
 
@@ -324,6 +334,9 @@ export default function RecordGamePage({
           selectedEditGameEntry={edit.selectedEditGameEntry}
           onSelectEditPlayerId={edit.setSelectedEditPlayerId}
           onUpdateEditGameEntry={edit.handleUpdateEditGameEntry}
+          onAddEditGamePosition={edit.handleAddEditGamePosition}
+          onUpdateEditGamePosition={edit.handleUpdateEditGamePosition}
+          onRemoveEditGamePosition={edit.handleRemoveEditGamePosition}
           onRemoveEditGameEntry={edit.handleRemoveEditGameEntry}
           livePlays={game.livePlays}
           hoveredEditPlayerId={edit.hoveredEditPlayerId}
@@ -366,7 +379,7 @@ export default function RecordGamePage({
           onEntryChange={onEntryChange}
           onPrimaryAction={standard.handlePrimaryAction}
           primaryActionDisabled={standard.primaryActionDisabled}
-          isEditingSavedEntry={isEditingSavedEntry}
+          isEditingSavedEntry={isEditingActiveSavedEntry}
           isEditingSavedPitchingEntry={isEditingSavedPitchingEntry}
           onCancelEditSavedEntry={standard.handleCancelEditSavedEntry}
           pitchingEntry={pitchingEntry}
@@ -374,7 +387,8 @@ export default function RecordGamePage({
           onPitchingPrimaryAction={standard.handlePitchingPrimaryAction}
           isPitchingSaveDisabled={
             isPitchingSaveDisabled ||
-            (!isEditingSavedPitchingEntry &&
+            (!isEditingActiveSavedEntry &&
+              !isEditingSavedPitchingEntry &&
               standard.pendingPitchingEntries.some((entry) => entry.playerId === activePlayer.id))
           }
           onCancelEditSavedPitchingEntry={onCancelEditSavedPitchingEntry}
@@ -389,12 +403,14 @@ export default function RecordGamePage({
           onSave={standard.handleSave}
           savedEntries={savedEntries}
           savedPitchingEntries={savedPitchingEntries}
-          editingSavedEntryId={editingSavedEntryId}
+          editingSavedEntryId={isEditingActiveSavedEntry ? editingSavedEntryId : null}
+          editingSavedPitchingEntryId={editingSavedPitchingEntryId}
           onStartEditSavedEntry={onStartEditSavedEntry}
           onDeleteSavedEntry={onDeleteSavedEntry}
           onStartEditSavedPitchingEntry={onStartEditSavedPitchingEntry}
           onDeleteSavedPitchingEntry={onDeleteSavedPitchingEntry}
           saveError={saveError}
+          saveSuccess={saveSuccess}
           onClearSaveError={onClearSaveError}
           onNewGame={standard.handleNewGame}
         />

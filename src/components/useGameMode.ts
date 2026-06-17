@@ -21,7 +21,7 @@ import { useRunnerControls } from "./useRunnerControls"
 
 const emptyPitchingStats: LivePitchingStats = {
   inningsPitchedOuts: 0, hitsAllowed: 0, runsAllowed: 0, earnedRuns: 0,
-  walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0,
+  walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0, note: "",
 }
 
 type Input = {
@@ -178,6 +178,17 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
 
   /* ---------------- EFFECTS ---------------- */
 
+  // Auto-switch tab to match game batting half when the half changes (including manual changes).
+  // Skips until gameBattingHalf is established so the user can freely pick batting or pitching first.
+  useEffect(() => {
+    const battingHalf: GameHalf | null =
+      livePlays.length > 0 ? livePlays[0].half
+      : livePitchPlays.length > 0 ? (livePitchPlays[0].half === "Top" ? "Bottom" : "Top")
+      : null
+    if (battingHalf === null) return
+    setLiveGameTab(liveHalf === battingHalf ? "batting" : "pitching")
+  }, [liveHalf, livePlays, livePitchPlays])
+
   // Only set once so the user's manually expanded inning isn't overridden when the inning advances
   useEffect(() => {
     const key = `${liveInning}-${liveHalf}`
@@ -217,8 +228,19 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
     currentFrameBattingPlays.length > 0 ? "batting"
     : currentFramePitchingPlays.length > 0 ? "pitching"
     : null
-  const isLiveBattingBlocked = currentFrameLocksRecordMode === "pitching"
-  const isLivePitchingBlocked = currentFrameLocksRecordMode === "batting"
+
+  // Game-level lock: once batting half is established, the other half is pitching-only.
+  // Mirrors handleSyncLiveGame's teamBattingHalf logic to keep scores consistent.
+  const gameBattingHalf: GameHalf | null =
+    livePlays.length > 0 ? livePlays[0].half
+    : livePitchPlays.length > 0 ? (livePitchPlays[0].half === "Top" ? "Bottom" : "Top")
+    : null
+  const isLiveBattingBlocked =
+    currentFrameLocksRecordMode === "pitching" ||
+    (gameBattingHalf !== null && liveHalf !== gameBattingHalf)
+  const isLivePitchingBlocked =
+    currentFrameLocksRecordMode === "batting" ||
+    (gameBattingHalf !== null && liveHalf === gameBattingHalf)
 
   const liveInningSummaries = useMemo((): LiveInningSummary[] => {
     const summaries = new Map<string, LiveInningSummary>()
@@ -230,7 +252,14 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
       summaries.set(key, next)
       return next
     }
-    ensure(liveInning, liveHalf)
+    // Fill every frame from Top 1 through the current half-inning so gaps don't appear
+    const halves: GameHalf[] = ["Top", "Bottom"]
+    outer: for (let i = 1; i <= liveInning; i++) {
+      for (const h of halves) {
+        ensure(i, h)
+        if (i === liveInning && h === liveHalf) break outer
+      }
+    }
     livePlays.forEach((p) => ensure(p.inning, p.half).batting.push(p))
     livePitchPlays.forEach((p) => ensure(p.inning, p.half).pitching.push(p))
     return Array.from(summaries.values()).sort((a, b) => {
@@ -247,6 +276,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
     const next = getNextHalfInning(liveInning, liveHalf)
     setLiveOuts(0); setBases(emptyBases); setLiveGameTab("pitching")
     setLiveHalf(next.half); setLiveInning(next.inning)
+    setExpandedLiveInningKey(`${next.inning}-${next.half}`)
   }
 
   const advancePitchGameState = (result: LivePitchResult) => {
@@ -255,6 +285,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
     const next = getNextHalfInning(liveInning, liveHalf)
     setLiveOuts(0); setBases(emptyBases); setLiveGameTab("batting")
     setLiveHalf(next.half); setLiveInning(next.inning)
+    setExpandedLiveInningKey(`${next.inning}-${next.half}`)
   }
 
   /* ---------------- RUNNER HANDLERS ---------------- */
@@ -345,6 +376,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
       hitBatters: prev.hitBatters + (result === "HBP" ? 1 : 0),
       strikeouts: prev.strikeouts + (result === "SO" ? 1 : 0),
       homeRunsAllowed: prev.homeRunsAllowed + (result === "HR" ? 1 : 0),
+      note: prev.note,
     }))
     setQuickPitchNote("")
     advancePitchGameState(result)
@@ -370,6 +402,7 @@ export function useGameMode({ allPlayers, activePlayer, gameMeta, isMetaComplete
       hitBatters: Math.max(prev.hitBatters - (last.result === "HBP" ? 1 : 0), 0),
       strikeouts: Math.max(prev.strikeouts - (last.result === "SO" ? 1 : 0), 0),
       homeRunsAllowed: Math.max(prev.homeRunsAllowed - (last.result === "HR" ? 1 : 0), 0),
+      note: prev.note,
     }))
   }
 

@@ -34,12 +34,12 @@ import type {
 } from "../types"
 
 const emptyBattingEntry: BattingEntryData = {
-  AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, note: "",
+  AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, SB: 0, CS: 0, note: "",
 }
 
 const emptyPitchingEntry: PitchingEntryData = {
   inningsPitchedOuts: 0, hitsAllowed: 0, runsAllowed: 0, earnedRuns: 0,
-  walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0,
+  walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0, note: "",
 }
 
 function getNextMatchNumber(games: GameRow[]) {
@@ -82,6 +82,7 @@ export default function RecordGameContainer({
   const [editingSavedPitchingEntry, setEditingSavedPitchingEntry] = useState<SavedPitchingGameEntry | null>(null)
   const [recordMode, setRecordMode] = useState<"batting" | "pitching">("batting")
   const [saveError, setSaveError] = useState("")
+  const [saveSuccess, setSaveSuccess] = useState("")
   const skipNextSaveRef = useRef(true)
   const [preEditSnapshot, setPreEditSnapshot] = useState<{ gameMeta: DraftGameMeta; currentEntry: BattingEntryData } | null>(null)
   const standardDraftKey = `standard-draft-${teamId}-${seasonYear}`
@@ -154,7 +155,16 @@ export default function RecordGameContainer({
 
   const handleSelectPlayer = async (player: Player) => {
     if (player.id === activePlayer.id) return
+    setSaveSuccess("")
     setActivePlayer(player)
+    setPreEditSnapshot(null)
+    setEditingSavedEntryId(null)
+    setEditingSavedEntry(null)
+    setEditingSavedPitchingEntry(null)
+    setCurrentEntry(emptyBattingEntry)
+    setPitchingEntry(emptyPitchingEntry)
+    setRecordMode("batting")
+    setSaveError("")
     const [batting, pitching] = await Promise.all([
       fetchSavedEntriesByPlayer(teamId, seasonYear),
       fetchPitchingEntriesByPlayer(teamId, seasonYear),
@@ -193,6 +203,8 @@ export default function RecordGameContainer({
       setCurrentEntry(emptyBattingEntry)
       setPitchingEntry(emptyPitchingEntry)
       setRecordMode("batting")
+      setSaveSuccess("Saved")
+      window.setTimeout(() => setSaveSuccess(""), 3000)
       clearDraft()
     } catch (err) {
       const message = err instanceof Error ? err.message : "Save failed"
@@ -236,7 +248,7 @@ export default function RecordGameContainer({
     setSaveError("")
     try {
       await updateBattingStatEntry(editingSavedEntry.statId, editingSavedEntry.gameId, {
-        game: buildGamePayload(teamId, nextGameMeta),
+        game: buildGamePayload(Number(editingSavedEntry.teamId), nextGameMeta),
         battingStat: buildBattingStatPayload(
           editingSavedEntry.playerId,
           gamePositions ?? editingSavedEntry.gamePositions,
@@ -247,6 +259,8 @@ export default function RecordGameContainer({
       await refreshAll(nextGameMeta.seasonYear)
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
+      setSaveSuccess("Saved")
+      window.setTimeout(() => setSaveSuccess(""), 3000)
       restorePreEditState()
       clearDraft()
     } catch (err) {
@@ -337,12 +351,14 @@ export default function RecordGameContainer({
     setSaveError("")
     try {
       await updatePitchingStatEntry(editingSavedPitchingEntry.statId, editingSavedPitchingEntry.gameId, {
-        game: buildGamePayload(teamId, nextGameMeta),
+        game: buildGamePayload(Number(editingSavedPitchingEntry.teamId), nextGameMeta),
         pitchingStat: buildPitchingStatPayload(editingSavedPitchingEntry.playerId, nextPitchingEntry),
       })
       await refreshAll(nextGameMeta.seasonYear)
       setEditingSavedPitchingEntry(null)
       setPitchingEntry(emptyPitchingEntry)
+      setSaveSuccess("Saved")
+      window.setTimeout(() => setSaveSuccess(""), 3000)
     } catch (err) {
       const message = err instanceof Error ? err.message : "Pitching update failed"
       setSaveError(message)
@@ -415,6 +431,7 @@ export default function RecordGameContainer({
       isEditingSavedEntry={editingSavedEntryId !== null}
       isEditingSavedPitchingEntry={editingSavedPitchingEntry !== null}
       editingSavedEntryId={editingSavedEntryId}
+      editingSavedPitchingEntryId={editingSavedPitchingEntry?.id ?? null}
       onStartEditSavedEntry={handleStartEditSavedEntry}
       onUpdateSavedEntry={handleUpdateSavedEntry}
       onUpdateSavedGame={handleSaveGame}
@@ -427,6 +444,7 @@ export default function RecordGameContainer({
       onCancelEditSavedPitchingEntry={handleCancelEditSavedPitchingEntry}
       onDeleteSavedPitchingEntry={handleDeleteSavedPitchingEntry}
       editingGamePositions={editingSavedEntry?.gamePositions}
+      saveSuccess={saveSuccess}
       recordMode={recordMode}
       setRecordMode={setRecordMode}
       pitchingEntry={pitchingEntry}

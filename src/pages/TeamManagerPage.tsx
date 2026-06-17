@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
 import { withAvatarCacheBust } from "../utils/avatar"
+import type { LeagueConfig, LineupScoreWeights } from "../config/leagueConfig"
+import { getLeagueConfig } from "../config/leagueConfig"
 import {
   fetchPlayers,
   fetchPlayersByTeam,
@@ -15,6 +17,11 @@ import { calcBattingMetrics, calcPitchingMetrics, fmtRate, fmtDecimal, fmtIp } f
 
 type ManagerMode = "batting" | "pitching"
 type LineupStyle = "balanced" | "obp" | "power" | "contact"
+
+type BattingSummary = {
+  player: Player
+  metrics: ReturnType<typeof calcBattingMetrics>
+}
 
 function mapPlayer(row: {
   id: number
@@ -52,47 +59,69 @@ function getPositionGroup(position: string) {
   return "Infielders"
 }
 
-function sortLineup(
-  summaries: Array<{ player: Player; metrics: ReturnType<typeof calcBattingMetrics> }>,
-  style: LineupStyle
+function fmtStealPct(sb: number, cs: number) {
+  const attempts = sb + cs
+  return attempts > 0 ? fmtRate(sb / attempts) : "--"
+}
+
+function scoreWeights(values: Record<keyof LineupScoreWeights, number>, weights: LineupScoreWeights) {
+  return Object.entries(weights).reduce(
+    (total, [key, weight]) => total + values[key as keyof LineupScoreWeights] * (weight ?? 0),
+    0
+  )
+}
+
+function scoreLineupSlot(
+  summary: BattingSummary,
+  slotIndex: number,
+  style: LineupStyle,
+  config: LeagueConfig
 ) {
-  const active = summaries.filter((summary) => summary.metrics.ab > 0)
-  const source = active.length > 0 ? active : summaries
+  const { metrics } = summary
+  const sample = Math.min(metrics.pa / config.manager.minimumRatePa, 1)
+  const values = {
+    avg: metrics.avg * sample,
+    obp: metrics.obp * sample,
+    ops: metrics.ops * sample,
+    contact: (metrics.ab > 0 ? Math.max(1 - metrics.so / metrics.ab, 0) : 0) * sample,
+    hrRate: (metrics.pa > 0 ? metrics.hr / metrics.pa : 0) * sample,
+    rbiRate: (metrics.pa > 0 ? metrics.rbi / metrics.pa : 0) * sample,
+    hitRate: (metrics.pa > 0 ? metrics.h / metrics.pa : 0) * sample,
+  }
 
-  return [...source]
-    .sort((a, b) => {
-      if (style === "obp") {
-        return (
-          b.metrics.obp - a.metrics.obp ||
-          b.metrics.avg - a.metrics.avg ||
-          b.metrics.ops - a.metrics.ops
-        )
+  const slotScore = scoreWeights(
+    values,
+    config.manager.lineupSlots[slotIndex] ??
+      config.manager.lineupSlots[config.manager.lineupSlots.length - 1] ??
+      {}
+  )
+  const styleBoost = scoreWeights(values, config.manager.lineupStyleBoosts[style])
+
+  return slotScore + styleBoost + metrics.pa / 10000
+}
+
+function sortLineup(summaries: BattingSummary[], style: LineupStyle, config: LeagueConfig) {
+  const active = summaries.filter((summary) => summary.metrics.pa > 0)
+  const remaining = [...(active.length > 0 ? active : summaries)]
+  const lineup: BattingSummary[] = []
+
+  for (let slotIndex = 0; slotIndex < 9 && remaining.length > 0; slotIndex += 1) {
+    let bestIndex = 0
+    let bestScore = Number.NEGATIVE_INFINITY
+
+    remaining.forEach((summary, index) => {
+      const score = scoreLineupSlot(summary, slotIndex, style, config)
+      if (score > bestScore) {
+        bestScore = score
+        bestIndex = index
       }
-
-      if (style === "power") {
-        return (
-          b.metrics.ops - a.metrics.ops ||
-          b.metrics.hr - a.metrics.hr ||
-          b.metrics.rbi - a.metrics.rbi
-        )
-      }
-
-      if (style === "contact") {
-        const aContact = a.metrics.ab > 0 ? a.metrics.so / a.metrics.ab : 1
-        const bContact = b.metrics.ab > 0 ? b.metrics.so / b.metrics.ab : 1
-        return (
-          b.metrics.avg - a.metrics.avg ||
-          aContact - bContact ||
-          b.metrics.h - a.metrics.h
-        )
-      }
-
-      return (
-        b.metrics.obp + b.metrics.ops + b.metrics.avg -
-        (a.metrics.obp + a.metrics.ops + a.metrics.avg)
-      )
     })
-    .slice(0, 9)
+
+    const [selected] = remaining.splice(bestIndex, 1)
+    lineup.push(selected)
+  }
+
+  return lineup
 }
 
 export default function TeamManagerPage() {
@@ -111,6 +140,7 @@ export default function TeamManagerPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [errorMessage, setErrorMessage] = useState("")
   const [debugMessage, setDebugMessage] = useState("")
+  const leagueConfig = useMemo(() => getLeagueConfig(team?.league), [team?.league])
 
   useEffect(() => {
     const load = async () => {
@@ -244,14 +274,15 @@ export default function TeamManagerPage() {
   )
 
   const leaders = useMemo(() => {
-    const eligible = playerSummaries.filter((summary) => summary.metrics.ab > 0)
+    const eligible = playerSummaries.filter((summary) => summary.metrics.pa >= leagueConfig.manager.minimumRatePa)
     const byAvg = [...eligible].sort((a, b) => b.metrics.avg - a.metrics.avg)[0]
     const byHr = [...playerSummaries].sort((a, b) => b.metrics.hr - a.metrics.hr)[0]
     const byRbi = [...playerSummaries].sort((a, b) => b.metrics.rbi - a.metrics.rbi)[0]
+    const bySb = [...playerSummaries].sort((a, b) => b.metrics.sb - a.metrics.sb)[0]
     const byHits = [...playerSummaries].sort((a, b) => b.metrics.h - a.metrics.h)[0]
 
-    return { byAvg, byHr, byRbi, byHits }
-  }, [playerSummaries])
+    return { byAvg, byHr, byRbi, bySb, byHits }
+  }, [leagueConfig, playerSummaries])
 
   const pitchingLeaders = useMemo(() => {
     const eligible = pitcherSummaries.filter((summary) => summary.metrics.outs > 0)
@@ -283,39 +314,39 @@ export default function TeamManagerPage() {
 
   const pitchingRosterOverview = useMemo(
     () =>
-      [...pitcherSummaries].sort((a, b) => {
-        if (a.player.positions.includes("P") && !b.player.positions.includes("P")) return -1
-        if (!a.player.positions.includes("P") && b.player.positions.includes("P")) return 1
-        return (
-          b.metrics.outs - a.metrics.outs ||
-          b.metrics.so - a.metrics.so ||
-          (a.player.jerseyNumber ?? 999) - (b.player.jerseyNumber ?? 999)
-        )
-      }),
+      pitcherSummaries
+        .filter((summary) => summary.player.positions.includes("P"))
+        .sort((a, b) => {
+          return (
+            b.metrics.outs - a.metrics.outs ||
+            b.metrics.so - a.metrics.so ||
+            (a.player.jerseyNumber ?? 999) - (b.player.jerseyNumber ?? 999)
+          )
+        }),
     [pitcherSummaries]
   )
 
   const hotPlayers = useMemo(
     () =>
       [...playerSummaries]
-        .filter((summary) => summary.metrics.ab > 0)
-        .sort((a, b) => b.metrics.ops - a.metrics.ops)
+        .filter((summary) => summary.metrics.pa >= leagueConfig.manager.minimumRatePa)
+        .sort((a, b) => b.metrics.ops - a.metrics.ops || b.metrics.pa - a.metrics.pa)
         .slice(0, 3),
-    [playerSummaries]
+    [leagueConfig, playerSummaries]
   )
 
   const coldPlayers = useMemo(
     () =>
       [...playerSummaries]
-        .filter((summary) => summary.metrics.ab > 0)
-        .sort((a, b) => a.metrics.ops - b.metrics.ops)
+        .filter((summary) => summary.metrics.pa >= leagueConfig.manager.minimumRatePa)
+        .sort((a, b) => a.metrics.ops - b.metrics.ops || b.metrics.pa - a.metrics.pa)
         .slice(0, 3),
-    [playerSummaries]
+    [leagueConfig, playerSummaries]
   )
 
   const suggestedLineup = useMemo(
-    () => sortLineup(playerSummaries, lineupStyle),
-    [lineupStyle, playerSummaries]
+    () => sortLineup(playerSummaries, lineupStyle, leagueConfig),
+    [leagueConfig, lineupStyle, playerSummaries]
   )
 
   const positionBalance = useMemo(() => {
@@ -430,6 +461,8 @@ export default function TeamManagerPage() {
                     { label: "OPS", value: fmtRate(teamTotals.ops), sub: "production" },
                     { label: "HR", value: String(teamTotals.hr), sub: "home runs" },
                     { label: "RBI", value: String(teamTotals.rbi), sub: "runs batted in" },
+                    { label: "SB", value: String(teamTotals.sb), sub: "stolen bases" },
+                    { label: "SB%", value: fmtStealPct(teamTotals.sb, teamTotals.cs), sub: "steal rate" },
                   ].map(({ label, value, sub, accent }) => (
                     <ManagerSummaryCard key={label} label={label} value={value} sub={sub} accent={accent} />
                   ))}
@@ -469,11 +502,15 @@ export default function TeamManagerPage() {
                 {/* ── Leaders row ── */}
                 <section className="grid grid-cols-1 gap-5 xl:grid-cols-4">
                   <MgrCard title="Team Leaders">
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                      Min {leagueConfig.manager.minimumRatePa} PA for AVG
+                    </p>
                     <div className="mt-4 space-y-2">
                       {[
                         { label: "AVG",  text: leaders.byAvg  ? leaders.byAvg.player.name  : "", val: leaders.byAvg  ? fmtRate(leaders.byAvg.metrics.avg)  : "—" },
                         { label: "HR",   text: leaders.byHr   ? leaders.byHr.player.name   : "", val: leaders.byHr   ? String(leaders.byHr.metrics.hr)         : "—" },
                         { label: "RBI",  text: leaders.byRbi  ? leaders.byRbi.player.name  : "", val: leaders.byRbi  ? String(leaders.byRbi.metrics.rbi)        : "—" },
+                        { label: "SB",   text: leaders.bySb   ? leaders.bySb.player.name   : "", val: leaders.bySb   ? String(leaders.bySb.metrics.sb)         : "—" },
                         { label: "Hits", text: leaders.byHits ? leaders.byHits.player.name : "", val: leaders.byHits ? String(leaders.byHits.metrics.h)         : "—" },
                       ].map(({ label, text, val }) => (
                         <div key={label} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
@@ -488,14 +525,17 @@ export default function TeamManagerPage() {
                   </MgrCard>
 
                   <MgrCard title="Hot Players">
+                    <p className="mt-1 text-[11px] font-bold uppercase tracking-widest text-gray-400">
+                      Min {leagueConfig.manager.minimumRatePa} PA
+                    </p>
                     <div className="mt-4 space-y-2">
                       {hotPlayers.length === 0 ? (
-                        <p className="text-sm text-gray-400">No batting data yet.</p>
+                        <p className="text-sm text-gray-400">No qualified hitters yet.</p>
                       ) : (
                         hotPlayers.map((summary) => (
                           <div key={summary.player.id} className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5">
                             <p className="text-sm font-semibold text-gray-900">{summary.player.name}</p>
-                            <p className="text-xs font-bold text-green-900">OPS {fmtRate(summary.metrics.ops)}</p>
+                            <p className="text-xs font-bold text-green-900">OPS {fmtRate(summary.metrics.ops)} · {summary.metrics.pa} PA</p>
                           </div>
                         ))
                       )}
@@ -560,7 +600,7 @@ export default function TeamManagerPage() {
                           <span className="text-xs text-gray-400">{summary.player.positions.join(", ")}</span>
                         </p>
                         <p className="mt-1 text-xs text-gray-400">
-                          AVG {fmtRate(summary.metrics.avg)} · OBP {fmtRate(summary.metrics.obp)} · OPS {fmtRate(summary.metrics.ops)}
+                          PA {summary.metrics.pa} · AVG {fmtRate(summary.metrics.avg)} · OBP {fmtRate(summary.metrics.obp)} · OPS {fmtRate(summary.metrics.ops)}
                         </p>
                       </div>
                     ))}
@@ -582,6 +622,9 @@ export default function TeamManagerPage() {
                           <th className="pb-3 px-2 text-center text-green-700">AVG</th>
                           <th className="pb-3 px-2 text-center">HR</th>
                           <th className="pb-3 px-2 text-center">RBI</th>
+                          <th className="pb-3 px-2 text-center">SB</th>
+                          <th className="pb-3 px-2 text-center">CS</th>
+                          <th className="pb-3 px-2 text-center">SB%</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-50">
@@ -602,6 +645,9 @@ export default function TeamManagerPage() {
                               <td className="px-2 py-3 text-center font-bold text-green-900">{fmtRate(totals.avg)}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.hr}</td>
                               <td className="px-2 py-3 text-center text-gray-500">{totals.rbi}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{totals.sb}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{totals.cs}</td>
+                              <td className="px-2 py-3 text-center text-gray-500">{fmtStealPct(totals.sb, totals.cs)}</td>
                             </tr>
                           )
                         })}

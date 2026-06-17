@@ -1,10 +1,10 @@
-import type { Player, BattingEntryData, PitchingEntryData, DraftGameMeta, SavedBattingGameEntry, PendingBattingEntry, PendingPitchingEntry } from "../types"
+import type { Player, Position, BattingEntryData, PitchingEntryData, DraftGameMeta, SavedBattingGameEntry, PendingBattingEntry, PendingPitchingEntry } from "../types"
 import type { EditGameTab, LivePlay } from "./RecordGamePage.types"
 import GameMetaFields from "./GameMetaFields"
 import SavedEntriesList from "./SavedEntriesList"
 import BattingStatFields from "./BattingStatFields"
 import PitchingStatFields from "./PitchingStatFields"
-import { getPlayerLabel, getGameResult, getGameScore, formatLiveInnings } from "./RecordGamePage.utils"
+import { getPlayerLabel, getGameResult, getGameScore, formatLiveInnings, gamePositionOptions } from "./RecordGamePage.utils"
 
 type Props = {
   teamName: string
@@ -29,6 +29,9 @@ type Props = {
   selectedEditGameEntry: PendingBattingEntry | null
   onSelectEditPlayerId: (id: string) => void
   onUpdateEditGameEntry: (id: string, entry: BattingEntryData) => void
+  onAddEditGamePosition: (id: string, position?: Position) => void
+  onUpdateEditGamePosition: (id: string, index: number, position: Position) => void
+  onRemoveEditGamePosition: (id: string, index: number) => void
   onRemoveEditGameEntry: (id: string) => void
   livePlays: LivePlay[]
   hoveredEditPlayerId: string | null
@@ -60,7 +63,9 @@ export default function EditModePanel({
   editGameTab, onEditGameTabChange,
   editGameEntries, editAvailablePlayers, allPlayers,
   selectedEditAddPlayerId, onEditAddPlayerIdChange, onAddEditGameEntry,
-  selectedEditGameEntry, onSelectEditPlayerId, onUpdateEditGameEntry, onRemoveEditGameEntry,
+  selectedEditGameEntry, onSelectEditPlayerId, onUpdateEditGameEntry,
+  onAddEditGamePosition, onUpdateEditGamePosition, onRemoveEditGamePosition,
+  onRemoveEditGameEntry,
   livePlays, onHoveredEditPlayerIdChange, hoveredEditPlayerEvents,
   hasInvalidEditGameStats,
   editGamePitchingEntries, editAvailablePitchers,
@@ -211,7 +216,43 @@ export default function EditModePanel({
                             </div>
                           </div>
                           {isEditingPlayer && (
-                            <div className="mt-4">
+                            <div className="mt-4 space-y-4">
+                              <div>
+                                <div className="flex items-center justify-between">
+                                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Game Positions</p>
+                                  <button
+                                    type="button"
+                                    onClick={() => onAddEditGamePosition(entry.playerId)}
+                                    disabled={gamePositionOptions.every((option) => entry.gamePositions.includes(option))}
+                                    className="rounded-lg bg-green-900 px-3 py-1.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:bg-gray-300"
+                                  >
+                                    + Add
+                                  </button>
+                                </div>
+                                <div className="mt-2 flex flex-wrap gap-2">
+                                  {entry.gamePositions.map((position, index) => (
+                                    <div key={`${entry.playerId}-${index}`} className="flex items-center gap-1 rounded-lg border border-gray-200 bg-white pl-2 pr-1 py-1">
+                                      <select
+                                        value={position}
+                                        onChange={(event) => onUpdateEditGamePosition(entry.playerId, index, event.target.value as Position)}
+                                        className="bg-transparent text-sm font-semibold text-gray-700 outline-none"
+                                      >
+                                        {gamePositionOptions.map((option) => (
+                                          <option key={option} value={option}>{option}</option>
+                                        ))}
+                                      </select>
+                                      <button
+                                        type="button"
+                                        onClick={() => onRemoveEditGamePosition(entry.playerId, index)}
+                                        disabled={entry.gamePositions.length === 1}
+                                        className="ml-0.5 text-gray-300 hover:text-red-400 disabled:opacity-20"
+                                      >
+                                        x
+                                      </button>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
                               <BattingStatFields entry={entry} onEntryChange={(nextEntry) => onUpdateEditGameEntry(entry.playerId, nextEntry)} />
                             </div>
                           )}

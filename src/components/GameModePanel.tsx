@@ -12,6 +12,7 @@ import GameModeStatusPanel from "./GameModeStatusPanel"
 import {
   getPlayerLabel, formatLiveInnings, battingResultClass,
   pitchingResultClass, liveResultLabels, livePitchResultLabels, emptyBases,
+  estimateRbiForBatting, battingResultBadge,
 } from "./RecordGamePage.utils"
 
 type Props = {
@@ -132,7 +133,7 @@ export default function GameModePanel({
   onRecordLivePlay, onRecordLivePitch, onUndoLiveAction,
   onRunnerOut, onRunnerRbi, onRunnerRun,
   onDeleteLivePlay, onDeleteLivePitchPlay, onUpdateLivePlay, onUpdateLivePitchPlay,
-  onSyncLiveGame, onResetLiveGame, onSyncMainCursorToLivePlay, onSyncMainCursorToLivePitchPlay,
+  onSyncLiveGame, onResetLiveGame,
   isSaving, pendingSyncConfirm, onPendingSyncConfirmChange,
   saveError, onClearSaveError,
 }: Props) {
@@ -205,6 +206,10 @@ export default function GameModePanel({
                 )}
               </div>
 
+              {currentLiveBatter && (
+                <AtBatHistory plays={livePlays.filter((p) => p.playerId === currentLiveBatter.id)} />
+              )}
+
               <div className="flex flex-wrap items-center justify-center gap-2 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[360px]">
                 <div className="grid grid-cols-2 gap-1.5">
                   <button type="button" onClick={() => onUndoLiveAction("batting")} disabled={livePlays.length === 0 && runnerOutHistory.length === 0 && runnerRbiHistory.length === 0 && runnerRunHistory.length === 0} className="min-w-14 rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs font-semibold text-gray-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-40">Undo</button>
@@ -214,12 +219,12 @@ export default function GameModePanel({
                 </div>
                 <div className="grid grid-cols-2 gap-1.5">
                   {[
-                    { label: "1B", active: bases.first, onClick: () => onBasesChange({ ...bases, first: !bases.first }) },
-                    { label: "2B", active: bases.second, onClick: () => onBasesChange({ ...bases, second: !bases.second }) },
-                    { label: "3B", active: bases.third, onClick: () => onBasesChange({ ...bases, third: !bases.third }) },
-                    { label: "Clear", active: false, onClick: () => onBasesChange(emptyBases) },
+                    { label: "1B", active: bases.first, onClick: () => onBasesChange({ ...bases, first: !bases.first }), activeClass: "bg-emerald-100 text-emerald-900" },
+                    { label: "2B", active: bases.second, onClick: () => onBasesChange({ ...bases, second: !bases.second }), activeClass: "bg-emerald-500 text-white" },
+                    { label: "3B", active: bases.third, onClick: () => onBasesChange({ ...bases, third: !bases.third }), activeClass: "bg-emerald-700 text-white" },
+                    { label: "Clear", active: false, onClick: () => onBasesChange(emptyBases), activeClass: "" },
                   ].map((item) => (
-                    <button key={item.label} type="button" onClick={item.onClick} className={`min-w-14 rounded-lg px-2 py-2 text-xs font-semibold shadow-sm ${item.active ? "bg-green-900 text-white" : "bg-white text-gray-600"}`}>
+                    <button key={item.label} type="button" onClick={item.onClick} className={`min-w-14 rounded-lg px-2 py-2 text-xs font-semibold shadow-sm ${item.active ? item.activeClass : "bg-white text-gray-600"}`}>
                       {item.label}
                     </button>
                   ))}
@@ -248,7 +253,18 @@ export default function GameModePanel({
                 <button
                   key={item.result}
                   type="button"
-                  onClick={() => onRecordLivePlay(item.result)}
+                  onClick={() => {
+                    if (editingLiveEventId) {
+                      const play = livePlays.find((p) => p.id === editingLiveEventId)
+                      if (play) {
+                        const newRbi = quickRbi ?? estimateRbiForBatting(play.basesBefore, item.result)
+                        onUpdateLivePlay(editingLiveEventId, item.result, newRbi, quickNote)
+                        onEditingLiveEventIdChange(null)
+                      }
+                    } else {
+                      onRecordLivePlay(item.result)
+                    }
+                  }}
                   disabled={!isMetaComplete || !currentLiveBatter || isLiveBattingBlocked}
                   className={`min-h-16 rounded-xl px-2 py-3 text-sm font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 ${battingResultClass(item.result)}`}
                 >
@@ -284,28 +300,27 @@ export default function GameModePanel({
                 <p className="mt-1 text-sm text-gray-500">{livePitcher.positions.join(", ")} · {liveHalf} {liveInning} · {liveOuts} outs</p>
               </div>
 
-              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[230px]">
+              <div className="flex items-center justify-between gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2 md:min-w-[280px]">
                 <div className="grid grid-cols-2 gap-1.5">
                   <button type="button" onClick={() => onUndoLiveAction("pitching")} disabled={livePitchPlays.length === 0 && runnerOutHistory.length === 0} className="rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs font-semibold text-gray-700 shadow-sm disabled:cursor-not-allowed disabled:opacity-40">Undo</button>
                   <button type="button" onClick={() => onRecordLivePitch("R")} disabled={!isMetaComplete || isLivePitchingBlocked || !selectedBase || !bases[selectedBase]} className="rounded-lg bg-orange-100 px-2 py-2 text-xs font-semibold text-orange-900 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">Run</button>
                   <button type="button" onClick={() => onRecordLivePitch("ER")} disabled={!isMetaComplete || isLivePitchingBlocked || !selectedBase || !bases[selectedBase]} className="rounded-lg bg-red-200 px-2 py-2 text-xs font-semibold text-red-900 shadow-sm disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">ER</button>
                   <button type="button" onClick={onRunnerOut} disabled={!selectedBase || !bases[selectedBase]} className="rounded-lg bg-gray-900 px-2 py-2 text-xs font-semibold text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300">Out</button>
                 </div>
+                <div className="grid grid-cols-2 gap-1.5">
+                  {[
+                    { label: "1B", active: bases.first, onClick: () => onBasesChange({ ...bases, first: !bases.first }), activeClass: "bg-emerald-100 text-emerald-900" },
+                    { label: "2B", active: bases.second, onClick: () => onBasesChange({ ...bases, second: !bases.second }), activeClass: "bg-emerald-500 text-white" },
+                    { label: "3B", active: bases.third, onClick: () => onBasesChange({ ...bases, third: !bases.third }), activeClass: "bg-emerald-700 text-white" },
+                    { label: "Clear", active: false, onClick: () => onBasesChange(emptyBases), activeClass: "" },
+                  ].map((item) => (
+                    <button key={item.label} type="button" onClick={item.onClick} className={`min-w-14 rounded-lg px-2 py-2 text-xs font-semibold shadow-sm ${item.active ? item.activeClass : "bg-white text-gray-600"}`}>
+                      {item.label}
+                    </button>
+                  ))}
+                </div>
                 <BaseDiamond bases={bases} onBasesChange={onBasesChange} selectedBase={selectedBase} onSelectBase={onSelectBase} />
               </div>
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-gray-500">
-              {[
-                { label: "1B", active: bases.first, onClick: () => onBasesChange({ ...bases, first: !bases.first }) },
-                { label: "2B", active: bases.second, onClick: () => onBasesChange({ ...bases, second: !bases.second }) },
-                { label: "3B", active: bases.third, onClick: () => onBasesChange({ ...bases, third: !bases.third }) },
-              ].map((item) => (
-                <button key={item.label} type="button" onClick={item.onClick} className={`rounded-full px-2.5 py-1 font-semibold ${item.active ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-500"}`}>
-                  {item.label}
-                </button>
-              ))}
-              <button type="button" onClick={() => onBasesChange(emptyBases)} className="rounded-full bg-gray-100 px-2.5 py-1 font-semibold text-gray-500">Clear Bases</button>
             </div>
 
             <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -335,19 +350,15 @@ export default function GameModePanel({
                   {item.label}
                 </button>
               ))}
-              <div className="min-h-16 overflow-hidden rounded-xl bg-red-50 text-sm font-bold text-red-900 shadow-sm">
-                <div className="grid h-full grid-cols-3 divide-x divide-red-100">
-                  {[
-                    { result: "H" as LivePitchResult, label: "1B" },
-                    { result: "2B" as LivePitchResult, label: "2B" },
-                    { result: "3B" as LivePitchResult, label: "3B" },
-                  ].map((item) => (
-                    <button key={item.result} type="button" onClick={() => onRecordLivePitch(item.result)} disabled={!isMetaComplete || isLivePitchingBlocked} className="px-1 py-3 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">
-                      {item.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              {[
+                { result: "H" as LivePitchResult, label: "1B", cls: "bg-emerald-100 text-emerald-900 hover:bg-emerald-200" },
+                { result: "2B" as LivePitchResult, label: "2B", cls: "bg-emerald-500 text-white hover:bg-emerald-400" },
+                { result: "3B" as LivePitchResult, label: "3B", cls: "bg-emerald-600 text-white hover:bg-emerald-500" },
+              ].map((item) => (
+                <button key={item.result} type="button" onClick={() => onRecordLivePitch(item.result)} disabled={!isMetaComplete || isLivePitchingBlocked} className={`min-h-16 rounded-xl px-2 py-3 text-sm font-bold shadow-sm transition-colors disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 ${item.cls}`}>
+                  {item.label}
+                </button>
+              ))}
               <button type="button" onClick={() => onRecordLivePitch("E")} disabled={!isMetaComplete || isLivePitchingBlocked} className="min-h-16 rounded-xl bg-amber-100 px-2 py-3 text-sm font-bold text-amber-900 shadow-sm transition-colors hover:bg-amber-200 disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400">
                 Error
               </button>
@@ -404,18 +415,43 @@ export default function GameModePanel({
           liveInningSummaries={liveInningSummaries}
           expandedLiveInningKey={expandedLiveInningKey}
           onExpandedLiveInningKeyChange={onExpandedLiveInningKeyChange}
-          onLiveInningChange={onLiveInningChange}
-          onLiveHalfChange={onLiveHalfChange}
           editingLiveEventId={editingLiveEventId}
           onEditingLiveEventIdChange={onEditingLiveEventIdChange}
-          onSyncMainCursorToLivePlay={onSyncMainCursorToLivePlay}
-          onSyncMainCursorToLivePitchPlay={onSyncMainCursorToLivePitchPlay}
           onDeleteLivePlay={onDeleteLivePlay}
           onDeleteLivePitchPlay={onDeleteLivePitchPlay}
           onUpdateLivePlay={onUpdateLivePlay}
           onUpdateLivePitchPlay={onUpdateLivePitchPlay}
         />
       </aside>
+    </div>
+  )
+}
+
+function formatAtBatResult(result: LivePlayResult) {
+  if (result === "FC_OUT_2B") return "FC2"
+  if (result === "FC_OUT_3B") return "FC3"
+  return result
+}
+
+function AtBatHistory({ plays }: { plays: LivePlay[] }) {
+  if (plays.length === 0) return null
+  return (
+    <div className="mt-3 rounded-xl bg-[#f7f8f3] px-3 py-2">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Previous AB</p>
+        <span className="text-[10px] font-semibold text-gray-400">{plays.length}</span>
+      </div>
+      <div className="mt-1.5 flex flex-wrap gap-1.5">
+        {plays.map((play, index) => (
+          <span
+            key={play.id}
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${battingResultBadge(play.result)}`}
+          >
+            <span>{formatAtBatResult(play.result)}</span>
+            {play.rbi > 0 && <span className="opacity-70">+{play.rbi}</span>}
+          </span>
+        ))}
+      </div>
     </div>
   )
 }

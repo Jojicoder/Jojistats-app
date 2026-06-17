@@ -42,6 +42,8 @@ export function buildBattingStatPayload(
     hbp: entry.HBP,
     sf: entry.SF,
     so: entry.SO,
+    sb: entry.SB,
+    cs: entry.CS,
     note: entry.note.trim() || null,
   }
 }
@@ -60,6 +62,7 @@ export function buildPitchingStatPayload(
     hbp: entry.hitBatters,
     strikeouts: entry.strikeouts,
     home_runs_allowed: entry.homeRunsAllowed,
+    note: entry.note.trim() || null,
   }
 }
 

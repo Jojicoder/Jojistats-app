@@ -1,5 +1,5 @@
 import { useState } from "react"
-import type { Player, SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
+import type { LeagueKey, Player, SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
 import { usePitchingStats } from "../hooks/usePitchingStats"
 import PitchingTrendChart from "./PitchingTrendChart"
 import { calcPitchingMetrics } from "../utils/metrics"
@@ -10,7 +10,7 @@ type Props = {
   entries: SavedPitchingGameEntry[]
   teamEntries?: SavedPitchingGameEntry[]
   battingEntries?: SavedBattingGameEntry[]
-  league?: "mlb" | "jaa" | null
+  league?: LeagueKey | null
   mode?: "batting" | "pitching"
   onModeChange?: (mode: "batting" | "pitching") => void
 }
@@ -19,6 +19,10 @@ const statDescriptions: Record<string, string> = {
   IP:   "Innings Pitched",
   ERA:  "Earned Run Average",
   WHIP: "Walks + Hits per Inning",
+  "K/9": "Strikeouts per 9 Inn.",
+  W:    "Wins",
+  HLD:  "Holds",
+  SV:   "Saves",
   H:    "Hits Allowed",
   R:    "Runs Allowed",
   ER:   "Earned Runs",
@@ -50,6 +54,35 @@ function formatIP(outs: number) {
   return rem === 0 ? `${whole}.0` : `${whole}.${rem}`
 }
 
+function formatPitchingRole(role: Player["pitchingRole"]) {
+  if (role === "starter") return "SP"
+  if (role === "reliever") return "RP"
+  if (role === "closer") return "CL"
+  return null
+}
+
+function resolvePitchingRole(player: Player): Player["pitchingRole"] {
+  if (player.pitchingRole) return player.pitchingRole
+  return player.positions.includes("P") ? "reliever" : null
+}
+
+function formatPlayerPositions(player: Player) {
+  const role = formatPitchingRole(resolvePitchingRole(player))
+  return player.positions
+    .map((position) => position === "P" ? `P / ${role ?? "RP"}` : position)
+    .join(", ")
+}
+
+function sumOptionalPitchingStat(
+  entries: SavedPitchingGameEntry[],
+  key: "holds" | "saves"
+) {
+  return entries.reduce((total, entry) => {
+    const statLine = entry.statLine as typeof entry.statLine & Partial<Record<typeof key, number>>
+    return total + (Number(statLine[key]) || 0)
+  }, 0)
+}
+
 export default function MyPitchingStatsPage({
   activePlayer,
   entries,
@@ -62,11 +95,37 @@ export default function MyPitchingStatsPage({
   const displayedEntries = selectedEntry ? [selectedEntry] : entries
   const statLines = displayedEntries.map((e) => e.statLine)
   const stats = usePitchingStats(statLines)
-  const gamesPlayed = displayedEntries.length
   const playerMetrics = calcPitchingMetrics(displayedEntries)
   const teamMetrics = calcPitchingMetrics(teamEntries)
   const playerIp = playerMetrics.outs / 3
   const teamIp = teamMetrics.outs / 3
+  const pitchingRole = resolvePitchingRole(activePlayer)
+  const kPerNine = playerIp > 0 ? (playerMetrics.so * 9) / playerIp : 0
+  const wins = displayedEntries.filter((entry) => formatResult(entry) === "W").length
+  const holds = sumOptionalPitchingStat(displayedEntries, "holds")
+  const saves = sumOptionalPitchingStat(displayedEntries, "saves")
+  const roleStatCards =
+    pitchingRole === "closer"
+      ? [
+          { label: "SV", value: String(saves) },
+          { label: "ERA", value: stats.era },
+          { label: "WHIP", value: stats.whip },
+          { label: "K/9", value: kPerNine.toFixed(2) },
+        ]
+      : pitchingRole === "starter"
+        ? [
+            { label: "ERA", value: stats.era },
+            { label: "WHIP", value: stats.whip },
+            { label: "IP", value: stats.ip },
+            { label: "K/9", value: kPerNine.toFixed(2) },
+            { label: "W", value: String(wins) },
+          ]
+        : [
+            { label: "ERA", value: stats.era },
+            { label: "WHIP", value: stats.whip },
+            { label: "HLD", value: String(holds) },
+            { label: "K/9", value: kPerNine.toFixed(2) },
+          ]
   const perInning = (value: number, innings: number) => innings > 0 ? value / innings : 0
   const comparisons: Record<string, { player: number; team: number; lower: boolean; label: string }> = {
     ERA: { player: playerMetrics.era, team: teamMetrics.era, lower: true, label: teamMetrics.era.toFixed(2) },
@@ -93,7 +152,7 @@ export default function MyPitchingStatsPage({
                   ? `#${activePlayer.jerseyNumber} ${activePlayer.name}`
                   : activePlayer.name}
               </h1>
-              <p className="mt-0.5 text-sm text-gray-400">{activePlayer.positions.join(", ")}</p>
+              <p className="mt-0.5 text-sm text-gray-400">{formatPlayerPositions(activePlayer)}</p>
             </div>
             {onModeChange && (
               <div className="grid w-full grid-cols-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:inline-flex sm:w-auto sm:shrink-0">
@@ -124,11 +183,7 @@ export default function MyPitchingStatsPage({
             </div>
           )}
 
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Games</p>
-              <p className="mt-2 text-2xl font-extrabold text-green-950">{gamesPlayed}</p>
-            </div>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
               <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Innings Pitched</p>
               <p className="mt-2 text-2xl font-extrabold text-green-950">{stats.ip}</p>
@@ -138,37 +193,25 @@ export default function MyPitchingStatsPage({
 
         {/* Stat Cards */}
         <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {(
-            [
-              { label: "ERA",  value: stats.era },
-              { label: "WHIP", value: stats.whip },
-              { label: "H",    value: String(stats.h) },
-              { label: "R",    value: String(stats.r) },
-              { label: "ER",   value: String(stats.er) },
-              { label: "BB",   value: String(stats.bb) },
-              { label: "HBP",  value: String(stats.hbp) },
-              { label: "SO",   value: String(stats.so) },
-              { label: "HR",   value: String(stats.hr) },
-            ] as const
-          ).map(({ label, value }) => {
+          {roleStatCards.map(({ label, value }) => {
             const comparison = comparisons[label]
-            const useAbsolute = league && (label === "ERA" || label === "WHIP")
+            const useAbsolute = league && (label === "ERA" || label === "WHIP" || label === "K/9" || label === "SV" || label === "HLD" || label === "W")
             const neutral = { bg: "bg-[#f7f8f3]", label: "text-gray-400", value: "text-green-950" }
             const s = useAbsolute
-              ? (() => { const c = getStatColor(label, value, league, activePlayer.pitchingRole); return { bg: c.bg, label: c.lbl, value: c.val } })()
+              ? (() => { const c = getStatColor(label, value, league, pitchingRole); return { bg: c.bg, label: c.lbl, value: c.val } })()
               : neutral
             return (
               <div key={label} className={`min-w-0 rounded-2xl p-3 shadow-sm sm:p-4 ${s.bg}`}>
                 <p className={`text-xs font-bold uppercase tracking-widest ${s.label}`}>{label}</p>
                 <p className="mt-0.5 text-xs text-gray-400">{statDescriptions[label]}</p>
                 <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${s.value}`}>{value}</p>
-                {!useAbsolute && <p className="mt-1 text-xs text-gray-400">Team {comparison.label}</p>}
+                {comparison && !useAbsolute && <p className="mt-1 text-xs text-gray-400">Team {comparison.label}</p>}
               </div>
             )
           })}
         </section>
 
-        <PitchingTrendChart entries={displayedEntries} league={league} pitchingRole={activePlayer.pitchingRole} />
+        <PitchingTrendChart entries={displayedEntries} league={league} pitchingRole={pitchingRole} />
 
         <RecentPitchingGames entries={entries} onSelect={setSelectedEntry} selectedId={selectedEntry?.id ?? null} />
 

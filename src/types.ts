@@ -1,3 +1,6 @@
+import type { LeagueKey } from "./config/leagueConfig"
+export type { LeagueKey } from "./config/leagueConfig"
+
 export type Position =
   | "P"
   | "C"
@@ -16,7 +19,7 @@ export type Team = {
   name: string
   isArchived?: boolean
   currentSeasonYear: number
-  league: "mlb" | "jaa" | null
+  league: LeagueKey | null
 }
 
 export type PitchingRole = "starter" | "reliever" | "closer"
@@ -66,6 +69,8 @@ export type BattingEntryData = {
   HBP: number
   SF: number
   SO: number
+  SB: number
+  CS: number
   note: string
 }
 
@@ -101,6 +106,9 @@ export type BattingCalculatedKPI = {
   hr: number
   rbi: number
   hbp: number
+  sb: number
+  cs: number
+  sbPct: string
   gamesPlayed: number
 }
 
@@ -113,6 +121,7 @@ export type PitchingEntryData = {
   hitBatters: number
   strikeouts: number
   homeRunsAllowed: number
+  note: string
 }
 
 export type SavedPitchingGameEntry = {

@@ -161,27 +161,8 @@ export function useLiveGameDraft({
       setLivePitchingEntry({ ...draft.livePitchingEntry, hitBatters: draft.livePitchingEntry.hitBatters ?? 0 })
     }
     if (Array.isArray(draft.livePitchPlays)) setLivePitchPlays(draft.livePitchPlays)
-  }, [
-    localDraftKey,
-    setAwayScore,
-    setBases,
-    setCurrentBatterIndex,
-    setHomeScore,
-    setLineupIds,
-    setLiveHalf,
-    setLiveInning,
-    setLiveOuts,
-    setLivePitcherId,
-    setLivePitchPlays,
-    setLivePitchingEntry,
-    setLivePlays,
-    setQuickPitchNote,
-    setReplacedLineupIds,
-    setRunnerOutHistory,
-    setRunnerRbiHistory,
-    setRunnerRunHistory,
-    setSelectedBase,
-  ])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localDraftKey])
 
   useEffect(() => {
     if (skipNextSaveRef.current) {

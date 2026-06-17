@@ -17,6 +17,7 @@ import type {
 } from "../types"
 import PerformanceTrendCard from "../components/PerformanceTrendCard"
 import PitchingTrendChart from "../components/PitchingTrendChart"
+import { getStatColor } from "../components/mlb/playerStats"
 import { calcBattingMetrics, calcPitchingMetrics, fmtRate, fmtDecimal, fmtIp } from "../utils/metrics"
 
 type ProfileGoals = {
@@ -42,6 +43,22 @@ const defaultGoals: ProfileGoals = {
 }
 
 type PlayerTab = "batting" | "pitching"
+type PitchingRoleKey = "starter" | "reliever" | "closer"
+
+function resolvePitchingRole(player: Player): PitchingRoleKey | null {
+  const positions = player.positions as string[]
+  if (player.pitchingRole) return player.pitchingRole
+  if (positions.includes("SP")) return "starter"
+  if (positions.includes("CL")) return "closer"
+  if (positions.some((p) => p === "RP" || p === "P")) return "reliever"
+  return null
+}
+
+const pitchingRoleLabels: Record<PitchingRoleKey, string> = {
+  starter: "SP",
+  reliever: "RP",
+  closer: "CL",
+}
 
 function mapPlayer(row: {
   id: number
@@ -204,6 +221,12 @@ export default function PlayerPage() {
 
   useEffect(() => subscribeAvatarUpdated(userId, (url) => setGoals((prev) => ({ ...prev, avatarUrl: url }))), [userId])
 
+  // 投手なら自動的に Pitching タブを開く
+  useEffect(() => {
+    if (!player) return
+    if (resolvePitchingRole(player) != null) setActiveTab("pitching")
+  }, [player])
+
   const metrics = useMemo(() => calcBattingMetrics(entries), [entries])
   const pitchingMetrics = useMemo(
     () => calcPitchingMetrics(pitchingEntries),
@@ -264,6 +287,19 @@ export default function PlayerPage() {
   }
 
   const bbPerK = metrics.so > 0 ? (metrics.bb / metrics.so).toFixed(2) : "--"
+  const stealAttempts = metrics.sb + metrics.cs
+  const sbPct = stealAttempts > 0 && metrics.sbPct != null ? fmtRate(metrics.sbPct) : "--"
+  const pitchingRole = player ? resolvePitchingRole(player) : null
+  const kPerNine = pitchingMetrics.ip > 0 ? (pitchingMetrics.so * 9) / pitchingMetrics.ip : 0
+  const pitchingWins = pitchingEntries.filter((entry) => entry.gameMeta.result === "W").length
+  const pitchingHolds = pitchingEntries.reduce(
+    (total, entry) => total + ((entry.statLine as { holds?: number }).holds ?? 0),
+    0
+  )
+  const pitchingSaves = pitchingEntries.reduce(
+    (total, entry) => total + ((entry.statLine as { saves?: number }).saves ?? 0),
+    0
+  )
 
   const statCards = [
     { label: "AVG", value: fmtRate(metrics.avg) },
@@ -273,20 +309,32 @@ export default function PlayerPage() {
     { label: "H", value: String(metrics.h) },
     { label: "HR", value: String(metrics.hr) },
     { label: "RBI", value: String(metrics.rbi) },
+    { label: "SB", value: String(metrics.sb) },
+    { label: "CS", value: String(metrics.cs) },
+    { label: "SB%", value: sbPct },
     { label: "BB", value: String(metrics.bb) },
     { label: "SO", value: String(metrics.so) },
   ]
 
-  const pitchingStatCards = [
-    { label: "ERA", value: fmtDecimal(pitchingMetrics.era) },
-    { label: "WHIP", value: fmtDecimal(pitchingMetrics.whip) },
-    { label: "IP", value: fmtIp(pitchingMetrics.outs) },
-    { label: "SO", value: String(pitchingMetrics.so) },
-    { label: "BB", value: String(pitchingMetrics.bb) },
-    { label: "H", value: String(pitchingMetrics.h) },
-    { label: "ER", value: String(pitchingMetrics.er) },
-    { label: "HR", value: String(pitchingMetrics.hr) },
-  ]
+  const pitchingStatCards = (() => {
+    const common = {
+      era: { label: "ERA", value: fmtDecimal(pitchingMetrics.era) },
+      whip: { label: "WHIP", value: fmtDecimal(pitchingMetrics.whip) },
+      ip: { label: "IP", value: fmtIp(pitchingMetrics.outs) },
+      wins: { label: "W", value: String(pitchingWins) },
+      holds: { label: "HLD", value: String(pitchingHolds) },
+      saves: { label: "SV", value: String(pitchingSaves) },
+      k9: { label: "K/9", value: fmtDecimal(kPerNine) },
+    }
+
+    if (pitchingRole === "closer") {
+      return [common.saves, common.era, common.whip, common.k9]
+    }
+    if (pitchingRole === "reliever") {
+      return [common.era, common.whip, common.holds, common.k9]
+    }
+    return [common.era, common.whip, common.ip, common.k9, common.wins]
+  })()
 
   return (
     <div className="flex flex-1 flex-col bg-[#f7f8f3]">
@@ -354,7 +402,7 @@ export default function PlayerPage() {
                 {player.name}
               </h1>
               <p className="mt-1 text-sm text-gray-500">
-                {player.positions.join(", ")} · {team.name} · {team.currentSeasonYear} Season
+                {pitchingRole ? pitchingRoleLabels[pitchingRole] : player.positions.join(", ")} · {team.name} · {team.currentSeasonYear} Season
               </p>
               <p className="mt-4 rounded-xl bg-[#f7f8f3] px-4 py-3 text-sm font-medium text-green-900">
                 Goal: {goals.seasonGoal || "Not set"}
@@ -389,19 +437,22 @@ export default function PlayerPage() {
             {activeTab === "batting" ? (
               <>
             <section className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-              {statCards.map((stat) => (
-                <div
-                  key={stat.label}
-                  className="rounded-xl bg-white p-4 shadow-sm"
-                >
-                  <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                    {stat.label}
-                  </p>
-                  <p className="mt-2 text-2xl font-extrabold tracking-tight text-green-950">
-                    {stat.value}
-                  </p>
-                </div>
-              ))}
+              {statCards.map((stat) => {
+                const color = getStatColor(stat.label, stat.value, team?.league)
+                return (
+                  <div
+                    key={stat.label}
+                    className={`rounded-xl p-4 shadow-sm ${color.bg}`}
+                  >
+                    <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>
+                      {stat.label}
+                    </p>
+                    <p className={`mt-2 text-2xl font-extrabold tracking-tight ${color.val}`}>
+                      {stat.value}
+                    </p>
+                  </div>
+                )
+              })}
             </section>
 
             <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -585,6 +636,8 @@ export default function PlayerPage() {
                       <th className="pb-3 pr-4">H</th>
                       <th className="pb-3 pr-4">HR</th>
                       <th className="pb-3 pr-4">RBI</th>
+                      <th className="pb-3 pr-4">SB</th>
+                      <th className="pb-3 pr-4">CS</th>
                       <th className="pb-3 pr-4">BB</th>
                       <th className="pb-3 pr-4">SO</th>
                     </tr>
@@ -611,6 +664,12 @@ export default function PlayerPage() {
                           {entry.statLine.RBI}
                         </td>
                         <td className="py-3 pr-4 text-gray-600">
+                          {entry.statLine.SB ?? 0}
+                        </td>
+                        <td className="py-3 pr-4 text-gray-600">
+                          {entry.statLine.CS ?? 0}
+                        </td>
+                        <td className="py-3 pr-4 text-gray-600">
                           {entry.statLine.BB}
                         </td>
                         <td className="py-3 pr-4 text-gray-600">
@@ -634,19 +693,22 @@ export default function PlayerPage() {
             ) : (
               <>
                 <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                  {pitchingStatCards.map((stat) => (
-                    <div
-                      key={stat.label}
-                      className="rounded-xl bg-white p-4 shadow-sm"
-                    >
-                      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                        {stat.label}
-                      </p>
-                      <p className="mt-2 text-2xl font-extrabold tracking-tight text-green-950">
-                        {stat.value}
-                      </p>
-                    </div>
-                  ))}
+                  {pitchingStatCards.map((stat) => {
+                    const color = getStatColor(stat.label, stat.value, team?.league, pitchingRole)
+                    return (
+                      <div
+                        key={stat.label}
+                        className={`rounded-xl p-4 shadow-sm ${color.bg}`}
+                      >
+                        <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>
+                          {stat.label}
+                        </p>
+                        <p className={`mt-2 text-2xl font-extrabold tracking-tight ${color.val}`}>
+                          {stat.value}
+                        </p>
+                      </div>
+                    )
+                  })}
                 </section>
 
                 <section className="grid grid-cols-1 gap-4 lg:grid-cols-2">

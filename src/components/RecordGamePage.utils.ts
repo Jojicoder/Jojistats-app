@@ -23,7 +23,8 @@ export const liveResultLabels: { result: LivePlayResult; label: string }[] = [
   { result: "OUT", label: "Out" },
   { result: "E", label: "Error" },
   { result: "FC", label: "FC Safe" },
-  { result: "FC_OUT", label: "FC Out" },
+  { result: "FC_OUT_2B", label: "FC Out (2B)" },
+  { result: "FC_OUT_3B", label: "FC Out (3B)" },
 ]
 
 export const livePitchResultLabels: { result: LivePitchResult; label: string }[] = [
@@ -37,7 +38,21 @@ export const livePitchResultLabels: { result: LivePitchResult; label: string }[]
 export function createEmptyBattingLine(): BattingEntryData {
   return {
     AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0,
-    BB: 0, HBP: 0, SF: 0, SO: 0, note: "",
+    BB: 0, HBP: 0, SF: 0, SO: 0, SB: 0, CS: 0, note: "",
+  }
+}
+
+export function createEmptyPitchingLine(): PitchingEntryData {
+  return {
+    inningsPitchedOuts: 0,
+    hitsAllowed: 0,
+    runsAllowed: 0,
+    earnedRuns: 0,
+    walks: 0,
+    hitBatters: 0,
+    strikeouts: 0,
+    homeRunsAllowed: 0,
+    note: "",
   }
 }
 
@@ -60,7 +75,7 @@ export function buildLiveStatLine(result: LivePlayResult, rbi: number): BattingE
 }
 
 export function isOutResult(result: LivePlayResult) {
-  return result === "SO" || result === "OUT" || result === "SF" || result === "FC_OUT"
+  return result === "SO" || result === "OUT" || result === "SF" || result === "FC_OUT_2B" || result === "FC_OUT_3B"
 }
 
 export function isPitchOutResult(result: LivePitchResult) {
@@ -134,14 +149,26 @@ export function nextBasesForBatting(bases: BasesState, result: LivePlayResult, r
   if (result === "HR") return { ...emptyBases }
   if (result === "BB" || result === "HBP") return advanceBasesByWalk(bases)
   if (result === "E") return { ...removeScoredRunners(bases, bases.third ? 1 : 0), first: true }
-  if (result === "FC" || result === "FC_OUT") return { ...removeScoredRunners(bases, rbi), first: true }
+  if (result === "FC") return { ...removeScoredRunners(bases, rbi), first: true }
+  // FC Out (2B): force play at 2nd - runner from 1st is out, runner on 2nd advances to 3rd, batter safe at 1st
+  if (result === "FC_OUT_2B") {
+    const afterScore = removeScoredRunners(bases, rbi)
+    return {
+      first: true,
+      second: false,
+      third: afterScore.third || (bases.first ? afterScore.second : false),
+    }
+  }
+  // FC Out (3B): runner on 3rd is out (no RBI), 2nd runner stays, batter safe at 1st
+  if (result === "FC_OUT_3B") return { first: true, second: bases.second, third: false }
   return removeScoredRunners(bases, rbi)
 }
 
 export function estimateRunsForBatting(bases: BasesState, result: LivePlayResult, rbi: number) {
   if (result === "E") return bases.third ? 1 : 0
   if (result === "SF") return bases.third ? 1 : 0
-  if (result === "FC" || result === "FC_OUT") return Number(bases.third)
+  if (result === "FC" || result === "FC_OUT_2B") return Number(bases.third)
+  if (result === "FC_OUT_3B") return 0
   if (result === "HR") return countBases(bases) + 1
   if (result === "BB" || result === "HBP") return isBasesLoaded(bases) ? 1 : 0
   return rbi
@@ -154,7 +181,8 @@ export function estimateRbiForBatting(bases: BasesState, result: LivePlayResult)
   if (result === "1B") return Number(bases.third)
   if (result === "SF") return bases.third ? 1 : 0
   if (result === "BB" || result === "HBP") return isBasesLoaded(bases) ? 1 : 0
-  if (result === "FC" || result === "FC_OUT") return Number(bases.third)
+  if (result === "FC" || result === "FC_OUT_2B") return Number(bases.third)
+  if (result === "FC_OUT_3B") return 0
   return 0
 }
 
@@ -199,8 +227,7 @@ export function buildPitchingEntryFromPlays(plays: LivePitchPlay[]): PitchingEnt
       return entry
     },
     {
-      inningsPitchedOuts: 0, hitsAllowed: 0, runsAllowed: 0, earnedRuns: 0,
-      walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0,
+      ...createEmptyPitchingLine(),
     }
   )
 }
@@ -211,88 +238,95 @@ export function getActionTimeFromId(id: string) {
 }
 
 export function recomputeLiveGame(battingPlays: LivePlay[], pitchingPlays: LivePitchPlay[]) {
-  let inning = 1
-  let half: GameHalf = "Top"
-  let outs = 0
-  let bases: BasesState = emptyBases
   let away = 0
   let home = 0
 
   const nextBattingPlays: LivePlay[] = []
   const nextPitchingPlays: LivePitchPlay[] = []
-  const stateAfterEvent = new Map<
-    string,
-    { inning: number; half: GameHalf; outs: number; bases: BasesState }
-  >()
 
-  const events = [
-    ...battingPlays.map((play) => ({ type: "batting" as const, play })),
-    ...pitchingPlays.map((play) => ({ type: "pitching" as const, play })),
-  ].sort((a, b) => getActionTimeFromId(a.play.id) - getActionTimeFromId(b.play.id))
+  // Group plays by their stored (inning, half) — these values are the source of truth.
+  // Processing frame-by-frame prevents deletion of 3-out plays from reassigning subsequent plays to wrong innings.
+  const frameSet = new Map<string, { inning: number; half: GameHalf }>()
+  const addFrame = (inning: number, half: GameHalf) => {
+    const key = `${inning}-${half}`
+    if (!frameSet.has(key)) frameSet.set(key, { inning, half })
+  }
+  battingPlays.forEach((p) => addFrame(p.inning, p.half))
+  pitchingPlays.forEach((p) => addFrame(p.inning, p.half))
 
-  events.forEach((event) => {
-    if (event.type === "batting") {
-      const play = event.play
-      const rbi = Math.max(0, play.rbi)
-      const runs = estimateRunsForBatting(bases, play.result, rbi)
-      const statLine = buildLiveStatLine(play.result, rbi)
-      const recomputedPlay: LivePlay = { ...play, inning, half, outsBefore: outs, basesBefore: bases, rbi, runs, statLine }
-
-      nextBattingPlays.push(recomputedPlay)
-      if (half === "Top") away += runs
-      else home += runs
-
-      const nextOuts = outs + (isOutResult(play.result) ? 1 : 0)
-      if (nextOuts >= 3) {
-        const nextFrame = getNextHalfInning(inning, half)
-        inning = nextFrame.inning; half = nextFrame.half; outs = 0; bases = emptyBases
-      } else {
-        outs = nextOuts
-        bases = nextBasesForBatting(bases, play.result, rbi)
-      }
-
-      stateAfterEvent.set(play.id, { inning, half, outs, bases })
-      return
-    }
-
-    const play = event.play
-    const runs = estimateRunsForPitching(bases, play.result)
-    const recomputedPlay: LivePitchPlay = { ...play, inning, half, outsBefore: outs, basesBefore: bases }
-
-    nextPitchingPlays.push(recomputedPlay)
-    if (half === "Top") away += runs
-    else home += runs
-
-    const nextOuts = outs + (isPitchOutResult(play.result) ? 1 : 0)
-    if (nextOuts >= 3) {
-      const nextFrame = getNextHalfInning(inning, half)
-      inning = nextFrame.inning; half = nextFrame.half; outs = 0; bases = emptyBases
-    } else {
-      outs = nextOuts
-      if (play.result === "R" || play.result === "ER") {
-        // Use the recorded scoredBase if available; fall back to removing the closest runner.
-        bases = play.scoredBase && bases[play.scoredBase]
-          ? { ...bases, [play.scoredBase]: false }
-          : removeScoredRunners(bases, 1)
-      } else {
-        bases = nextBasesForPitching(bases, play.result)
-      }
-    }
-
-    stateAfterEvent.set(play.id, { inning, half, outs, bases })
+  const frames = Array.from(frameSet.values()).sort((a, b) => {
+    if (a.inning !== b.inning) return a.inning - b.inning
+    return a.half === b.half ? 0 : a.half === "Top" ? -1 : 1
   })
+
+  let liveInning = 1
+  let liveHalf: GameHalf = "Top"
+  let liveOuts = 0
+  let liveBases: BasesState = emptyBases
+
+  for (const frame of frames) {
+    let outs = 0
+    let bases: BasesState = emptyBases
+
+    const events = [
+      ...battingPlays.filter((p) => p.inning === frame.inning && p.half === frame.half).map((p) => ({ type: "batting" as const, play: p })),
+      ...pitchingPlays.filter((p) => p.inning === frame.inning && p.half === frame.half).map((p) => ({ type: "pitching" as const, play: p })),
+    ].sort((a, b) => getActionTimeFromId(a.play.id) - getActionTimeFromId(b.play.id))
+
+    for (const event of events) {
+      if (event.type === "batting") {
+        const play = event.play
+        const rbi = Math.max(0, play.rbi)
+        const runs = estimateRunsForBatting(bases, play.result, rbi)
+        const statLine = buildLiveStatLine(play.result, rbi)
+        nextBattingPlays.push({ ...play, inning: frame.inning, half: frame.half, outsBefore: outs, basesBefore: bases, rbi, runs, statLine })
+        if (frame.half === "Top") away += runs
+        else home += runs
+        const nextOuts = outs + (isOutResult(play.result) ? 1 : 0)
+        if (nextOuts >= 3) { outs = 3; bases = emptyBases }
+        else { outs = nextOuts; bases = nextBasesForBatting(bases, play.result, rbi) }
+      } else {
+        const play = event.play
+        const runs = estimateRunsForPitching(bases, play.result)
+        nextPitchingPlays.push({ ...play, inning: frame.inning, half: frame.half, outsBefore: outs, basesBefore: bases })
+        if (frame.half === "Top") away += runs
+        else home += runs
+        const nextOuts = outs + (isPitchOutResult(play.result) ? 1 : 0)
+        if (nextOuts >= 3) { outs = 3; bases = emptyBases }
+        else {
+          outs = nextOuts
+          if (play.result === "R" || play.result === "ER") {
+            bases = play.scoredBase && bases[play.scoredBase]
+              ? { ...bases, [play.scoredBase]: false }
+              : removeScoredRunners(bases, 1)
+          } else {
+            bases = nextBasesForPitching(bases, play.result)
+          }
+        }
+      }
+    }
+
+    liveInning = frame.inning
+    liveHalf = frame.half
+    liveOuts = outs
+    liveBases = bases
+  }
+
+  if (liveOuts >= 3) {
+    const next = getNextHalfInning(liveInning, liveHalf)
+    liveInning = next.inning; liveHalf = next.half; liveOuts = 0; liveBases = emptyBases
+  }
 
   return {
     livePlays: nextBattingPlays,
     livePitchPlays: nextPitchingPlays,
     awayScore: away,
     homeScore: home,
-    liveInning: inning,
-    liveHalf: half,
-    liveOuts: outs,
-    bases,
+    liveInning,
+    liveHalf,
+    liveOuts,
+    bases: liveBases,
     livePitchingEntry: buildPitchingEntryFromPlays(nextPitchingPlays),
-    stateAfterEvent,
   }
 }
 
@@ -404,8 +438,9 @@ export function battingResultClass(result: LivePlayResult): string {
     case "SO":  return "bg-red-100 text-red-900 hover:bg-red-200"
     case "OUT": return "bg-gray-800 text-white hover:bg-gray-700"
     case "E":   return "bg-amber-100 text-amber-900 hover:bg-amber-200"
-    case "FC":  return "bg-indigo-100 text-indigo-900 hover:bg-indigo-200"
-    case "FC_OUT": return "bg-indigo-800 text-white hover:bg-indigo-700"
+    case "FC":        return "bg-indigo-100 text-indigo-900 hover:bg-indigo-200"
+    case "FC_OUT_2B": return "bg-indigo-800 text-white hover:bg-indigo-700"
+    case "FC_OUT_3B": return "bg-indigo-600 text-white hover:bg-indigo-500"
   }
 }
 
@@ -437,8 +472,9 @@ export function battingResultBadge(result: LivePlayResult): string {
     case "SO":  return "bg-red-100 text-red-900"
     case "OUT": return "bg-gray-200 text-gray-700"
     case "E":   return "bg-amber-100 text-amber-900"
-    case "FC":  return "bg-indigo-100 text-indigo-900"
-    case "FC_OUT": return "bg-indigo-800 text-white"
+    case "FC":        return "bg-indigo-100 text-indigo-900"
+    case "FC_OUT_2B": return "bg-indigo-800 text-white"
+    case "FC_OUT_3B": return "bg-indigo-600 text-white"
   }
 }
 

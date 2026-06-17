@@ -1,4 +1,3 @@
-import { useState } from "react"
 import type { BattingEntryData } from "../types"
 
 type BattingStatFieldsProps = {
@@ -13,6 +12,8 @@ const fieldDescriptions: Record<string, string> = {
   HBP: "Hit By Pitch",
   SF:  "Sacrifice Flies",
   SO:  "Strikeouts",
+  SB:  "Stolen Bases",
+  CS:  "Caught Stealing",
   "1B": "Singles",
   "2B": "Doubles",
   "3B": "Triples",
@@ -23,10 +24,7 @@ export default function BattingStatFields({
   entry,
   onEntryChange,
 }: BattingStatFieldsProps) {
-  const [singles, setSingles] = useState(
-    Math.max(0, entry.H - entry.doubles - entry.triples - entry.HR)
-  )
-
+  const singles = Math.max(0, entry.H - entry.doubles - entry.triples - entry.HR)
   const totalHits = singles + entry.doubles + entry.triples + entry.HR
 
   const updateHit = (
@@ -46,7 +44,6 @@ export default function BattingStatFields({
     const nextTotal = nextSingles + nextDoubles + nextTriples + nextHR
     if (delta === 1 && nextTotal > entry.AB) return
 
-    setSingles(nextSingles)
     onEntryChange({
       ...entry,
       H: nextTotal,
@@ -76,7 +73,6 @@ export default function BattingStatFields({
       if (newTotal > nextValue) {
         const overflow = newTotal - nextValue
         const nextSingles = Math.max(0, singles - overflow)
-        setSingles(nextSingles)
         nextEntry.H = nextSingles + entry.doubles + entry.triples + entry.HR
       }
     }
@@ -149,6 +145,44 @@ export default function BattingStatFields({
                     onClick={() => updateHit(key, 1)}
                     disabled={totalHits >= entry.AB}
                     className="h-10 w-10 rounded-full bg-green-900 text-white shadow-sm disabled:cursor-not-allowed disabled:bg-gray-300"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Stealing */}
+      <div className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+        <div>
+          <p className="text-sm font-medium text-gray-700">Stealing</p>
+          <p className="mt-0.5 text-xs text-gray-500">SB = Stolen Bases, CS = Caught Stealing</p>
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {(["SB", "CS"] as const).map((field) => (
+            <div key={field} className="rounded-lg bg-white px-3 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-700">{field}</p>
+                  <p className="text-[11px] text-gray-400">{fieldDescriptions[field]}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDecrement(field)}
+                    className="h-10 w-10 rounded-full bg-gray-100 text-gray-700 shadow-sm"
+                  >
+                    -
+                  </button>
+                  <span className="w-8 text-center font-semibold">{entry[field]}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleIncrement(field)}
+                    className="h-10 w-10 rounded-full bg-green-900 text-white shadow-sm"
                   >
                     +
                   </button>

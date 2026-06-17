@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import type {
   Player,
+  Position,
   BattingEntryData,
   DraftGameMeta,
   PendingBattingEntry,
@@ -10,7 +11,7 @@ import type {
   SavedPitchingGameEntry,
 } from "../types"
 import type { EditGameTab, LivePlay, RecordGamePageProps } from "./RecordGamePage.types"
-import { createEmptyBattingLine } from "./RecordGamePage.utils"
+import { createEmptyBattingLine, createEmptyPitchingLine, gamePositionOptions } from "./RecordGamePage.utils"
 
 type Input = {
   allPlayers: Player[]
@@ -41,6 +42,9 @@ export function useEditMode({
   const [hoveredEditPlayerId, setHoveredEditPlayerId] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
 
+  const prevBattingKeyRef = useRef<string | null>(null)
+  const prevPitchingKeyRef = useRef<string | null>(null)
+
   const editAvailablePlayers = allPlayers.filter((p) => !editGameEntries.some((e) => e.playerId === p.id))
   const editAvailablePitchers = allPlayers.filter((p) => !editGamePitchingEntries.some((e) => e.playerId === p.id))
   const selectedEditAddPlayerId = editAddPlayerId || editAvailablePlayers[0]?.id || ""
@@ -61,6 +65,11 @@ export function useEditMode({
 
   // Runs whenever a different saved game is selected for editing, not just on mount
   useEffect(() => {
+    const key = gameEntriesForEditing.map((e) => `${e.id}:${e.statId}`).join(",")
+    const isNewGame = key !== prevBattingKeyRef.current
+    if (!isNewGame) return
+    prevBattingKeyRef.current = key
+
     setEditGameEntries(
       gameEntriesForEditing.map((entry) => {
         const player = allPlayers.find((p) => p.id === entry.playerId)
@@ -76,11 +85,18 @@ export function useEditMode({
         }
       })
     )
-    setSelectedEditPlayerId("")
-    setEditAddPlayerId("")
+    if (isNewGame) {
+      setSelectedEditPlayerId("")
+      setEditAddPlayerId("")
+    }
   }, [allPlayers, gameEntriesForEditing])
 
   useEffect(() => {
+    const key = pitchingEntriesForEditing.map((e) => `${e.id}:${e.statId}`).join(",")
+    const isNewGame = key !== prevPitchingKeyRef.current
+    if (!isNewGame) return
+    prevPitchingKeyRef.current = key
+
     setEditGamePitchingEntries(
       pitchingEntriesForEditing.map((entry) => {
         const player = allPlayers.find((p) => p.id === entry.playerId)
@@ -91,8 +107,10 @@ export function useEditMode({
         }
       })
     )
-    setSelectedEditPitcherId("")
-    setEditAddPitcherId("")
+    if (isNewGame) {
+      setSelectedEditPitcherId("")
+      setEditAddPitcherId("")
+    }
   }, [allPlayers, pitchingEntriesForEditing])
 
   // Clear stale dropdown selection if that player was just added to the game (no longer in available list)
@@ -123,6 +141,60 @@ export function useEditMode({
   const handleUpdateEditGameEntry = (playerId: string, nextStatLine: BattingEntryData) =>
     setEditGameEntries((prev) => prev.map((e) => (e.playerId === playerId ? { ...e, ...nextStatLine } : e)))
 
+  const ensureEditGamePitchingEntry = (playerId: string) => {
+    const player = allPlayers.find((p) => p.id === playerId)
+    if (!player) return
+    setEditGamePitchingEntries((prev) =>
+      prev.some((entry) => entry.playerId === playerId)
+        ? prev
+        : [...prev, { ...createEmptyPitchingLine(), playerId: player.id, playerName: player.name }]
+    )
+    setSelectedEditPitcherId(playerId)
+    setEditGameTab("pitching")
+  }
+
+  const handleAddEditGamePosition = (playerId: string, position?: Position) => {
+    let addedPosition: Position | null = null
+    setEditGameEntries((prev) =>
+      prev.map((entry) => {
+        if (entry.playerId !== playerId) return entry
+        const addablePositions = position
+          ? [position]
+          : [
+              ...gamePositionOptions.filter((option) => option !== "P"),
+              "P" as Position,
+            ]
+        const nextPosition = addablePositions.find((option) => !entry.gamePositions.includes(option))
+        if (!nextPosition || entry.gamePositions.includes(nextPosition)) return entry
+        addedPosition = nextPosition
+        return { ...entry, gamePositions: [...entry.gamePositions, nextPosition] }
+      })
+    )
+    if (addedPosition === "P") ensureEditGamePitchingEntry(playerId)
+  }
+
+  const handleUpdateEditGamePosition = (playerId: string, index: number, position: Position = "P") => {
+    setEditGameEntries((prev) =>
+      prev.map((entry) => {
+        if (entry.playerId !== playerId) return entry
+        return {
+          ...entry,
+          gamePositions: entry.gamePositions.map((pos, i) => (i === index ? position : pos)),
+        }
+      })
+    )
+    if (position === "P") ensureEditGamePitchingEntry(playerId)
+  }
+
+  const handleRemoveEditGamePosition = (playerId: string, index: number) => {
+    setEditGameEntries((prev) =>
+      prev.map((entry) => {
+        if (entry.playerId !== playerId || entry.gamePositions.length <= 1) return entry
+        return { ...entry, gamePositions: entry.gamePositions.filter((_, i) => i !== index) }
+      })
+    )
+  }
+
   const handleRemoveEditGameEntry = (playerId: string) => {
     setEditGameEntries((prev) => prev.filter((e) => e.playerId !== playerId))
     if (selectedEditPlayerId === playerId) setSelectedEditPlayerId("")
@@ -152,12 +224,15 @@ export function useEditMode({
     if (!player) return
     setEditGamePitchingEntries((prev) => [
       ...prev,
-      {
-        inningsPitchedOuts: 0, hitsAllowed: 0, runsAllowed: 0, earnedRuns: 0,
-        walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0,
-        playerId: player.id, playerName: player.name,
-      },
+      { ...createEmptyPitchingLine(), playerId: player.id, playerName: player.name },
     ])
+    setEditGameEntries((prev) =>
+      prev.map((entry) =>
+        entry.playerId === player.id && !entry.gamePositions.includes("P")
+          ? { ...entry, gamePositions: [...entry.gamePositions, "P"] }
+          : entry
+      )
+    )
     setSelectedEditPitcherId(player.id)
     setEditAddPitcherId("")
   }
@@ -185,6 +260,7 @@ export function useEditMode({
       hasInvalidEditPitchingStats
     ) return
     if (editGameEntries.length > 0 && !validateScore(editGameEntries)) return
+    if (!window.confirm("Save this game with these records?")) return
     try {
       setIsSaving(true)
       await onUpdateSavedGame(gameMeta, editGameEntries, editGamePitchingEntries)
@@ -214,6 +290,9 @@ export function useEditMode({
     hasInvalidEditPitchingStats,
     isSaving,
     handleUpdateEditGameEntry,
+    handleAddEditGamePosition,
+    handleUpdateEditGamePosition,
+    handleRemoveEditGamePosition,
     handleRemoveEditGameEntry,
     handleAddEditGameEntry,
     handleUpdateEditGamePitchingEntry,

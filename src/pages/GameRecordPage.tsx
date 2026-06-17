@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { supabase } from "../api/supabase-client"
 import { withAvatarCacheBust } from "../utils/avatar"
@@ -23,6 +23,13 @@ import {
 
 import RecordGamePage from "../components/RecordGamePage"
 import { buildFullGamePayload } from "../utils/gamePayload"
+import {
+  withLoadTimeout,
+  readOfflineCache,
+  writeOfflineCache,
+  useOfflineGameCache,
+} from "../hooks/useOfflineGameCache"
+import type { TeamSnapshot } from "../hooks/useOfflineGameCache"
 
 import type {
   Player,
@@ -35,45 +42,6 @@ import type {
   PitchingEntryData,
 } from "../types"
 import type { GameRow } from "../api/supabase-api"
-
-const OFFLINE_CACHE_KEY = "jojistats-game-cache"
-const OFFLINE_QUEUE_KEY = "jojistats-game-queue"
-const LOAD_TIMEOUT_MS = 15000
-
-type TeamSnapshot = {
-  id: number
-  name: string
-  current_season_year: number
-}
-
-type OfflineRecordCache = {
-  team: TeamSnapshot
-  players: Player[]
-  savedEntriesByPlayer: Record<string, SavedBattingGameEntry[]>
-  preferredPlayerId?: string
-}
-
-function withLoadTimeout<T>(promise: PromiseLike<T>, label: string): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const timeoutId = window.setTimeout(
-      () => reject(new Error(`${label} timed out. Please check your connection and try again.`)),
-      LOAD_TIMEOUT_MS
-    )
-
-    Promise.resolve(promise)
-      .then(resolve)
-      .catch(reject)
-      .finally(() => window.clearTimeout(timeoutId))
-  })
-}
-
-function readOfflineCache(): OfflineRecordCache | null {
-  try {
-    return JSON.parse(localStorage.getItem(OFFLINE_CACHE_KEY) ?? "null") as OfflineRecordCache | null
-  } catch {
-    return null
-  }
-}
 
 function getPreferredPlayer(players: Player[], preferredPlayerId?: string) {
   return (preferredPlayerId && players.find((p) => p.id === preferredPlayerId)) || players[0] || null
@@ -90,6 +58,8 @@ const emptyBattingEntry: BattingEntryData = {
   HBP: 0,
   SF: 0,
   SO: 0,
+  SB: 0,
+  CS: 0,
   note: "",
 }
 
@@ -102,6 +72,7 @@ const emptyPitchingEntry: PitchingEntryData = {
   hitBatters: 0,
   strikeouts: 0,
   homeRunsAllowed: 0,
+  note: "",
 }
 
 function mapPlayer(row: {
@@ -139,6 +110,7 @@ export default function GameRecordPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [accessError, setAccessError] = useState("")
   const [saveError, setSaveError] = useState("")
+  const [saveSuccess, setSaveSuccess] = useState("")
   const [activePlayer, setActivePlayer] = useState<Player | null>(null)
   const [allPlayers, setAllPlayers] = useState<Player[]>([])
   const [teamName, setTeamName] = useState("")
@@ -170,19 +142,27 @@ export default function GameRecordPage() {
   const [recordMode, setRecordMode] = useState<"batting" | "pitching">(
     "batting"
   )
-  const teamSavedEntries = Object.values(savedEntriesByPlayer).flat()
-  const teamSavedPitchingEntries = Object.values(pitchingEntriesByPlayer).flat()
-  const savedPitchingEntries = activePlayer
-    ? pitchingEntriesByPlayer[activePlayer.id] ?? []
-    : []
+  const teamSavedEntries = useMemo(
+    () => Object.values(savedEntriesByPlayer).flat(),
+    [savedEntriesByPlayer]
+  )
+  const teamSavedPitchingEntries = useMemo(
+    () => Object.values(pitchingEntriesByPlayer).flat(),
+    [pitchingEntriesByPlayer]
+  )
+  const savedPitchingEntries = useMemo(
+    () => (activePlayer ? pitchingEntriesByPlayer[activePlayer.id] : undefined) ?? [],
+    [activePlayer, pitchingEntriesByPlayer]
+  )
 
   const [pitchingEntry, setPitchingEntry] =
     useState<PitchingEntryData>(emptyPitchingEntry)
 
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
-  const [offlineQueueSize, setOfflineQueueSize] = useState(() => {
-    try { return (JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]") as unknown[]).length } catch { return 0 }
-  })
+  const { isOnline, offlineQueueSize, enqueueOfflineGame, handleOnline, handleOffline } =
+    useOfflineGameCache((refreshed, playerId) => {
+      setSavedEntriesByPlayer(refreshed)
+      setSavedEntries(refreshed[playerId] ?? [])
+    })
 
   const applyTeamShell = useCallback((team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
     setTeamName(team.name)
@@ -226,14 +206,7 @@ export default function GameRecordPage() {
           matchNumber: getNextMatchNumber(games),
         }))
 
-        try {
-          localStorage.setItem(OFFLINE_CACHE_KEY, JSON.stringify({
-            team,
-            players: mappedPlayers,
-            savedEntriesByPlayer: entries,
-            preferredPlayerId: firstPlayer.id,
-          }))
-        } catch { /* storage full - skip */ }
+        writeOfflineCache({ team, players: mappedPlayers, savedEntriesByPlayer: entries, preferredPlayerId: firstPlayer.id })
       })
       .catch((error) => {
         console.error(error)
@@ -321,39 +294,31 @@ export default function GameRecordPage() {
     checkUser()
   }, [applyTeamShell, loadProfileAvatar, loadTeam, navigate])
 
-  const flushOfflineQueue = async (currentTeamId: number, currentSeasonYear: number, currentPlayerId: string) => {
-    let queue: { payload: Parameters<typeof createFullGame>[0] }[] = []
-    try { queue = JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]") } catch { return }
-    if (queue.length === 0) return
-    for (const item of queue) {
-      try { await createFullGame(item.payload) } catch { return }
-    }
-    localStorage.removeItem(OFFLINE_QUEUE_KEY)
-    setOfflineQueueSize(0)
-    const refreshed = await fetchSavedEntriesByPlayer(currentTeamId, currentSeasonYear)
-    setSavedEntriesByPlayer(refreshed)
-    setSavedEntries(refreshed[currentPlayerId] ?? [])
-  }
-
   useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true)
-      if (teamId != null && activePlayer) {
-        flushOfflineQueue(teamId, seasonYear, activePlayer.id)
-      }
-    }
-    const handleOffline = () => setIsOnline(false)
-    window.addEventListener("online", handleOnline)
-    window.addEventListener("offline", handleOffline)
+    const onOnline = () => handleOnline(teamId, seasonYear, activePlayer?.id ?? "")
+    const onOffline = handleOffline
+    window.addEventListener("online", onOnline)
+    window.addEventListener("offline", onOffline)
     return () => {
-      window.removeEventListener("online", handleOnline)
-      window.removeEventListener("offline", handleOffline)
+      window.removeEventListener("online", onOnline)
+      window.removeEventListener("offline", onOffline)
     }
-  }, [teamId, seasonYear, activePlayer])
+  }, [teamId, seasonYear, activePlayer, handleOnline, handleOffline])
 
   const handleSelectPlayer = async (player: Player) => {
     if (player.id === activePlayer?.id) return
     setActivePlayer(player)
+    setGameMeta(
+      preEditSnapshot?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: gameMeta.matchNumber }
+    )
+    setPreEditSnapshot(null)
+    setEditingSavedEntryId(null)
+    setEditingSavedEntry(null)
+    setEditingSavedPitchingEntry(null)
+    setCurrentEntry(emptyBattingEntry)
+    setPitchingEntry(emptyPitchingEntry)
+    setSaveError("")
+    setRecordMode("batting")
     if (teamId == null) return
     const [refreshed, refreshedPitching] = await Promise.all([
       fetchSavedEntriesByPlayer(teamId, seasonYear),
@@ -384,11 +349,7 @@ export default function GameRecordPage() {
         const gameId = editingSavedEntry?.gameId ?? Number(editingSavedEntryId.replace("db-", ""))
         await updateFullGame(gameId, payload)
       } else if (!navigator.onLine) {
-        const queue: { payload: typeof payload }[] = []
-        try { queue.push(...JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) ?? "[]")) } catch { /* ignore */ }
-        queue.push({ payload })
-        localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(queue))
-        setOfflineQueueSize(queue.length)
+        enqueueOfflineGame(payload)
         return
       } else {
         await createFullGame(payload)
@@ -440,13 +401,15 @@ export default function GameRecordPage() {
     nextStatLine: BattingEntryData,
     gamePositions?: import("../types").Position[]
   ) => {
-    if (!activePlayer || !editingSavedEntry) return
+    if (!activePlayer) { setSaveError("No active player."); return }
+    if (!editingSavedEntry) { setSaveError("No entry selected. Please click Edit on a saved entry again."); return }
+    if (!nextGameMeta.date.trim() || !nextGameMeta.opponent.trim()) { setSaveError("Date and opponent are required."); return }
 
     setSaveError("")
     try {
       await updateBattingStatEntry(editingSavedEntry.statId, editingSavedEntry.gameId, {
         game: {
-          team_id: Number(activePlayer.teamId),
+          team_id: Number(editingSavedEntry.teamId),
           game_date: nextGameMeta.date,
           opponent_name: nextGameMeta.opponent,
           season_year: nextGameMeta.seasonYear,
@@ -471,6 +434,8 @@ export default function GameRecordPage() {
           hbp: nextStatLine.HBP,
           sf: nextStatLine.SF,
           so: nextStatLine.SO,
+          sb: nextStatLine.SB,
+          cs: nextStatLine.CS,
           note: nextStatLine.note.trim() || null,
         },
       })
@@ -489,10 +454,11 @@ export default function GameRecordPage() {
       setEditingSavedEntryId(null)
       setEditingSavedEntry(null)
       setCurrentEntry(emptyBattingEntry)
+      setSaveSuccess("Saved")
+      setTimeout(() => setSaveSuccess(""), 3000)
     } catch (err) {
       const message = err instanceof Error ? err.message : "Update failed"
       setSaveError(message)
-      throw err
     }
   }
 
@@ -502,7 +468,7 @@ export default function GameRecordPage() {
     setSaveError("")
     try {
       await updateGameInfo(editingSavedEntry.gameId, {
-        team_id: Number(activePlayer.teamId),
+        team_id: Number(editingSavedEntry.teamId),
         game_date: nextGameMeta.date,
         opponent_name: nextGameMeta.opponent,
         season_year: nextGameMeta.seasonYear,
@@ -631,7 +597,7 @@ export default function GameRecordPage() {
         editingSavedPitchingEntry.gameId,
         {
           game: {
-            team_id: Number(activePlayer.teamId),
+            team_id: Number(editingSavedPitchingEntry.teamId),
             game_date: nextGameMeta.date,
             opponent_name: nextGameMeta.opponent,
             season_year: nextGameMeta.seasonYear,
@@ -652,6 +618,7 @@ export default function GameRecordPage() {
             hbp: nextPitchingEntry.hitBatters,
             strikeouts: nextPitchingEntry.strikeouts,
             home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
+            note: nextPitchingEntry.note.trim() || null,
           },
         }
       )
@@ -670,6 +637,8 @@ export default function GameRecordPage() {
 
       setEditingSavedPitchingEntry(null)
       setPitchingEntry(emptyPitchingEntry)
+      setSaveSuccess("Saved")
+      setTimeout(() => setSaveSuccess(""), 3000)
     } catch (err) {
       const message = err instanceof Error ? err.message : "Pitching update failed"
       setSaveError(message)
@@ -806,6 +775,12 @@ export default function GameRecordPage() {
         </div>
       </header>
 
+      {saveSuccess && (
+        <div className="fixed bottom-5 right-5 z-50 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800 shadow-lg">
+          {saveSuccess}
+        </div>
+      )}
+
       <main className="mx-auto max-w-7xl px-3 py-4 sm:px-4 sm:py-6">
         <RecordGamePage
           activePlayer={activePlayer}
@@ -849,6 +824,7 @@ export default function GameRecordPage() {
             pitchingEntry.earnedRuns > pitchingEntry.runsAllowed
           }
           saveError={saveError}
+          saveSuccess={saveSuccess}
           onClearSaveError={() => setSaveError("")}
           onNewGame={handleNewGame}
         />

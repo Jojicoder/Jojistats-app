@@ -1,9 +1,20 @@
 import { useState, useEffect, useMemo } from "react"
-import type { Player, Position, BattingEntryData, DraftGameMeta, PendingBattingEntry, PendingPitchingEntry, PitchingEntryData } from "../types"
+import type {
+  Player,
+  Position,
+  BattingEntryData,
+  DraftGameMeta,
+  PendingBattingEntry,
+  PendingPitchingEntry,
+  PitchingEntryData,
+  SavedBattingGameEntry,
+  SavedPitchingGameEntry,
+} from "../types"
 import type { RecordGamePageProps } from "./RecordGamePage.types"
 
 type Input = {
   activePlayer: Player
+  allPlayers: Player[]
   currentEntry: BattingEntryData
   onEntryChange: (entry: BattingEntryData) => void
   gameMeta: DraftGameMeta
@@ -15,7 +26,10 @@ type Input = {
   setRecordMode: (mode: "batting" | "pitching") => void
   onSaveGame: RecordGamePageProps["onSaveGame"]
   onUpdateSavedEntry: RecordGamePageProps["onUpdateSavedEntry"]
+  onUpdateSavedGame?: RecordGamePageProps["onUpdateSavedGame"]
   onCancelEditSavedEntry: RecordGamePageProps["onCancelEditSavedEntry"]
+  gameEntriesForEditing?: SavedBattingGameEntry[]
+  pitchingEntriesForEditing?: SavedPitchingGameEntry[]
   pitchingEntry: PitchingEntryData
   onPitchingEntryChange: (entry: PitchingEntryData) => void
   onUpdateSavedPitchingEntry?: RecordGamePageProps["onUpdateSavedPitchingEntry"]
@@ -24,6 +38,7 @@ type Input = {
 
 export function useStandardMode({
   activePlayer,
+  allPlayers,
   currentEntry,
   onEntryChange,
   gameMeta,
@@ -35,7 +50,10 @@ export function useStandardMode({
   setRecordMode,
   onSaveGame,
   onUpdateSavedEntry,
+  onUpdateSavedGame,
   onCancelEditSavedEntry,
+  gameEntriesForEditing = [],
+  pitchingEntriesForEditing = [],
   pitchingEntry,
   onPitchingEntryChange,
   onUpdateSavedPitchingEntry,
@@ -50,6 +68,7 @@ export function useStandardMode({
     hitBatters: 0,
     strikeouts: 0,
     homeRunsAllowed: 0,
+    note: "",
   }
   const defaultGamePositions = useMemo(() => {
     const base =
@@ -69,7 +88,7 @@ export function useStandardMode({
 
   const [gamePositions, setGamePositions] = useState<Position[]>(defaultGamePositions)
 
-  const canRecordPitching = gamePositions.includes("P")
+  const canRecordPitching = true
 
   useEffect(() => {
     if (!canRecordPitching && recordMode === "pitching") setRecordMode("batting")
@@ -138,9 +157,13 @@ export function useStandardMode({
   )
   const canAdd = isMetaComplete && !hasInvalidStats && !isPlayerAlreadyAdded
   const primaryActionDisabled =
-    isEditingSavedEntry || isEditingPendingEntry
-      ? !isMetaComplete || hasInvalidStats
-      : !canAdd
+    isSaving
+      ? true
+      : isEditingSavedEntry
+      ? hasInvalidStats
+      : isEditingPendingEntry
+        ? !isMetaComplete || hasInvalidStats
+        : !canAdd
 
   const addGamePosition = () => setGamePositions((prev) => [...prev, activePlayer.positions[0]])
   const updateGamePosition = (index: number, next: Position) =>
@@ -149,7 +172,9 @@ export function useStandardMode({
     setGamePositions((prev) => (prev.length === 1 ? prev : prev.filter((_, i) => i !== index)))
 
   const handleSetRecordMode = (next: "batting" | "pitching") => {
-    if (next === "pitching" && !canRecordPitching) return
+    if (next === "pitching" && !gamePositions.includes("P")) {
+      setGamePositions((prev) => (prev.includes("P") ? prev : [...prev, "P"]))
+    }
     setRecordMode(next)
   }
 
@@ -159,12 +184,12 @@ export function useStandardMode({
       ...prev,
       { ...currentEntry, playerId: activePlayer.id, playerName: activePlayer.name, gamePositions },
     ])
-    onEntryChange({ AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, note: "" })
+    onEntryChange({ AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, SB: 0, CS: 0, note: "" })
   }
 
   const resetPendingEdit = () => {
     setEditingPendingPlayerId(null)
-    onEntryChange({ AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, note: "" })
+    onEntryChange({ AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, SB: 0, CS: 0, note: "" })
     setGamePositions(defaultGamePositions)
   }
 
@@ -182,6 +207,8 @@ export function useStandardMode({
       HBP: entry.HBP,
       SF: entry.SF,
       SO: entry.SO,
+      SB: entry.SB,
+      CS: entry.CS,
       note: entry.note,
     })
     setRecordMode("batting")
@@ -204,8 +231,16 @@ export function useStandardMode({
     if (editingPendingPlayerId === playerId) resetPendingEdit()
   }
 
-  const handlePrimaryAction = () => {
-    if (isEditingSavedEntry) { onUpdateSavedEntry(gameMeta, currentEntry, gamePositions); return }
+  const handlePrimaryAction = async () => {
+    if (isEditingSavedEntry) {
+      try {
+        setIsSaving(true)
+        await onUpdateSavedEntry(gameMeta, currentEntry, gamePositions)
+      } finally {
+        setIsSaving(false)
+      }
+      return
+    }
     if (isEditingPendingEntry) { handleUpdatePendingEntry(); return }
     handleAdd()
   }
@@ -219,6 +254,44 @@ export function useStandardMode({
   const handlePitchingPrimaryAction = async () => {
     try {
       setIsSaving(true)
+      if (isEditingSavedEntry && onUpdateSavedGame) {
+        if (!window.confirm("Save this game with these records?")) return
+        const battingByPlayer = new Map<string, PendingBattingEntry>()
+        gameEntriesForEditing.forEach((entry) => {
+          battingByPlayer.set(entry.playerId, {
+            ...entry.statLine,
+            playerId: entry.playerId,
+            playerName: allPlayers.find((player) => player.id === entry.playerId)?.name ?? `Player ${entry.playerId}`,
+            gamePositions: entry.playerId === activePlayer.id ? gamePositions : entry.gamePositions,
+          })
+        })
+        battingByPlayer.set(activePlayer.id, {
+          ...currentEntry,
+          playerId: activePlayer.id,
+          playerName: activePlayer.name,
+          gamePositions,
+        })
+        const nextBattingEntries = Array.from(battingByPlayer.values())
+
+        const pitchingByPlayer = new Map<string, PendingPitchingEntry>()
+        pitchingEntriesForEditing.forEach((entry) => {
+          pitchingByPlayer.set(entry.playerId, {
+            ...entry.statLine,
+            playerId: entry.playerId,
+            playerName: allPlayers.find((player) => player.id === entry.playerId)?.name ?? `Player ${entry.playerId}`,
+          })
+        })
+        const nextPitchingEntry: PendingPitchingEntry = {
+          ...pitchingEntry,
+          playerId: activePlayer.id,
+          playerName: activePlayer.name,
+        }
+        pitchingByPlayer.set(activePlayer.id, nextPitchingEntry)
+        const nextPitchingEntries = Array.from(pitchingByPlayer.values())
+
+        await onUpdateSavedGame(gameMeta, nextBattingEntries, nextPitchingEntries)
+        return
+      }
       if (isEditingSavedPitchingEntry && onUpdateSavedPitchingEntry) {
         await onUpdateSavedPitchingEntry(gameMeta, pitchingEntry)
         return

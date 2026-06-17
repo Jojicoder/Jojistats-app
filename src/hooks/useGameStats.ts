@@ -28,9 +28,11 @@ export function useGameStats(
         acc.HBP += entry.HBP ?? 0
         acc.SF += entry.SF ?? 0
         acc.SO += entry.SO
+        acc.SB += entry.SB ?? 0
+        acc.CS += entry.CS ?? 0
         return acc
       },
-      { AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, note: "" }
+      { AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0, BB: 0, HBP: 0, SF: 0, SO: 0, SB: 0, CS: 0, note: "" }
     )
 
     const singles = Math.max(totals.H - totals.doubles - totals.triples - totals.HR, 0)
@@ -41,6 +43,7 @@ export function useGameStats(
         ? (totals.H + totals.BB + totals.HBP) / (totals.AB + totals.BB + totals.HBP + totals.SF)
         : 0
     const numericSlg = totals.AB > 0 ? totalBases / totals.AB : 0
+    const stolenBaseAttempts = totals.SB + totals.CS
 
     const kpi: BattingCalculatedKPI = {
       avg: totals.AB > 0 ? fmtRate(totals.H / totals.AB) : ".000",
@@ -52,6 +55,9 @@ export function useGameStats(
       hr: totals.HR,
       rbi: totals.RBI,
       hbp: totals.HBP,
+      sb: totals.SB,
+      cs: totals.CS,
+      sbPct: stolenBaseAttempts > 0 ? fmtRate(totals.SB / stolenBaseAttempts) : "--",
       gamesPlayed: savedEntries.length,
     }
 

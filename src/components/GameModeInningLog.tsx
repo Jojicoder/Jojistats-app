@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react"
 import type {
   GameHalf,
   LiveInningSummary,
@@ -23,12 +24,8 @@ type Props = {
   liveInningSummaries: LiveInningSummary[]
   expandedLiveInningKey: string
   onExpandedLiveInningKeyChange: (key: string) => void
-  onLiveInningChange: (n: number) => void
-  onLiveHalfChange: (half: GameHalf) => void
   editingLiveEventId: string | null
   onEditingLiveEventIdChange: (id: string | null) => void
-  onSyncMainCursorToLivePlay: (play: LivePlay) => void
-  onSyncMainCursorToLivePitchPlay: (play: LivePitchPlay) => void
   onDeleteLivePlay: (id: string) => void
   onDeleteLivePitchPlay: (id: string) => void
   onUpdateLivePlay: (id: string, result: LivePlayResult, rbi: number, note: string) => void
@@ -44,17 +41,21 @@ export default function GameModeInningLog({
   liveInningSummaries,
   expandedLiveInningKey,
   onExpandedLiveInningKeyChange,
-  onLiveInningChange,
-  onLiveHalfChange,
   editingLiveEventId,
   onEditingLiveEventIdChange,
-  onSyncMainCursorToLivePlay,
-  onSyncMainCursorToLivePitchPlay,
   onDeleteLivePlay,
   onDeleteLivePitchPlay,
   onUpdateLivePlay,
   onUpdateLivePitchPlay,
 }: Props) {
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map())
+
+  useEffect(() => {
+    if (!expandedLiveInningKey) return
+    const el = rowRefs.current.get(expandedLiveInningKey)
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "nearest" })
+  }, [expandedLiveInningKey])
+
   return (
     <div className="rounded-xl bg-white p-3 shadow-sm sm:rounded-2xl sm:p-4">
       <h2 className="text-base font-bold text-gray-900">All Innings</h2>
@@ -74,13 +75,11 @@ export default function GameModeInningLog({
           const isExpanded = expandedLiveInningKey === summaryKey
 
           return (
-            <div key={summaryKey} className={`rounded-xl border bg-[#f7f8f3] transition ${isExpanded ? "border-green-900" : "border-gray-100"}`}>
+            <div key={summaryKey} ref={(el) => { if (el) rowRefs.current.set(summaryKey, el); else rowRefs.current.delete(summaryKey) }} className={`rounded-xl border bg-[#f7f8f3] transition ${isExpanded ? "border-green-900" : "border-gray-100"}`}>
               <button
                 type="button"
                 onClick={() => {
                   onExpandedLiveInningKeyChange(isExpanded ? "" : summaryKey)
-                  onLiveInningChange(summary.inning)
-                  onLiveHalfChange(summary.half)
                 }}
                 className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left"
               >
@@ -99,7 +98,6 @@ export default function GameModeInningLog({
                       plays={summary.batting}
                       editingLiveEventId={editingLiveEventId}
                       onEditingLiveEventIdChange={onEditingLiveEventIdChange}
-                      onSyncMainCursorToLivePlay={onSyncMainCursorToLivePlay}
                       onDeleteLivePlay={onDeleteLivePlay}
                       onUpdateLivePlay={onUpdateLivePlay}
                     />
@@ -109,7 +107,6 @@ export default function GameModeInningLog({
                       plays={summary.pitching}
                       editingLiveEventId={editingLiveEventId}
                       onEditingLiveEventIdChange={onEditingLiveEventIdChange}
-                      onSyncMainCursorToLivePitchPlay={onSyncMainCursorToLivePitchPlay}
                       onDeleteLivePitchPlay={onDeleteLivePitchPlay}
                       onUpdateLivePitchPlay={onUpdateLivePitchPlay}
                     />
@@ -128,14 +125,12 @@ function BattingEvents({
   plays,
   editingLiveEventId,
   onEditingLiveEventIdChange,
-  onSyncMainCursorToLivePlay,
   onDeleteLivePlay,
   onUpdateLivePlay,
 }: {
   plays: LivePlay[]
   editingLiveEventId: string | null
   onEditingLiveEventIdChange: (id: string | null) => void
-  onSyncMainCursorToLivePlay: (play: LivePlay) => void
   onDeleteLivePlay: (id: string) => void
   onUpdateLivePlay: (id: string, result: LivePlayResult, rbi: number, note: string) => void
 }) {
@@ -154,7 +149,7 @@ function BattingEvents({
                   <p className="truncate text-xs text-gray-500">RBI {play.rbi} · Runs {play.runs}{play.note ? ` · ${play.note}` : ""}</p>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
-                  <button type="button" onClick={() => { onSyncMainCursorToLivePlay(play); onEditingLiveEventIdChange(play.id) }} className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">Edit</button>
+                  <button type="button" onClick={() => onEditingLiveEventIdChange(play.id)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">Edit</button>
                   <button type="button" onClick={() => onDeleteLivePlay(play.id)} className="rounded-lg bg-red-600 px-2 py-1 text-xs font-semibold text-white">Delete</button>
                 </div>
               </div>
@@ -184,14 +179,12 @@ function PitchingEvents({
   plays,
   editingLiveEventId,
   onEditingLiveEventIdChange,
-  onSyncMainCursorToLivePitchPlay,
   onDeleteLivePitchPlay,
   onUpdateLivePitchPlay,
 }: {
   plays: LivePitchPlay[]
   editingLiveEventId: string | null
   onEditingLiveEventIdChange: (id: string | null) => void
-  onSyncMainCursorToLivePitchPlay: (play: LivePitchPlay) => void
   onDeleteLivePitchPlay: (id: string) => void
   onUpdateLivePitchPlay: (id: string, result: LivePitchResult, note: string) => void
 }) {
@@ -210,7 +203,7 @@ function PitchingEvents({
                   <p className="truncate text-xs text-gray-500">Runs {estimateRunsForPitching(play.basesBefore, play.result)}{play.note ? ` · ${play.note}` : ""}</p>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
-                  <button type="button" onClick={() => { onSyncMainCursorToLivePitchPlay(play); onEditingLiveEventIdChange(play.id) }} className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">Edit</button>
+                  <button type="button" onClick={() => onEditingLiveEventIdChange(play.id)} className="rounded-lg border border-gray-200 px-2 py-1 text-xs font-semibold text-gray-700">Edit</button>
                   <button type="button" onClick={() => onDeleteLivePitchPlay(play.id)} className="rounded-lg bg-red-600 px-2 py-1 text-xs font-semibold text-white">Delete</button>
                 </div>
               </div>
