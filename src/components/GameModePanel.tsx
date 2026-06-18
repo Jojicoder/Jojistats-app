@@ -442,7 +442,7 @@ function AtBatHistory({ plays }: { plays: LivePlay[] }) {
         <span className="text-[10px] font-semibold text-gray-400">{plays.length}</span>
       </div>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        {plays.map((play, index) => (
+        {plays.map((play) => (
           <span
             key={play.id}
             className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-bold ${battingResultBadge(play.result)}`}
