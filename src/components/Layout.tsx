@@ -26,14 +26,8 @@ import {
   upsertUserAccess,
 } from "../api/supabase-api"
 
-import {
-  createTeam,
-  updateTeam,
-  archiveTeam,
-  createPlayer,
-  updatePlayer,
-  archivePlayer,
-} from "../api/api"
+import { createTeam, updateTeam, archiveTeam } from "../api/teams"
+import { createPlayer, updatePlayer, archivePlayer } from "../api/players"
 
 import type { GameRow, PlayerRow, TeamRow } from "../api/supabase-api"
 import type {

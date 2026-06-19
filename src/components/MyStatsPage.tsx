@@ -5,7 +5,7 @@ import type {
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
 } from "../types"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { calcBattingMetrics, fmtRate } from "../utils/metrics"
 import { getStatColor } from "./mlb/playerStats"
 import SavedEntriesList from "./SavedEntriesList"
@@ -93,6 +93,10 @@ export default function MyStatsPage({
   onModeChange,
 }: MyStatsPageProps) {
   const [selectedEntry, setSelectedEntry] = useState<SavedBattingGameEntry | null>(null)
+
+  useEffect(() => {
+    setSelectedEntry(null)
+  }, [activePlayer.id])
 
   const displayedStats = useMemo(
     () => (selectedEntry ? buildBattingStats(selectedEntry) : calculatedStats),

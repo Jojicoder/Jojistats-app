@@ -1,6 +1,6 @@
 import { useState } from "react"
 import type { Player, SavedBattingGameEntry } from "../types"
-import { createFullGame } from "../api/api"
+import { createFullGame } from "../api/games"
 import { fetchSavedEntriesByPlayer } from "../api/supabase-api"
 
 export const OFFLINE_CACHE_KEY = "jojistats-game-cache"

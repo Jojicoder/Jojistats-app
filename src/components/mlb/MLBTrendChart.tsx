@@ -1,129 +1,17 @@
 import { useEffect, useMemo, useState } from "react"
 import { getStatColor } from "./playerStats"
-import type { GameLogSplit, MLBTeamStats } from "./types"
-
-// ── MLB Trend Chart ───────────────────────────────────────────────────
+import type { MLBTeamStats } from "./types"
+import {
+  fmtR, dateLabel, pitchCardColor, inferPitchRole,
+  buildHittingPoints, buildPitchingPoints,
+  HITTING_SUMMARY,
+  type ChartMetric, type WindowMode,
+} from "./MLBTrendChartUtils"
+import type { GameLogSplit } from "./types"
 
 const CW = 640
 const CH = 240
 const CP = { top: 16, right: 16, bottom: 36, left: 48 }
-
-function fmtR(n: number) {
-  return n.toFixed(3).replace(/^0\./, ".")
-}
-
-function buildHittingPoints(log: GameLogSplit[]) {
-  let ab = 0, h = 0, bb = 0, hbp = 0, sf = 0, d = 0, t = 0, hr = 0
-  return log.map((entry, i) => {
-    const s = entry.stat
-    ab += s.atBats ?? 0; h += s.hits ?? 0; bb += s.baseOnBalls ?? 0
-    hbp += s.hitByPitch ?? 0; sf += s.sacFlies ?? 0
-    d += s.doubles ?? 0; t += s.triples ?? 0; hr += s.homeRuns ?? 0
-    const singles = Math.max(h - d - t - hr, 0)
-    const tb = singles + d * 2 + t * 3 + hr * 4
-    const avg = ab > 0 ? h / ab : 0
-    const obpDen = ab + bb + hbp + sf
-    const obp = obpDen > 0 ? (h + bb + hbp) / obpDen : 0
-    const slg = ab > 0 ? tb / ab : 0
-    return { game: i + 1, date: entry.date, opp: entry.opponent?.name ?? "", avg, obp, ops: obp + slg }
-  })
-}
-
-function parseIP(ipStr: string): number {
-  const [whole, frac] = ipStr.split(".").map(Number)
-  return ((whole || 0) * 3 + (frac || 0)) / 3
-}
-
-function buildPitchingPoints(log: GameLogSplit[]) {
-  let totalER = 0, totalOuts = 0, totalH = 0, totalBB = 0, totalK = 0
-  let totalHBP = 0, totalR = 0, totalHR = 0, totalBF = 0, totalAB = 0
-  let totalD = 0, totalT = 0, qsCount = 0, games = 0, totalSaves = 0
-
-  return log.map((entry, i) => {
-    const s = entry.stat
-    const gameIP = parseIP(String(s.inningsPitched ?? "0.0"))
-    const gameER = s.earnedRuns ?? 0
-
-    totalER  += gameER
-    totalH   += s.hits ?? 0
-    totalBB  += s.baseOnBalls ?? 0
-    totalK   += s.strikeOuts ?? 0
-    totalHBP += s.hitByPitch ?? 0
-    totalR   += s.runs ?? 0
-    totalHR  += s.homeRuns ?? 0
-    totalBF  += s.battersFaced ?? 0
-    totalAB  += s.atBats ?? 0
-    totalD   += s.doubles ?? 0
-    totalT   += s.triples ?? 0
-    totalOuts += gameIP * 3
-    games++
-
-    totalSaves += s.saves ?? 0
-    if (gameIP >= 6 && gameER <= 3) qsCount++
-
-    const ip = totalOuts / 3
-    const era   = ip > 0 ? (totalER / ip) * 9 : 0
-    const whip  = ip > 0 ? (totalH + totalBB) / ip : 0
-    const k9    = ip > 0 ? (totalK / ip) * 9 : 0
-    const bb9   = ip > 0 ? (totalBB / ip) * 9 : 0
-    const kbbPct = totalBF > 0 ? (totalK - totalBB) / totalBF : null
-    const ipPerG = games > 0 ? ip / games : 0
-
-    // LOB% = (H + BB + HBP - R) / (H + BB + HBP - 1.4×HR)
-    const lobDen = totalH + totalBB + totalHBP - 1.4 * totalHR
-    const lobPct = lobDen > 0 ? (totalH + totalBB + totalHBP - totalR) / lobDen : null
-
-    // SLG against = TB / AB
-    const singles = Math.max(totalH - totalD - totalT - totalHR, 0)
-    const tb = singles + totalD * 2 + totalT * 3 + totalHR * 4
-    const slgAgainst = totalAB > 0 ? tb / totalAB : null
-
-    return {
-      game: i + 1, date: entry.date, opp: entry.opponent?.name ?? "",
-      era, whip, k9, bb9, kbbPct, ipPerG, qsCount, lobPct, slgAgainst, ip, totalSaves,
-    }
-  })
-}
-
-type ChartMetric = "avg" | "obp" | "ops"
-
-const HITTING_SUMMARY = [
-  { key: "AVG" as const, desc: "Batting Average" },
-  { key: "OBP" as const, desc: "On-base Percentage" },
-  { key: "SLG" as const, desc: "Slugging Percentage" },
-  { key: "OPS" as const, desc: "On-base Plus Slugging" },
-]
-
-type PitchRole = "SP" | "RP" | "CL"
-
-function inferPitchRole(p: { ipPerG: number; totalSaves: number }): PitchRole {
-  if (p.totalSaves >= 2) return "CL"
-  if (p.ipPerG >= 3.5) return "SP"
-  return "RP"
-}
-
-function dateLabel(iso: string) {
-  const [, m, d] = iso.split("-")
-  return `${Number(m)}/${Number(d)}`
-}
-
-type WindowMode = "recent" | "season"
-
-function pitchCardColor(key: string, num: number) {
-  const cfgs: Record<string, { hi: number; lo: number; lower?: boolean }> = {
-    "K-BB%":  { hi: 0.15, lo: 0.05 },
-    "LOB%":   { hi: 0.75, lo: 0.65 },
-    "IP/G":   { hi: 6.0,  lo: 5.0 },
-    "SLG":    { hi: 0.35, lo: 0.45, lower: true },
-  }
-  const c = cfgs[key]
-  if (!c) return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
-  const good = c.lower ? num <= c.hi : num >= c.hi
-  const bad  = c.lower ? num >= c.lo : num <= c.lo
-  if (good) return { bg: "bg-emerald-50", lbl: "text-emerald-700", val: "text-emerald-900" }
-  if (bad)  return { bg: "bg-rose-50",    lbl: "text-rose-600",    val: "text-rose-900" }
-  return { bg: "bg-[#f7f8f3]", lbl: "text-gray-400", val: "text-green-950" }
-}
 
 export default function MLBTrendChart({
   log,
@@ -138,12 +26,11 @@ export default function MLBTrendChart({
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null)
   const [windowMode, setWindowMode] = useState<WindowMode>("recent")
 
-  // Reset to "recent" when player changes
   useEffect(() => { setWindowMode("recent") }, [log])
 
   const recentLog = useMemo(() => log.slice(-15), [log])
   const displayLog = useMemo(
-    () => windowMode === "recent" ? recentLog : log,
+    () => (windowMode === "recent" ? recentLog : log),
     [windowMode, recentLog, log]
   )
 
@@ -159,7 +46,6 @@ export default function MLBTrendChart({
     )
   }
 
-  // summary from last cumulative point of selected window
   const last = hitPoints[hitPoints.length - 1]
   const slg = last ? last.ops - last.obp : 0
 
@@ -170,15 +56,13 @@ export default function MLBTrendChart({
   }
 
   const values = data.map(getValue)
-  const rawTeamAverage =
-    mode === "pitching"
-      ? teamStats?.pitching.era
-      : teamStats?.hitting[metric]
+  const rawTeamAverage = mode === "pitching" ? teamStats?.pitching.era : teamStats?.hitting[metric]
   const parsedTeamAverage = Number.parseFloat(String(rawTeamAverage ?? ""))
   const teamAverage = Number.isFinite(parsedTeamAverage) ? parsedTeamAverage : null
   const maxVal = mode === "pitching"
     ? Math.max(...values, teamAverage ?? 0, 6.0)
     : Math.max(...values, teamAverage ?? 0, 0.5)
+
   const plotW = CW - CP.left - CP.right
   const plotH = CH - CP.top - CP.bottom
   const getX = (i: number) =>
@@ -215,9 +99,7 @@ export default function MLBTrendChart({
               type="button"
               onClick={() => setWindowMode(w)}
               className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                windowMode === w
-                  ? "bg-green-900 text-white shadow-sm"
-                  : "text-gray-500 hover:text-green-900"
+                windowMode === w ? "bg-green-900 text-white shadow-sm" : "text-gray-500 hover:text-green-900"
               }`}
             >
               {w === "recent" ? "Last 15 Games" : "Full Season"}
@@ -226,7 +108,6 @@ export default function MLBTrendChart({
         </div>
       </div>
 
-      {/* ── Stat summary cards ── */}
       {mode === "hitting" && last && (
         <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
           {HITTING_SUMMARY.map(({ key, desc }) => {
@@ -243,6 +124,7 @@ export default function MLBTrendChart({
           })}
         </div>
       )}
+
       {mode === "pitching" && pitPoints.length > 0 && (() => {
         const p = pitPoints[pitPoints.length - 1]
         const role = inferPitchRole(p)
@@ -292,14 +174,11 @@ export default function MLBTrendChart({
         )
       })()}
 
-      {/* ── Chart area ── */}
       <div className="mt-4 rounded-xl bg-[#f7f8f3] p-3 sm:p-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-medium text-gray-700">{metricLabel} Trend</p>
-            <p className="text-xs text-gray-500">
-              {data.length} game{data.length !== 1 ? "s" : ""}
-            </p>
+            <p className="text-xs text-gray-500">{data.length} game{data.length !== 1 ? "s" : ""}</p>
           </div>
           {mode === "hitting" && (
             <div className="grid grid-cols-3 rounded-xl bg-white p-1 sm:flex sm:items-center sm:gap-2">
@@ -350,36 +229,15 @@ export default function MLBTrendChart({
 
             {teamAverage !== null && (
               <g>
-                <line
-                  x1={CP.left}
-                  x2={CW - CP.right}
-                  y1={getY(teamAverage)}
-                  y2={getY(teamAverage)}
-                  stroke="#6b7280"
-                  strokeWidth="2"
-                  strokeDasharray="7 5"
-                />
-                <text
-                  x={CW - CP.right}
-                  y={Math.max(CP.top + 11, getY(teamAverage) - 6)}
-                  textAnchor="end"
-                  className="fill-gray-600 text-[10px]"
-                  fontWeight="bold"
-                >
+                <line x1={CP.left} x2={CW - CP.right} y1={getY(teamAverage)} y2={getY(teamAverage)} stroke="#6b7280" strokeWidth="2" strokeDasharray="7 5" />
+                <text x={CW - CP.right} y={Math.max(CP.top + 11, getY(teamAverage) - 6)} textAnchor="end" className="fill-gray-600 text-[10px]" fontWeight="bold">
                   Team {mode === "pitching" ? teamAverage.toFixed(2) : fmtR(teamAverage)}
                 </text>
               </g>
             )}
 
             <polygon points={areaPoints} fill="url(#mlb-area)" />
-            <polyline
-              points={linePoints}
-              fill="none"
-              stroke="#166534"
-              strokeWidth="3"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
+            <polyline points={linePoints} fill="none" stroke="#166534" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
 
             {data.map((pt, i) => {
               const cx = getX(i)
@@ -394,23 +252,15 @@ export default function MLBTrendChart({
               return (
                 <g key={i} onMouseEnter={() => setHoveredIdx(i)} onMouseLeave={() => setHoveredIdx(null)}>
                   <circle cx={cx} cy={cy} r={isHovered ? "6" : "4.5"} fill="#166534" />
-
                   {isHovered && (
                     <>
                       <rect x={ttX} y={ttY} width="120" height="42" rx="6" fill="#111827" opacity="0.94" />
-                      <text x={ttX + 60} y={ttY + 14} textAnchor="middle" className="fill-white text-[10px]">
-                        {pt.opp ? `vs ${pt.opp}` : pt.date}
-                      </text>
-                      <text x={ttX + 60} y={ttY + 30} textAnchor="middle" className="fill-white text-[11px]" fontWeight="bold">
-                        {metricLabel} {display}
-                      </text>
+                      <text x={ttX + 60} y={ttY + 14} textAnchor="middle" className="fill-white text-[10px]">{pt.opp ? `vs ${pt.opp}` : pt.date}</text>
+                      <text x={ttX + 60} y={ttY + 30} textAnchor="middle" className="fill-white text-[11px]" fontWeight="bold">{metricLabel} {display}</text>
                     </>
                   )}
-
                   {showLabel && (
-                    <text x={cx} y={CH - 12} textAnchor="middle" className="fill-gray-500 text-[11px]">
-                      {dateLabel(pt.date)}
-                    </text>
+                    <text x={cx} y={CH - 12} textAnchor="middle" className="fill-gray-500 text-[11px]">{dateLabel(pt.date)}</text>
                   )}
                 </g>
               )

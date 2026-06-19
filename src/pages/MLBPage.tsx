@@ -4,7 +4,7 @@ import PageShell from "../components/PageShell"
 import PlayersTab from "../components/mlb/PlayersTab"
 import StandingsTab from "../components/mlb/StandingsTab"
 import TodayGamesTab from "../components/mlb/TodayGamesTab"
-import { getAllTeams } from "../components/mlb/api"
+import { getAllTeams } from "../api/mlb"
 import type { MLBTeam } from "../components/mlb/types"
 import { applyGlobalMLBTheme, clearGlobalMLBTheme, getTeamThemeStyle } from "../components/mlb/teamTheme"
 

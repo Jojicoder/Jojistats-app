@@ -5,7 +5,7 @@ import SavedEntriesList from "./SavedEntriesList"
 import GameMetaFields from "./GameMetaFields"
 import PendingEntriesPanel from "./PendingEntriesPanel"
 import SavedPitchingPanel from "./SavedPitchingPanel"
-import { gamePositionOptions } from "./RecordGamePage.utils"
+import { gamePositionOptions } from "./gameConstants"
 
 // ---- Prop groups ----
 

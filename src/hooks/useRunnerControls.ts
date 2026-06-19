@@ -9,8 +9,9 @@ import type {
   RunnerOutAction,
   RunnerRbiAction,
   RunnerRunAction,
-} from "./RecordGamePage.types"
-import { emptyBases, getNextHalfInning } from "./RecordGamePage.utils"
+} from "../components/RecordGamePage.types"
+import { emptyBases } from "../components/gameConstants"
+import { getNextHalfInning } from "../components/gameStatUtils"
 
 type Input = {
   liveInning: number

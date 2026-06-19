@@ -6,7 +6,7 @@ import type {
   MLBTeam,
   MLBTeamStats,
   RosterPlayer,
-} from "./types"
+} from "../components/mlb/types"
 
 const MLB_API = "https://statsapi.mlb.com/api/v1"
 const MLB_LIVE_API = "https://statsapi.mlb.com/api/v1.1"

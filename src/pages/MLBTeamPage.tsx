@@ -8,7 +8,7 @@ import {
   getTeamSchedule,
   getTeamStats,
   MLB_SEASON,
-} from "../components/mlb/api"
+} from "../api/mlb"
 import type {
   MLBGame,
   MLBTeam,

@@ -1,5 +1,5 @@
 import type { Player, PendingBattingEntry, PendingPitchingEntry, DraftGameMeta, SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
-import { formatLiveInnings } from "./RecordGamePage.utils"
+import { formatLiveInnings } from "./gameLiveUtils"
 
 type Props = {
   allPlayers: Player[]

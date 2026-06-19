@@ -1,6 +1,12 @@
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import type { SavedBattingGameEntry } from "../types"
 import { fmtRate } from "../utils/metrics"
+import {
+  usePerformanceTrend,
+  getStatCardStyle, getChartValues, getPointPosition,
+  clampTooltipY, getChartTitle,
+  chartWidth, chartHeight, chartPadding,
+} from "../hooks/usePerformanceTrend"
 
 type PerformanceTrendCardProps = {
   playerEntries: SavedBattingGameEntry[]
@@ -15,431 +21,23 @@ const statDescriptions: Record<string, string> = {
   OPS: "On-base Plus Slugging",
 }
 
-type TrendTab = "season" | "last5" | "last3"
-type ChartMetric = "avg" | "obp" | "ops"
-
-type ChartPoint = {
-  label: string
-  fullLabel: string
-  playerAvg: number
-  teamAvg: number
-  playerObp: number
-  teamObp: number
-  playerOps: number
-  teamOps: number
-}
-
-type SummaryStats = {
-  avg: string
-  obp: string
-  slg: string
-  ops: string
-  numericAvg: number
-  numericObp: number
-  numericSlg: number
-  numericOps: number
-}
-
-const chartWidth = 640
-const chartHeight = 260
-const chartPadding = {
-  top: 20,
-  right: 24,
-  bottom: 40,
-  left: 48,
-}
-
-
-function formatGameLabel(date: string) {
-  const [, month, day] = date.split("-")
-  return `${Number(month)}/${Number(day)}`
-}
-
-function buildGameKey(entry: SavedBattingGameEntry) {
-  return `${entry.gameMeta.date}-${entry.gameMeta.matchNumber}`
-}
-
-function getEntryAvg(entry: SavedBattingGameEntry): number {
-  return entry.statLine.AB > 0 ? entry.statLine.H / entry.statLine.AB : 0
-}
-
-function getEntryObp(entry: SavedBattingGameEntry): number {
-  const hbp = entry.statLine.HBP ?? 0
-  const sf = entry.statLine.SF ?? 0
-  const denominator = entry.statLine.AB + entry.statLine.BB + hbp + sf
-  return denominator > 0
-    ? (entry.statLine.H + entry.statLine.BB + hbp) / denominator
-    : 0
-}
-
-function getEntrySlg(entry: SavedBattingGameEntry): number {
-  const { AB, H, doubles, triples, HR } = entry.statLine
-  if (AB === 0) return 0
-
-  const singles = Math.max(H - doubles - triples - HR, 0)
-  const totalBases = singles + doubles * 2 + triples * 3 + HR * 4
-  return totalBases / AB
-}
-
-function getSummary(entries: SavedBattingGameEntry[]): SummaryStats {
-  const totals = entries.reduce(
-    (acc, entry) => {
-      acc.ab += entry.statLine.AB
-      acc.h += entry.statLine.H
-      acc.doubles += entry.statLine.doubles
-      acc.triples += entry.statLine.triples
-      acc.hr += entry.statLine.HR
-      acc.bb += entry.statLine.BB
-      acc.hbp += entry.statLine.HBP ?? 0
-      acc.sf += entry.statLine.SF ?? 0
-      return acc
-    },
-    { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0, sf: 0 }
-  )
-
-  const singles = Math.max(
-    totals.h - totals.doubles - totals.triples - totals.hr,
-    0
-  )
-
-  const totalBases =
-    singles +
-    totals.doubles * 2 +
-    totals.triples * 3 +
-    totals.hr * 4
-
-  const numericAvg = totals.ab > 0 ? totals.h / totals.ab : 0
-
-  const obpDenominator = totals.ab + totals.bb + totals.hbp + totals.sf
-  const numericObp =
-    obpDenominator > 0
-      ? (totals.h + totals.bb + totals.hbp) / obpDenominator
-      : 0
-
-  const numericSlg = totals.ab > 0 ? totalBases / totals.ab : 0
-  const numericOps = numericObp + numericSlg
-
-  return {
-    avg: fmtRate(numericAvg),
-    obp: fmtRate(numericObp),
-    slg: fmtRate(numericSlg),
-    ops: fmtRate(numericOps),
-    numericAvg,
-    numericObp,
-    numericSlg,
-    numericOps,
-  }
-}
-
-function sortEntriesByGame(entries: SavedBattingGameEntry[]) {
-  return [...entries].sort((a, b) => {
-    const dateCompare =
-      new Date(a.gameMeta.date).getTime() - new Date(b.gameMeta.date).getTime()
-
-    if (dateCompare !== 0) return dateCompare
-
-    return a.gameMeta.matchNumber - b.gameMeta.matchNumber
-  })
-}
-
-function filterPlayerEntriesByTab(
-  entries: SavedBattingGameEntry[],
-  activeTab: TrendTab,
-  seasonYear: number
-) {
-  const sortedEntries = sortEntriesByGame(entries)
-
-  if (activeTab === "last5") return sortedEntries.slice(-5)
-  if (activeTab === "last3") return sortedEntries.slice(-3)
-
-  const seasonEntries = sortedEntries.filter(
-    (entry) => entry.gameMeta.seasonYear === seasonYear
-  )
-  return seasonEntries.length > 0 ? seasonEntries : sortedEntries
-}
-
-function filterTeamEntriesForPlayerWindow(
-  teamEntries: SavedBattingGameEntry[],
-  playerWindowEntries: SavedBattingGameEntry[]
-) {
-  const gameKeys = new Set(playerWindowEntries.map(buildGameKey))
-  return sortEntriesByGame(teamEntries).filter((entry) =>
-    gameKeys.has(buildGameKey(entry))
-  )
-}
-
-function buildChartData(
-  playerEntries: SavedBattingGameEntry[],
-  teamEntries: SavedBattingGameEntry[]
-): ChartPoint[] {
-  return playerEntries.map((playerEntry) => {
-    const sameGameTeamEntries = teamEntries.filter(
-      (teamEntry) =>
-        teamEntry.gameMeta.date === playerEntry.gameMeta.date &&
-        teamEntry.gameMeta.matchNumber === playerEntry.gameMeta.matchNumber
-    )
-
-    const teamTotals = sameGameTeamEntries.reduce(
-      (acc, entry) => {
-        acc.ab += entry.statLine.AB
-        acc.h += entry.statLine.H
-        acc.doubles += entry.statLine.doubles
-        acc.triples += entry.statLine.triples
-        acc.hr += entry.statLine.HR
-        acc.bb += entry.statLine.BB
-        acc.hbp += entry.statLine.HBP ?? 0
-        acc.sf += entry.statLine.SF ?? 0
-        return acc
-      },
-      { ab: 0, h: 0, doubles: 0, triples: 0, hr: 0, bb: 0, hbp: 0, sf: 0 }
-    )
-
-    const playerAvg = getEntryAvg(playerEntry)
-    const playerObp = getEntryObp(playerEntry)
-    const playerSlg = getEntrySlg(playerEntry)
-    const playerOps = playerObp + playerSlg
-
-    const teamSingles = Math.max(
-      teamTotals.h - teamTotals.doubles - teamTotals.triples - teamTotals.hr,
-      0
-    )
-
-    const teamTotalBases =
-      teamSingles +
-      teamTotals.doubles * 2 +
-      teamTotals.triples * 3 +
-      teamTotals.hr * 4
-
-    const teamAvg = teamTotals.ab > 0 ? teamTotals.h / teamTotals.ab : 0
-
-    const teamObpDenominator =
-      teamTotals.ab + teamTotals.bb + teamTotals.hbp + teamTotals.sf
-    const teamObp =
-      teamObpDenominator > 0
-        ? (teamTotals.h + teamTotals.bb + teamTotals.hbp) / teamObpDenominator
-        : 0
-
-    const teamSlg = teamTotals.ab > 0 ? teamTotalBases / teamTotals.ab : 0
-    const teamOps = teamObp + teamSlg
-
-    return {
-      label: formatGameLabel(playerEntry.gameMeta.date),
-      fullLabel: `${playerEntry.gameMeta.date} vs ${playerEntry.gameMeta.opponent}`,
-      playerAvg: Number(playerAvg.toFixed(3)),
-      teamAvg: Number(teamAvg.toFixed(3)),
-      playerObp: Number(playerObp.toFixed(3)),
-      teamObp: Number(teamObp.toFixed(3)),
-      playerOps: Number(playerOps.toFixed(3)),
-      teamOps: Number(teamOps.toFixed(3)),
-    }
-  })
-}
-
-type StatCardStyle = { bg: string; label: string; value: string }
-
-function getStatCardStyle(
-  playerValue: number,
-  teamValue: number,
-  hasMinimumSample: boolean
-): StatCardStyle {
-  const map: Record<string, StatCardStyle> = {
-    emerald: { bg: "bg-emerald-50",  label: "text-emerald-700", value: "text-emerald-900" },
-    green:   { bg: "bg-green-50",    label: "text-green-700",   value: "text-green-900"   },
-    neutral: { bg: "bg-[#f7f8f3]",   label: "text-gray-400",    value: "text-green-950"   },
-    rose:    { bg: "bg-rose-50",      label: "text-rose-600",    value: "text-rose-900"    },
-    red:     { bg: "bg-red-50",       label: "text-red-600",     value: "text-red-900"     },
-  }
-
-  if (!hasMinimumSample || teamValue <= 0) return map.neutral
-  const ratio = playerValue / teamValue
-  if (ratio >= 1.25) return map.emerald
-  if (ratio >= 1.08) return map.green
-  if (ratio < 0.7) return map.red
-  if (ratio < 0.85) return map.rose
-  return map.neutral
-}
-
-function getChartValues(point: ChartPoint, metric: ChartMetric) {
-  if (metric === "obp") {
-    return {
-      player: point.playerObp,
-      team: point.teamObp,
-    }
-  }
-
-  if (metric === "ops") {
-    return {
-      player: point.playerOps,
-      team: point.teamOps,
-    }
-  }
-
-  return {
-    player: point.playerAvg,
-    team: point.teamAvg,
-  }
-}
-
-function getPointPosition(
-  point: ChartPoint,
-  index: number,
-  total: number,
-  metric: ChartMetric,
-  chartMax: number
-) {
-  const plotWidth = chartWidth - chartPadding.left - chartPadding.right
-  const plotHeight = chartHeight - chartPadding.top - chartPadding.bottom
-  const x =
-    total === 1
-      ? chartPadding.left + plotWidth / 2
-      : chartPadding.left + (plotWidth / (total - 1)) * index
-
-  const { player, team } = getChartValues(point, metric)
-
-  const getY = (value: number) =>
-    chartPadding.top +
-    plotHeight -
-    (Math.min(value, chartMax) / chartMax) * plotHeight
-
-  return {
-    x,
-    playerY: getY(player),
-    teamY: getY(team),
-  }
-}
-
-function buildPolyline(
-  data: ChartPoint[],
-  valueKey: "playerY" | "teamY",
-  metric: ChartMetric,
-  chartMax: number
-) {
-  return data
-    .map((point, index) => {
-      const position = getPointPosition(
-        point,
-        index,
-        data.length,
-        metric,
-        chartMax
-      )
-      return `${position.x},${position[valueKey]}`
-    })
-    .join(" ")
-}
-
-
-function clampTooltipY(topY: number) {
-  return Math.max(chartPadding.top + 4, topY)
-}
-
-function getChartTitle(metric: ChartMetric) {
-  if (metric === "obp") return "OBP Trend"
-  if (metric === "ops") return "OPS Trend"
-  return "AVG Trend"
-}
-
-function getMetricBaseMax(metric: ChartMetric) {
-  if (metric === "ops") return 1.0
-  return 0.6
-}
-
-function getChartMax(data: ChartPoint[], metric: ChartMetric) {
-  const values = data.flatMap((point) => {
-    const current = getChartValues(point, metric)
-    return [current.player, current.team]
-  })
-
-  const maxValue = Math.max(...values, 0)
-  const paddedMax = maxValue * 1.15
-  const baseMax = getMetricBaseMax(metric)
-
-  return Math.max(baseMax, paddedMax)
-}
-
 export default function PerformanceTrendCard({
   playerEntries,
   teamEntries,
   seasonYear,
 }: PerformanceTrendCardProps) {
-  const [activeTab, setActiveTab] = useState<TrendTab>("last3")
-  const [activeMetric, setActiveMetric] = useState<ChartMetric>("avg")
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
-  const filteredPlayerEntries = useMemo(
-    () => filterPlayerEntriesByTab(playerEntries, activeTab, seasonYear),
-    [playerEntries, activeTab, seasonYear]
-  )
-
-  const filteredTeamEntries = useMemo(
-    () => filterTeamEntriesForPlayerWindow(teamEntries, filteredPlayerEntries),
-    [teamEntries, filteredPlayerEntries]
-  )
-
-  const playerSummary = useMemo(
-    () => getSummary(filteredPlayerEntries),
-    [filteredPlayerEntries]
-  )
-
-  const teamSeasonEntries = useMemo(
-    () => teamEntries.filter((e) => e.gameMeta.seasonYear === seasonYear),
-    [teamEntries, seasonYear]
-  )
-
-  const teamSummary = useMemo(
-    () => getSummary(teamSeasonEntries),
-    [teamSeasonEntries]
-  )
-  const playerPlateAppearances = useMemo(
-    () =>
-      filteredPlayerEntries.reduce(
-        (total, entry) =>
-          total +
-          entry.statLine.AB +
-          entry.statLine.BB +
-          (entry.statLine.HBP ?? 0) +
-          (entry.statLine.SF ?? 0),
-        0
-      ),
-    [filteredPlayerEntries]
-  )
-
-  const chartData = useMemo(
-    () => buildChartData(filteredPlayerEntries, filteredTeamEntries),
-    [filteredPlayerEntries, filteredTeamEntries]
-  )
-
-  const chartMax = useMemo(
-    () => getChartMax(chartData, activeMetric),
-    [chartData, activeMetric]
-  )
-
-  const yTicks = [
-    chartMax,
-    chartMax * 0.75,
-    chartMax * 0.5,
-    chartMax * 0.25,
-    0,
-  ]
-
-  const playerLinePoints = buildPolyline(
-    chartData,
-    "playerY",
-    activeMetric,
-    chartMax
-  )
-
-  const teamLinePoints = buildPolyline(
-    chartData,
-    "teamY",
-    activeMetric,
-    chartMax
-  )
-
-  const areaBottomY = chartHeight - chartPadding.bottom
-  const areaPlotWidth = chartWidth - chartPadding.left - chartPadding.right
-  const areaFirstX = chartData.length <= 1 ? chartPadding.left + areaPlotWidth / 2 : chartPadding.left
-  const areaLastX = chartData.length <= 1 ? chartPadding.left + areaPlotWidth / 2 : chartPadding.left + areaPlotWidth
+  const {
+    activeTab, setActiveTab,
+    activeMetric, setActiveMetric,
+    filteredPlayerEntries,
+    playerSummary, teamSummary,
+    playerPlateAppearances,
+    chartData, chartMax, yTicks,
+    playerLinePoints, teamLinePoints,
+    areaBottomY, areaFirstX, areaLastX,
+  } = usePerformanceTrend(playerEntries, teamEntries, seasonYear)
 
   return (
     <section className="rounded-2xl bg-white p-5 shadow-sm">
@@ -452,41 +50,18 @@ export default function PerformanceTrendCard({
         </div>
 
         <div className="grid grid-cols-3 rounded-xl bg-gray-100 p-1 sm:flex sm:items-center sm:gap-2">
-          <button
-            type="button"
-            onClick={() => setActiveTab("last3")}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${
-              activeTab === "last3"
-                ? "bg-white text-green-900 shadow-sm"
-                : "text-gray-600"
-            }`}
-          >
-            Last 3
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("last5")}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${
-              activeTab === "last5"
-                ? "bg-white text-green-900 shadow-sm"
-                : "text-gray-600"
-            }`}
-          >
-            Last 5
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("season")}
-            className={`rounded-lg px-3 py-2 text-sm font-medium ${
-              activeTab === "season"
-                ? "bg-white text-green-900 shadow-sm"
-                : "text-gray-600"
-            }`}
-          >
-            Seasons
-          </button>
+          {(["last3", "last5", "season"] as const).map((tab) => (
+            <button
+              key={tab}
+              type="button"
+              onClick={() => setActiveTab(tab)}
+              className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                activeTab === tab ? "bg-white text-green-900 shadow-sm" : "text-gray-600"
+              }`}
+            >
+              {tab === "last3" ? "Last 3" : tab === "last5" ? "Last 5" : "Seasons"}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -520,51 +95,25 @@ export default function PerformanceTrendCard({
           <div className="mt-4 rounded-xl bg-[#f7f8f3] p-4">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700">
-                  {getChartTitle(activeMetric)}
-                </p>
+                <p className="text-sm font-medium text-gray-700">{getChartTitle(activeMetric)}</p>
                 <p className="text-xs text-gray-500">
-                  {filteredPlayerEntries.length} game
-                  {filteredPlayerEntries.length === 1 ? "" : "s"}
+                  {filteredPlayerEntries.length} game{filteredPlayerEntries.length === 1 ? "" : "s"}
                 </p>
               </div>
 
               <div className="grid grid-cols-3 rounded-xl bg-white p-1 sm:flex sm:items-center sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveMetric("avg")}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                    activeMetric === "avg"
-                      ? "bg-green-900 text-white shadow-sm"
-                      : "text-gray-600"
-                  }`}
-                >
-                  AVG
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveMetric("obp")}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                    activeMetric === "obp"
-                      ? "bg-green-900 text-white shadow-sm"
-                      : "text-gray-600"
-                  }`}
-                >
-                  OBP
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveMetric("ops")}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium ${
-                    activeMetric === "ops"
-                      ? "bg-green-900 text-white shadow-sm"
-                      : "text-gray-600"
-                  }`}
-                >
-                  OPS
-                </button>
+                {(["avg", "obp", "ops"] as const).map((metric) => (
+                  <button
+                    key={metric}
+                    type="button"
+                    onClick={() => setActiveMetric(metric)}
+                    className={`rounded-lg px-3 py-2 text-sm font-medium ${
+                      activeMetric === metric ? "bg-green-900 text-white shadow-sm" : "text-gray-600"
+                    }`}
+                  >
+                    {metric.toUpperCase()}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -578,45 +127,19 @@ export default function PerformanceTrendCard({
                 {yTicks.map((tick) => {
                   const y =
                     chartPadding.top +
-                    (chartHeight - chartPadding.top - chartPadding.bottom) *
-                      (1 - tick / chartMax)
-
+                    (chartHeight - chartPadding.top - chartPadding.bottom) * (1 - tick / chartMax)
                   return (
                     <g key={tick}>
-                      <line
-                        x1={chartPadding.left}
-                        x2={chartWidth - chartPadding.right}
-                        y1={y}
-                        y2={y}
-                        stroke="#e5e7eb"
-                        strokeDasharray="4 4"
-                      />
-                      <text
-                        x={chartPadding.left - 10}
-                        y={y + 4}
-                        textAnchor="end"
-                        className="fill-gray-500 text-[11px]"
-                      >
+                      <line x1={chartPadding.left} x2={chartWidth - chartPadding.right} y1={y} y2={y} stroke="#e5e7eb" strokeDasharray="4 4" />
+                      <text x={chartPadding.left - 10} y={y + 4} textAnchor="end" className="fill-gray-500 text-[11px]">
                         {fmtRate(tick)}
                       </text>
                     </g>
                   )
                 })}
 
-                <line
-                  x1={chartPadding.left}
-                  x2={chartPadding.left}
-                  y1={chartPadding.top}
-                  y2={chartHeight - chartPadding.bottom}
-                  stroke="#d1d5db"
-                />
-                <line
-                  x1={chartPadding.left}
-                  x2={chartWidth - chartPadding.right}
-                  y1={chartHeight - chartPadding.bottom}
-                  y2={chartHeight - chartPadding.bottom}
-                  stroke="#d1d5db"
-                />
+                <line x1={chartPadding.left} x2={chartPadding.left} y1={chartPadding.top} y2={chartHeight - chartPadding.bottom} stroke="#d1d5db" />
+                <line x1={chartPadding.left} x2={chartWidth - chartPadding.right} y1={chartHeight - chartPadding.bottom} y2={chartHeight - chartPadding.bottom} stroke="#d1d5db" />
 
                 <defs>
                   <linearGradient id="player-area-fill" x1="0" y1="0" x2="0" y2="1">
@@ -628,45 +151,19 @@ export default function PerformanceTrendCard({
                     <stop offset="100%" stopColor="#2563eb" stopOpacity="0" />
                   </linearGradient>
                 </defs>
+
                 {chartData.length >= 1 && (
                   <>
-                    <polygon
-                      points={`${teamLinePoints} ${areaLastX},${areaBottomY} ${areaFirstX},${areaBottomY}`}
-                      fill="url(#team-area-fill)"
-                    />
-                    <polygon
-                      points={`${playerLinePoints} ${areaLastX},${areaBottomY} ${areaFirstX},${areaBottomY}`}
-                      fill="url(#player-area-fill)"
-                    />
+                    <polygon points={`${teamLinePoints} ${areaLastX},${areaBottomY} ${areaFirstX},${areaBottomY}`} fill="url(#team-area-fill)" />
+                    <polygon points={`${playerLinePoints} ${areaLastX},${areaBottomY} ${areaFirstX},${areaBottomY}`} fill="url(#player-area-fill)" />
                   </>
                 )}
-                <polyline
-                  points={teamLinePoints}
-                  fill="none"
-                  stroke="#2563eb"
-                  strokeWidth="2"
-                  strokeDasharray="6 4"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
-                <polyline
-                  points={playerLinePoints}
-                  fill="none"
-                  stroke="#166534"
-                  strokeWidth="3"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
-                />
+
+                <polyline points={teamLinePoints} fill="none" stroke="#2563eb" strokeWidth="2" strokeDasharray="6 4" strokeLinejoin="round" strokeLinecap="round" />
+                <polyline points={playerLinePoints} fill="none" stroke="#166534" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
 
                 {chartData.map((point, index) => {
-                  const position = getPointPosition(
-                    point,
-                    index,
-                    chartData.length,
-                    activeMetric,
-                    chartMax
-                  )
-
+                  const position = getPointPosition(point, index, chartData.length, activeMetric, chartMax)
                   const values = getChartValues(point, activeMetric)
                   const isHovered = hoveredIndex === index
 
@@ -676,71 +173,23 @@ export default function PerformanceTrendCard({
                       onMouseEnter={() => setHoveredIndex(index)}
                       onMouseLeave={() => setHoveredIndex(null)}
                     >
-                      <circle
-                        cx={position.x}
-                        cy={position.teamY}
-                        r={isHovered ? "5" : "3.5"}
-                        fill="#2563eb"
-                      />
-                      <circle
-                        cx={position.x}
-                        cy={position.playerY}
-                        r={isHovered ? "6" : "4.5"}
-                        fill="#166534"
-                      />
+                      <circle cx={position.x} cy={position.teamY} r={isHovered ? "5" : "3.5"} fill="#2563eb" />
+                      <circle cx={position.x} cy={position.playerY} r={isHovered ? "6" : "4.5"} fill="#166534" />
 
-                      {isHovered &&
-                        (() => {
-                          const tooltipY = clampTooltipY(
-                            Math.min(position.playerY, position.teamY) - 42
-                          )
-                          const tooltipX = Math.max(chartPadding.left, Math.min(position.x - 60, chartWidth - chartPadding.right - 120))
+                      {isHovered && (() => {
+                        const tooltipY = clampTooltipY(Math.min(position.playerY, position.teamY) - 42)
+                        const tooltipX = Math.max(chartPadding.left, Math.min(position.x - 60, chartWidth - chartPadding.right - 120))
+                        return (
+                          <>
+                            <rect x={tooltipX} y={tooltipY} width="120" height="48" rx="6" fill="#111827" opacity="0.94" />
+                            <text x={tooltipX + 60} y={tooltipY + 13} textAnchor="middle" className="fill-white text-[10px]">{point.fullLabel}</text>
+                            <text x={tooltipX + 60} y={tooltipY + 27} textAnchor="middle" className="fill-white text-[11px]">{`Player ${fmtRate(values.player)}`}</text>
+                            <text x={tooltipX + 60} y={tooltipY + 40} textAnchor="middle" className="fill-white text-[11px]">{`Team ${fmtRate(values.team)}`}</text>
+                          </>
+                        )
+                      })()}
 
-                          return (
-                            <>
-                              <rect
-                                x={tooltipX}
-                                y={tooltipY}
-                                width="120"
-                                height="48"
-                                rx="6"
-                                fill="#111827"
-                                opacity="0.94"
-                              />
-                              <text
-                                x={tooltipX + 60}
-                                y={tooltipY + 13}
-                                textAnchor="middle"
-                                className="fill-white text-[10px]"
-                              >
-                                {point.fullLabel}
-                              </text>
-                              <text
-                                x={tooltipX + 60}
-                                y={tooltipY + 27}
-                                textAnchor="middle"
-                                className="fill-white text-[11px]"
-                              >
-                                {`Player ${fmtRate(values.player)}`}
-                              </text>
-                              <text
-                                x={tooltipX + 60}
-                                y={tooltipY + 40}
-                                textAnchor="middle"
-                                className="fill-white text-[11px]"
-                              >
-                                {`Team ${fmtRate(values.team)}`}
-                              </text>
-                            </>
-                          )
-                        })()}
-
-                      <text
-                        x={position.x}
-                        y={chartHeight - 12}
-                        textAnchor="middle"
-                        className="fill-gray-500 text-[11px]"
-                      >
+                      <text x={position.x} y={chartHeight - 12} textAnchor="middle" className="fill-gray-500 text-[11px]">
                         {point.label}
                       </text>
                     </g>

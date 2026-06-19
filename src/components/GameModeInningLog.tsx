@@ -7,13 +7,9 @@ import type {
   LivePlay,
   LivePlayResult,
 } from "./RecordGamePage.types"
-import {
-  battingResultBadge,
-  estimateRunsForPitching,
-  livePitchResultLabels,
-  liveResultLabels,
-  pitchingResultBadge,
-} from "./RecordGamePage.utils"
+import { liveResultLabels, livePitchResultLabels } from "./gameConstants"
+import { estimateRunsForPitching } from "./gameStatUtils"
+import { battingResultBadge, pitchingResultBadge } from "./gameLiveUtils"
 
 type Props = {
   awayScore: number

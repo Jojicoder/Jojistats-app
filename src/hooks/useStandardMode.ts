@@ -10,7 +10,9 @@ import type {
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
 } from "../types"
-import type { RecordGamePageProps } from "./RecordGamePage.types"
+import type { RecordGamePageProps } from "../components/RecordGamePage.types"
+import { createEmptyPitchingLine } from "../components/gameConstants"
+import { validateScore } from "../utils/scoreValidation"
 
 type Input = {
   activePlayer: Player
@@ -59,17 +61,6 @@ export function useStandardMode({
   onUpdateSavedPitchingEntry,
   onNewGame,
 }: Input) {
-  const emptyPitchingEntry: PitchingEntryData = {
-    inningsPitchedOuts: 0,
-    hitsAllowed: 0,
-    runsAllowed: 0,
-    earnedRuns: 0,
-    walks: 0,
-    hitBatters: 0,
-    strikeouts: 0,
-    homeRunsAllowed: 0,
-    note: "",
-  }
   const defaultGamePositions = useMemo(() => {
     const base =
       isEditingSavedEntry && editingGamePositions?.length
@@ -305,7 +296,7 @@ export function useStandardMode({
           playerName: activePlayer.name,
         },
       ])
-      onPitchingEntryChange(emptyPitchingEntry)
+      onPitchingEntryChange(createEmptyPitchingLine())
     } catch {
       // Parent save handlers surface the message through saveError.
     } finally {
@@ -317,26 +308,12 @@ export function useStandardMode({
     setPendingPitchingEntries((prev) => prev.filter((entry) => entry.playerId !== playerId))
   }
 
-  const validateScore = (entries: { RBI: number }[]): boolean => {
-    if (gameMeta.teamScore == null) return true
-    const totalRbi = entries.reduce((sum, e) => sum + e.RBI, 0)
-    const errorRuns = gameMeta.errorRuns ?? 0
-    const expected = totalRbi + errorRuns
-    if (gameMeta.teamScore !== expected) {
-      window.alert(
-        `Score mismatch!\n\nTeam Score entered: ${gameMeta.teamScore}\nTotal RBI: ${totalRbi}${errorRuns > 0 ? ` + Error Runs: ${errorRuns}` : ""} = ${expected}\n\nPlease fix the score, RBI totals, or Error Runs before saving.`
-      )
-      return false
-    }
-    return true
-  }
-
   const handleSave = async () => {
     if (
       isEditingSavedEntry ||
       !isMetaComplete ||
       (pendingEntries.length === 0 && pendingPitchingEntries.length === 0) ||
-      (pendingEntries.length > 0 && !validateScore(pendingEntries))
+      (pendingEntries.length > 0 && !validateScore(gameMeta, pendingEntries))
     ) return
     try {
       setIsSaving(true)
@@ -368,7 +345,7 @@ export function useStandardMode({
       resetStandardDraft()
       return
     }
-    if (pendingEntries.length > 0 && !validateScore(pendingEntries)) return
+    if (pendingEntries.length > 0 && !validateScore(gameMeta, pendingEntries)) return
 
     try {
       setIsSaving(true)

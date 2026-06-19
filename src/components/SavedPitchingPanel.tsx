@@ -1,5 +1,5 @@
 import type { SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
-import { formatLiveInnings } from "./RecordGamePage.utils"
+import { formatLiveInnings } from "./gameLiveUtils"
 
 type Props = {
   savedPitchingEntries: SavedPitchingGameEntry[]

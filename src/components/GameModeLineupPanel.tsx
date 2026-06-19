@@ -1,6 +1,6 @@
 import type { Player, PitchingEntryData } from "../types"
 import type { LivePlay } from "./RecordGamePage.types"
-import { formatLiveInnings, getPlayerLabel } from "./RecordGamePage.utils"
+import { formatLiveInnings, getPlayerLabel } from "./gameLiveUtils"
 
 type Props = {
   allPlayers: Player[]

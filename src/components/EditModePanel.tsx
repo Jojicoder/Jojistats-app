@@ -4,7 +4,8 @@ import GameMetaFields from "./GameMetaFields"
 import SavedEntriesList from "./SavedEntriesList"
 import BattingStatFields from "./BattingStatFields"
 import PitchingStatFields from "./PitchingStatFields"
-import { getPlayerLabel, getGameResult, getGameScore, formatLiveInnings, gamePositionOptions } from "./RecordGamePage.utils"
+import { gamePositionOptions } from "./gameConstants"
+import { getPlayerLabel, getGameResult, getGameScore, formatLiveInnings } from "./gameLiveUtils"
 
 type Props = {
   teamName: string

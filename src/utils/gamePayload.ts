@@ -5,7 +5,7 @@ import type {
   PendingPitchingEntry,
   PitchingEntryData,
 } from "../types"
-import type { FullGamePayload } from "../api/api"
+import type { FullGamePayload } from "../api/games"
 
 export function buildGamePayload(teamId: number, gameMeta: DraftGameMeta): FullGamePayload["game"] {
   return {

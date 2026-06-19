@@ -10,7 +10,7 @@ import type {
   RunnerOutAction,
   RunnerRbiAction,
   RunnerRunAction,
-} from "./RecordGamePage.types"
+} from "../components/RecordGamePage.types"
 
 type DraftState = {
   lineupIds: string[]

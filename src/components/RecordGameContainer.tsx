@@ -14,7 +14,7 @@ import {
   updateFullGame,
   updateGameInfo,
   updatePitchingStatEntry,
-} from "../api/api"
+} from "../api/games"
 import RecordGamePage from "./RecordGamePage"
 import {
   buildBattingStatPayload,

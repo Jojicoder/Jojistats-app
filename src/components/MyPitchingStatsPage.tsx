@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import type { LeagueKey, Player, SavedBattingGameEntry, SavedPitchingGameEntry } from "../types"
 import { usePitchingStats } from "../hooks/usePitchingStats"
 import PitchingTrendChart from "./PitchingTrendChart"
@@ -92,6 +92,11 @@ export default function MyPitchingStatsPage({
   onModeChange,
 }: Props) {
   const [selectedEntry, setSelectedEntry] = useState<SavedPitchingGameEntry | null>(null)
+
+  useEffect(() => {
+    setSelectedEntry(null)
+  }, [activePlayer.id])
+
   const displayedEntries = selectedEntry ? [selectedEntry] : entries
   const statLines = displayedEntries.map((e) => e.statLine)
   const stats = usePitchingStats(statLines)

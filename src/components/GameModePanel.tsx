@@ -9,11 +9,9 @@ import GameModeActionsCard from "./GameModeActionsCard"
 import GameModeInningLog from "./GameModeInningLog"
 import GameModeLineupPanel from "./GameModeLineupPanel"
 import GameModeStatusPanel from "./GameModeStatusPanel"
-import {
-  getPlayerLabel, formatLiveInnings, battingResultClass,
-  pitchingResultClass, liveResultLabels, livePitchResultLabels, emptyBases,
-  estimateRbiForBatting, battingResultBadge,
-} from "./RecordGamePage.utils"
+import { emptyBases, liveResultLabels, livePitchResultLabels } from "./gameConstants"
+import { estimateRbiForBatting } from "./gameStatUtils"
+import { getPlayerLabel, formatLiveInnings, battingResultClass, pitchingResultClass, battingResultBadge } from "./gameLiveUtils"
 
 type Props = {
   // Game meta

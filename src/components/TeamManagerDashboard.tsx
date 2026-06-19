@@ -3,6 +3,7 @@ import type { Player, SavedBattingGameEntry, SavedPitchingGameEntry, Team } from
 import { calcBattingMetrics, calcPitchingMetrics, fmtRate, fmtDecimal, fmtIp } from "../utils/metrics"
 import type { LeagueConfig, LineupScoreWeights } from "../config/leagueConfig"
 import { getLeagueConfig } from "../config/leagueConfig"
+import { getPlayerLabel } from "./gameLiveUtils"
 
 type ManagerMode = "batting" | "pitching"
 type LineupStyle = "balanced" | "obp" | "power" | "contact"
@@ -19,10 +20,6 @@ type BattingSummary = {
   metrics: ReturnType<typeof calcBattingMetrics>
 }
 
-
-function getPlayerLabel(player: Player) {
-  return player.jerseyNumber != null ? `#${player.jerseyNumber} ${player.name}` : player.name
-}
 
 function getPositionGroup(position: string) {
   if (position === "P") return "Pitchers"

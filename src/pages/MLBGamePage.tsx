@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams, useSearchParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import MLBGameDetails from "../components/mlb/MLBGameDetails"
-import { getAllTeams } from "../components/mlb/api"
+import { getAllTeams } from "../api/mlb"
 import { applyGlobalMLBTheme, clearGlobalMLBTheme, getTeamThemeStyle } from "../components/mlb/teamTheme"
 import type { MLBTeam } from "../components/mlb/types"
 

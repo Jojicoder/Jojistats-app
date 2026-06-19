@@ -7,8 +7,9 @@ import type {
   LivePitchResult,
   LivePlay,
   LivePlayResult,
-} from "./RecordGamePage.types"
-import { getActionTimeFromId, recomputeLiveGame } from "./RecordGamePage.utils"
+} from "../components/RecordGamePage.types"
+import { getActionTimeFromId } from "../components/gameStatUtils"
+import { recomputeLiveGame } from "../components/gameLiveUtils"
 
 type LivePitchingStats = ReturnType<typeof recomputeLiveGame>["livePitchingEntry"]
 

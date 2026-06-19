@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
-import { getGames } from "./api"
+import { getGames } from "../../api/mlb"
 import type { MLBGame } from "./types"
 
 // ── Today's Games ─────────────────────────────────────────────────────

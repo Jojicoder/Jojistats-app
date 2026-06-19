@@ -10,19 +10,7 @@ import {
   fetchTeamById,
   fetchUserAccessByEmail,
 } from "../api/supabase-api"
-import {
-  createFullGame,
-  deleteBattingStatEntry,
-  deleteGame,
-  deletePitchingStatEntry,
-  updateBattingStatEntry,
-  updateFullGame,
-  updateGameInfo,
-  updatePitchingStatEntry,
-} from "../api/api"
-
 import RecordGamePage from "../components/RecordGamePage"
-import { buildFullGamePayload } from "../utils/gamePayload"
 import {
   withLoadTimeout,
   readOfflineCache,
@@ -30,6 +18,7 @@ import {
   useOfflineGameCache,
 } from "../hooks/useOfflineGameCache"
 import type { TeamSnapshot } from "../hooks/useOfflineGameCache"
+import { useGameRecordCRUD } from "../hooks/useGameRecordCRUD"
 
 import type {
   Player,
@@ -37,8 +26,6 @@ import type {
   BattingEntryData,
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
-  PendingBattingEntry,
-  PendingPitchingEntry,
   PitchingEntryData,
 } from "../types"
 import type { GameRow } from "../api/supabase-api"
@@ -48,60 +35,28 @@ function getPreferredPlayer(players: Player[], preferredPlayerId?: string) {
 }
 
 const emptyBattingEntry: BattingEntryData = {
-  AB: 0,
-  H: 0,
-  doubles: 0,
-  triples: 0,
-  HR: 0,
-  RBI: 0,
-  BB: 0,
-  HBP: 0,
-  SF: 0,
-  SO: 0,
-  SB: 0,
-  CS: 0,
-  note: "",
+  AB: 0, H: 0, doubles: 0, triples: 0, HR: 0, RBI: 0,
+  BB: 0, HBP: 0, SF: 0, SO: 0, SB: 0, CS: 0, note: "",
 }
-
 const emptyPitchingEntry: PitchingEntryData = {
-  inningsPitchedOuts: 0,
-  hitsAllowed: 0,
-  runsAllowed: 0,
-  earnedRuns: 0,
-  walks: 0,
-  hitBatters: 0,
-  strikeouts: 0,
-  homeRunsAllowed: 0,
-  note: "",
+  inningsPitchedOuts: 0, hitsAllowed: 0, runsAllowed: 0, earnedRuns: 0,
+  walks: 0, hitBatters: 0, strikeouts: 0, homeRunsAllowed: 0, note: "",
 }
 
 function mapPlayer(row: {
-  id: number
-  team_id: number
-  name: string
-  position: string
-  jersey_number: number | null
-  season_year: number
-  is_archived: boolean | number | null
+  id: number; team_id: number; name: string; position: string
+  jersey_number: number | null; season_year: number; is_archived: boolean | number | null
 }): Player {
   return {
-    id: String(row.id),
-    teamId: String(row.team_id),
-    name: row.name,
+    id: String(row.id), teamId: String(row.team_id), name: row.name,
     positions: [row.position as import("../types").Position],
-    jerseyNumber: row.jersey_number,
-    seasonYear: row.season_year,
+    jerseyNumber: row.jersey_number, seasonYear: row.season_year,
     isArchived: Boolean(row.is_archived),
   }
 }
 
 function getNextMatchNumber(games: GameRow[]) {
-  const maxMatchNumber = games.reduce(
-    (max, game) => Math.max(max, Number(game.match_number) || 0),
-    0
-  )
-
-  return maxMatchNumber + 1
+  return games.reduce((max, game) => Math.max(max, Number(game.match_number) || 0), 0) + 1
 }
 
 export default function GameRecordPage() {
@@ -117,18 +72,8 @@ export default function GameRecordPage() {
   const [teamId, setTeamId] = useState<number | null>(null)
   const [seasonYear, setSeasonYear] = useState(new Date().getFullYear())
   const [avatarUrl, setAvatarUrl] = useState("")
-
-  const [gameMeta, setGameMeta] = useState<DraftGameMeta>({
-    date: "",
-    opponent: "",
-    location: "",
-    seasonYear: new Date().getFullYear(),
-    matchNumber: 1,
-  })
-
-  const [currentEntry, setCurrentEntry] =
-    useState<BattingEntryData>(emptyBattingEntry)
-
+  const [gameMeta, setGameMeta] = useState<DraftGameMeta>({ date: "", opponent: "", location: "", seasonYear: new Date().getFullYear(), matchNumber: 1 })
+  const [currentEntry, setCurrentEntry] = useState<BattingEntryData>(emptyBattingEntry)
   const [savedEntries, setSavedEntries] = useState<SavedBattingGameEntry[]>([])
   const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<Record<string, SavedBattingGameEntry[]>>({})
   const [pitchingEntriesByPlayer, setPitchingEntriesByPlayer] = useState<Record<string, SavedPitchingGameEntry[]>>({})
@@ -136,33 +81,51 @@ export default function GameRecordPage() {
   const [editingSavedEntryId, setEditingSavedEntryId] = useState<string | null>(null)
   const [editingSavedEntry, setEditingSavedEntry] = useState<SavedBattingGameEntry | null>(null)
   const [preEditSnapshot, setPreEditSnapshot] = useState<{ gameMeta: DraftGameMeta; currentEntry: BattingEntryData } | null>(null)
-  const [editingSavedPitchingEntry, setEditingSavedPitchingEntry] =
-    useState<SavedPitchingGameEntry | null>(null)
+  const [editingSavedPitchingEntry, setEditingSavedPitchingEntry] = useState<SavedPitchingGameEntry | null>(null)
+  const [recordMode, setRecordMode] = useState<"batting" | "pitching">("batting")
+  const [pitchingEntry, setPitchingEntry] = useState<PitchingEntryData>(emptyPitchingEntry)
 
-  const [recordMode, setRecordMode] = useState<"batting" | "pitching">(
-    "batting"
-  )
-  const teamSavedEntries = useMemo(
-    () => Object.values(savedEntriesByPlayer).flat(),
-    [savedEntriesByPlayer]
-  )
-  const teamSavedPitchingEntries = useMemo(
-    () => Object.values(pitchingEntriesByPlayer).flat(),
-    [pitchingEntriesByPlayer]
-  )
+  const teamSavedEntries = useMemo(() => Object.values(savedEntriesByPlayer).flat(), [savedEntriesByPlayer])
+  const teamSavedPitchingEntries = useMemo(() => Object.values(pitchingEntriesByPlayer).flat(), [pitchingEntriesByPlayer])
   const savedPitchingEntries = useMemo(
     () => (activePlayer ? pitchingEntriesByPlayer[activePlayer.id] : undefined) ?? [],
     [activePlayer, pitchingEntriesByPlayer]
   )
-
-  const [pitchingEntry, setPitchingEntry] =
-    useState<PitchingEntryData>(emptyPitchingEntry)
 
   const { isOnline, offlineQueueSize, enqueueOfflineGame, handleOnline, handleOffline } =
     useOfflineGameCache((refreshed, playerId) => {
       setSavedEntriesByPlayer(refreshed)
       setSavedEntries(refreshed[playerId] ?? [])
     })
+
+  const crudHandlers = useGameRecordCRUD({
+    activePlayer,
+    allPlayers,
+    teamId,
+    seasonYear,
+    gameMeta,
+    pitchingEntry,
+    editingSavedEntry,
+    editingSavedEntryId,
+    editingSavedPitchingEntry,
+    preEditSnapshot,
+    seasonGames,
+    setSaveError,
+    setSaveSuccess,
+    setCurrentEntry,
+    setPitchingEntry,
+    setSavedEntriesByPlayer,
+    setPitchingEntriesByPlayer,
+    setSavedEntries,
+    setSeasonGames,
+    setGameMeta,
+    setEditingSavedEntryId,
+    setEditingSavedEntry,
+    setEditingSavedPitchingEntry,
+    setPreEditSnapshot,
+    setRecordMode,
+    enqueueOfflineGame,
+  })
 
   const applyTeamShell = useCallback((team: TeamSnapshot, mappedPlayers: Player[], firstPlayer: Player) => {
     setTeamName(team.name)
@@ -174,14 +137,7 @@ export default function GameRecordPage() {
   }, [])
 
   const loadProfileAvatar = useCallback((userId: string) => {
-    withLoadTimeout(
-      supabase
-        .from("profiles")
-        .select("avatar_url")
-        .eq("id", userId)
-        .maybeSingle(),
-      "Profile load"
-    )
+    withLoadTimeout(supabase.from("profiles").select("avatar_url").eq("id", userId).maybeSingle(), "Profile load")
       .then(({ data: profile }) => setAvatarUrl(profile?.avatar_url ? withAvatarCacheBust(profile.avatar_url) : ""))
       .catch((error) => console.error(error))
   }, [])
@@ -200,12 +156,7 @@ export default function GameRecordPage() {
         setPitchingEntriesByPlayer(pitchingEntries)
         setSavedEntries(entries[firstPlayer.id] ?? [])
         setSeasonGames(games)
-        setGameMeta((prev) => ({
-          ...prev,
-          seasonYear: team.current_season_year,
-          matchNumber: getNextMatchNumber(games),
-        }))
-
+        setGameMeta((prev) => ({ ...prev, seasonYear: team.current_season_year, matchNumber: getNextMatchNumber(games) }))
         writeOfflineCache({ team, players: mappedPlayers, savedEntriesByPlayer: entries, preferredPlayerId: firstPlayer.id })
       })
       .catch((error) => {
@@ -214,18 +165,11 @@ export default function GameRecordPage() {
       })
   }, [])
 
-  const loadTeam = useCallback(async (
-    team: TeamSnapshot,
-    preferredPlayerId?: string
-  ) => {
-    const playerRows = await withLoadTimeout(
-      fetchPlayers(team.id, team.current_season_year),
-      "Players load"
-    )
+  const loadTeam = useCallback(async (team: TeamSnapshot, preferredPlayerId?: string) => {
+    const playerRows = await withLoadTimeout(fetchPlayers(team.id, team.current_season_year), "Players load")
     const mapped = playerRows.map(mapPlayer).filter((p) => !p.isArchived)
     const first = getPreferredPlayer(mapped, preferredPlayerId)
     if (!first) { setAccessError("No players found for this season."); return }
-
     applyTeamShell(team, mapped, first)
     loadSeasonDataInBackground(team, mapped, first)
   }, [applyTeamShell, loadSeasonDataInBackground])
@@ -237,10 +181,7 @@ export default function GameRecordPage() {
           const { data: sessionData } = await supabase.auth.getSession()
           if (!sessionData.session) { navigate("/login", { replace: true }); return }
           const cached = readOfflineCache()
-          if (!cached) {
-            setAccessError("You're offline and no local cache was found. Please launch the app online first.")
-            return
-          }
+          if (!cached) { setAccessError("You're offline and no local cache was found. Please launch the app online first."); return }
           const first = getPreferredPlayer(cached.players, cached.preferredPlayerId)
           if (!first) { setAccessError("No player data found in cache."); return }
           applyTeamShell(cached.team, cached.players, first)
@@ -248,69 +189,37 @@ export default function GameRecordPage() {
           setSavedEntries(cached.savedEntriesByPlayer[first.id] ?? [])
           return
         }
-
         const { data } = await withLoadTimeout(supabase.auth.getUser(), "Auth check")
-
-        if (!data.user) {
-          navigate("/login", { replace: true })
-          return
-        }
-
+        if (!data.user) { navigate("/login", { replace: true }); return }
         const email = data.user.email?.trim().toLowerCase()
-        if (!email) {
-          setAccessError("No email address found for this account.")
-          return
-        }
-
-        const isAdmin = email === "admin@jojistats.com"
-
-        if (isAdmin) {
-          navigate("/admin", { replace: true })
-          return
-        }
-
+        if (!email) { setAccessError("No email address found for this account."); return }
+        if (email === "admin@jojistats.com") { navigate("/admin", { replace: true }); return }
         loadProfileAvatar(data.user.id)
-
         const access = await withLoadTimeout(fetchUserAccessByEmail(email), "User access load")
-        if (!access || (access.role !== "recorder" && access.role !== "manager")) {
-          setAccessError("No GameRecord access has been assigned.")
-          return
-        }
-
+        if (!access || (access.role !== "recorder" && access.role !== "manager")) { setAccessError("No GameRecord access has been assigned."); return }
         const team = await withLoadTimeout(fetchTeamById(access.team_id), "Team load")
         await loadTeam(team, String(access.player_id))
       } catch (error) {
         console.error(error)
-        setAccessError(
-          error instanceof Error
-            ? `Failed to load: ${error.message}`
-            : "Failed to load GameRecord access."
-        )
+        setAccessError(error instanceof Error ? `Failed to load: ${error.message}` : "Failed to load GameRecord access.")
       } finally {
         setIsLoading(false)
       }
     }
-
     checkUser()
   }, [applyTeamShell, loadProfileAvatar, loadTeam, navigate])
 
   useEffect(() => {
     const onOnline = () => handleOnline(teamId, seasonYear, activePlayer?.id ?? "")
-    const onOffline = handleOffline
     window.addEventListener("online", onOnline)
-    window.addEventListener("offline", onOffline)
-    return () => {
-      window.removeEventListener("online", onOnline)
-      window.removeEventListener("offline", onOffline)
-    }
+    window.addEventListener("offline", handleOffline)
+    return () => { window.removeEventListener("online", onOnline); window.removeEventListener("offline", handleOffline) }
   }, [teamId, seasonYear, activePlayer, handleOnline, handleOffline])
 
   const handleSelectPlayer = async (player: Player) => {
     if (player.id === activePlayer?.id) return
     setActivePlayer(player)
-    setGameMeta(
-      preEditSnapshot?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: gameMeta.matchNumber }
-    )
+    setGameMeta(preEditSnapshot?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: gameMeta.matchNumber })
     setPreEditSnapshot(null)
     setEditingSavedEntryId(null)
     setEditingSavedEntry(null)
@@ -334,401 +243,7 @@ export default function GameRecordPage() {
     navigate("/login")
   }
 
-  const handleSaveGame = async (
-    nextGameMeta: DraftGameMeta,
-    entries: PendingBattingEntry[],
-    pitchingEntries: PendingPitchingEntry[] = []
-  ) => {
-    if (!activePlayer) return
-
-    setSaveError("")
-    try {
-      const payload = buildFullGamePayload(Number(activePlayer.teamId), nextGameMeta, entries, pitchingEntries)
-
-      if (editingSavedEntryId) {
-        const gameId = editingSavedEntry?.gameId ?? Number(editingSavedEntryId.replace("db-", ""))
-        await updateFullGame(gameId, payload)
-      } else if (!navigator.onLine) {
-        enqueueOfflineGame(payload)
-        return
-      } else {
-        await createFullGame(payload)
-      }
-
-      if (teamId != null) {
-        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
-          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
-        ])
-        setSavedEntriesByPlayer(refreshed)
-        setPitchingEntriesByPlayer(refreshedPitching)
-        setSavedEntries(refreshed[activePlayer.id] ?? [])
-        setSeasonGames(refreshedGames)
-        setGameMeta({
-          date: "",
-          opponent: "",
-          location: "",
-          seasonYear: nextGameMeta.seasonYear,
-          matchNumber: getNextMatchNumber(refreshedGames),
-        })
-      }
-      setEditingSavedEntryId(null)
-      setEditingSavedEntry(null)
-      setEditingSavedPitchingEntry(null)
-      setCurrentEntry(emptyBattingEntry)
-      setPitchingEntry(emptyPitchingEntry)
-      setRecordMode("batting")
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Save failed"
-      setSaveError(message)
-      throw err
-    }
-  }
-
-  const handleStartEditSavedEntry = (savedEntry: SavedBattingGameEntry) => {
-    if (!editingSavedEntryId) {
-      setPreEditSnapshot({ gameMeta, currentEntry })
-    }
-    setEditingSavedEntryId(savedEntry.id)
-    setEditingSavedEntry(savedEntry)
-    setGameMeta(savedEntry.gameMeta)
-    setCurrentEntry(savedEntry.statLine)
-  }
-
-  const handleUpdateSavedEntry = async (
-    nextGameMeta: DraftGameMeta,
-    nextStatLine: BattingEntryData,
-    gamePositions?: import("../types").Position[]
-  ) => {
-    if (!activePlayer) { setSaveError("No active player."); return }
-    if (!editingSavedEntry) { setSaveError("No entry selected. Please click Edit on a saved entry again."); return }
-    if (!nextGameMeta.date.trim() || !nextGameMeta.opponent.trim()) { setSaveError("Date and opponent are required."); return }
-
-    setSaveError("")
-    try {
-      await updateBattingStatEntry(editingSavedEntry.statId, editingSavedEntry.gameId, {
-        game: {
-          team_id: Number(editingSavedEntry.teamId),
-          game_date: nextGameMeta.date,
-          opponent_name: nextGameMeta.opponent,
-          season_year: nextGameMeta.seasonYear,
-          match_number: nextGameMeta.matchNumber,
-          location: nextGameMeta.location?.trim() || null,
-          ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-          team_score: nextGameMeta.teamScore ?? null,
-          opponent_score: nextGameMeta.opponentScore ?? null,
-          result: nextGameMeta.result || null,
-        },
-        battingStat: {
-          player_id: Number(editingSavedEntry.playerId),
-          batting_order: 1,
-          game_positions: gamePositions ?? editingSavedEntry.gamePositions,
-          ab: nextStatLine.AB,
-          h: nextStatLine.H,
-          double_hits: nextStatLine.doubles,
-          triple_hits: nextStatLine.triples,
-          hr: nextStatLine.HR,
-          rbi: nextStatLine.RBI,
-          bb: nextStatLine.BB,
-          hbp: nextStatLine.HBP,
-          sf: nextStatLine.SF,
-          so: nextStatLine.SO,
-          sb: nextStatLine.SB,
-          cs: nextStatLine.CS,
-          note: nextStatLine.note.trim() || null,
-        },
-      })
-
-      if (teamId != null) {
-        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
-          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
-        ])
-        setSavedEntriesByPlayer(refreshed)
-        setPitchingEntriesByPlayer(refreshedPitching)
-        setSavedEntries(refreshed[activePlayer.id] ?? [])
-        setSeasonGames(refreshedGames)
-      }
-      setEditingSavedEntryId(null)
-      setEditingSavedEntry(null)
-      setCurrentEntry(emptyBattingEntry)
-      setSaveSuccess("Saved")
-      setTimeout(() => setSaveSuccess(""), 3000)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Update failed"
-      setSaveError(message)
-    }
-  }
-
-  const handleUpdateSavedGameMeta = async (nextGameMeta: DraftGameMeta) => {
-    if (!activePlayer || !editingSavedEntry) return
-
-    setSaveError("")
-    try {
-      await updateGameInfo(editingSavedEntry.gameId, {
-        team_id: Number(editingSavedEntry.teamId),
-        game_date: nextGameMeta.date,
-        opponent_name: nextGameMeta.opponent,
-        season_year: nextGameMeta.seasonYear,
-        match_number: nextGameMeta.matchNumber,
-        location: nextGameMeta.location?.trim() || null,
-        ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-        team_score: nextGameMeta.teamScore ?? null,
-        opponent_score: nextGameMeta.opponentScore ?? null,
-        result: nextGameMeta.result || null,
-      })
-
-      if (teamId != null) {
-        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
-          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
-        ])
-        setSavedEntriesByPlayer(refreshed)
-        setPitchingEntriesByPlayer(refreshedPitching)
-        setSavedEntries(refreshed[activePlayer.id] ?? [])
-        setSeasonGames(refreshedGames)
-      }
-      setEditingSavedEntryId(null)
-      setEditingSavedEntry(null)
-      setCurrentEntry(emptyBattingEntry)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Update failed"
-      setSaveError(message)
-      throw err
-    }
-  }
-
-  const handleCancelEditSavedEntry = () => {
-    const snap = preEditSnapshot
-    setPreEditSnapshot(null)
-    setEditingSavedEntryId(null)
-    setEditingSavedEntry(null)
-    setEditingSavedPitchingEntry(null)
-    setGameMeta(snap?.gameMeta ?? { date: "", opponent: "", location: "", seasonYear, matchNumber: 1 })
-    setCurrentEntry(snap?.currentEntry ?? emptyBattingEntry)
-    setPitchingEntry(emptyPitchingEntry)
-    setRecordMode("batting")
-  }
-
-  const handleDeleteSavedEntry = async (savedEntry: SavedBattingGameEntry) => {
-    if (!activePlayer) return
-    if (!window.confirm("Delete this saved entry?")) return
-
-    setSaveError("")
-    try {
-      await deleteBattingStatEntry(savedEntry.statId, savedEntry.gameId)
-      if (teamId != null && activePlayer) {
-        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
-          fetchSavedEntriesByPlayer(teamId, seasonYear),
-          fetchPitchingEntriesByPlayer(teamId, seasonYear),
-          fetchGamesBySeason(teamId, seasonYear),
-        ])
-        setSavedEntriesByPlayer(refreshed)
-        setPitchingEntriesByPlayer(refreshedPitching)
-        setSavedEntries(refreshed[activePlayer.id] ?? [])
-        setSeasonGames(refreshedGames)
-      }
-      if (editingSavedEntryId === savedEntry.id) {
-        setEditingSavedEntryId(null)
-        setEditingSavedEntry(null)
-        setCurrentEntry(emptyBattingEntry)
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Delete failed"
-      setSaveError(message)
-      window.alert(`Delete failed: ${message}`)
-    }
-  }
-
-  const handleDeleteSavedGame = async () => {
-    if (!activePlayer || !editingSavedEntry) return
-    if (!window.confirm("Delete this entire game? This cannot be undone.")) return
-
-    setSaveError("")
-    try {
-      await deleteGame(editingSavedEntry.gameId)
-      setEditingSavedEntryId(null)
-      setEditingSavedEntry(null)
-      setCurrentEntry(emptyBattingEntry)
-      if (teamId != null) {
-        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
-          fetchSavedEntriesByPlayer(teamId, seasonYear),
-          fetchPitchingEntriesByPlayer(teamId, seasonYear),
-          fetchGamesBySeason(teamId, seasonYear),
-        ])
-        setSavedEntriesByPlayer(refreshed)
-        setPitchingEntriesByPlayer(refreshedPitching)
-        setSavedEntries(refreshed[activePlayer.id] ?? [])
-        setSeasonGames(refreshedGames)
-        setGameMeta((prev) => ({
-          ...prev,
-          matchNumber: getNextMatchNumber(refreshedGames),
-        }))
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Delete failed"
-      setSaveError(message)
-      window.alert(`Delete failed: ${message}`)
-    }
-  }
-
-  const handleStartEditSavedPitchingEntry = (savedEntry: SavedPitchingGameEntry) => {
-    setEditingSavedPitchingEntry(savedEntry)
-    setEditingSavedEntryId(null)
-    setEditingSavedEntry(null)
-    setGameMeta(savedEntry.gameMeta)
-    setPitchingEntry(savedEntry.statLine)
-    setRecordMode("pitching")
-  }
-
-  const handleUpdateSavedPitchingEntry = async (
-    nextGameMeta: DraftGameMeta,
-    nextPitchingEntry: PitchingEntryData
-  ) => {
-    if (!activePlayer || !editingSavedPitchingEntry) return
-
-    setSaveError("")
-    try {
-      await updatePitchingStatEntry(
-        editingSavedPitchingEntry.statId,
-        editingSavedPitchingEntry.gameId,
-        {
-          game: {
-            team_id: Number(editingSavedPitchingEntry.teamId),
-            game_date: nextGameMeta.date,
-            opponent_name: nextGameMeta.opponent,
-            season_year: nextGameMeta.seasonYear,
-            match_number: nextGameMeta.matchNumber,
-            location: nextGameMeta.location?.trim() || null,
-            ...(nextGameMeta.memo !== undefined ? { memo: nextGameMeta.memo.trim() || null } : {}),
-            team_score: nextGameMeta.teamScore ?? null,
-            opponent_score: nextGameMeta.opponentScore ?? null,
-            result: nextGameMeta.result || null,
-          },
-          pitchingStat: {
-            player_id: Number(editingSavedPitchingEntry.playerId),
-            innings_pitched_outs: nextPitchingEntry.inningsPitchedOuts,
-            hits_allowed: nextPitchingEntry.hitsAllowed,
-            runs_allowed: nextPitchingEntry.runsAllowed,
-            earned_runs: nextPitchingEntry.earnedRuns,
-            walks: nextPitchingEntry.walks,
-            hbp: nextPitchingEntry.hitBatters,
-            strikeouts: nextPitchingEntry.strikeouts,
-            home_runs_allowed: nextPitchingEntry.homeRunsAllowed,
-            note: nextPitchingEntry.note.trim() || null,
-          },
-        }
-      )
-
-      if (teamId != null) {
-        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
-          fetchSavedEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchPitchingEntriesByPlayer(teamId, nextGameMeta.seasonYear),
-          fetchGamesBySeason(teamId, nextGameMeta.seasonYear),
-        ])
-        setSavedEntriesByPlayer(refreshed)
-        setPitchingEntriesByPlayer(refreshedPitching)
-        setSavedEntries(refreshed[activePlayer.id] ?? [])
-        setSeasonGames(refreshedGames)
-      }
-
-      setEditingSavedPitchingEntry(null)
-      setPitchingEntry(emptyPitchingEntry)
-      setSaveSuccess("Saved")
-      setTimeout(() => setSaveSuccess(""), 3000)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Pitching update failed"
-      setSaveError(message)
-      throw err
-    }
-  }
-
-  const handleCancelEditSavedPitchingEntry = () => {
-    setEditingSavedPitchingEntry(null)
-    setPitchingEntry(emptyPitchingEntry)
-  }
-
-  const handleNewGame = () => {
-    setSaveError("")
-    setPreEditSnapshot(null)
-    setEditingSavedEntryId(null)
-    setEditingSavedEntry(null)
-    setEditingSavedPitchingEntry(null)
-    setCurrentEntry(emptyBattingEntry)
-    setPitchingEntry(emptyPitchingEntry)
-    setRecordMode("batting")
-    setGameMeta({
-      date: "",
-      opponent: "",
-      location: "",
-      seasonYear,
-      matchNumber: getNextMatchNumber(seasonGames),
-    })
-  }
-
-  const handleDeleteSavedPitchingEntry = async (savedEntry: SavedPitchingGameEntry) => {
-    if (!activePlayer) return
-    if (!window.confirm("Delete this pitching entry?")) return
-
-    setSaveError("")
-    try {
-      await deletePitchingStatEntry(savedEntry.statId, savedEntry.gameId)
-      if (teamId != null) {
-        const [refreshed, refreshedPitching, refreshedGames] = await Promise.all([
-          fetchSavedEntriesByPlayer(teamId, seasonYear),
-          fetchPitchingEntriesByPlayer(teamId, seasonYear),
-          fetchGamesBySeason(teamId, seasonYear),
-        ])
-        setSavedEntriesByPlayer(refreshed)
-        setPitchingEntriesByPlayer(refreshedPitching)
-        setSavedEntries(refreshed[activePlayer.id] ?? [])
-        setSeasonGames(refreshedGames)
-      }
-      if (editingSavedPitchingEntry?.id === savedEntry.id) {
-        setEditingSavedPitchingEntry(null)
-        setPitchingEntry(emptyPitchingEntry)
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Pitching delete failed"
-      setSaveError(message)
-      window.alert(`Pitching delete failed: ${message}`)
-    }
-  }
-
-  const handleSavePitchingGame = async (
-    nextPitchingEntry = pitchingEntry,
-    pitcherId = activePlayer?.id
-  ) => {
-    if (!activePlayer || !pitcherId) return
-
-    const pitcher = allPlayers.find((player) => player.id === pitcherId)
-
-    try {
-      await handleSaveGame(gameMeta, [], [
-        {
-          ...nextPitchingEntry,
-          playerId: pitcherId,
-          playerName: pitcher?.name ?? activePlayer.name,
-        },
-      ])
-      setPitchingEntry(emptyPitchingEntry)
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Pitching save failed"
-      setSaveError(message)
-      throw err
-    }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-1 bg-gray-50 p-6 text-gray-600">
-        Checking auth...
-      </div>
-    )
-  }
+  if (isLoading) return <div className="flex flex-1 bg-gray-50 p-6 text-gray-600">Checking auth...</div>
 
   if (accessError || !activePlayer) {
     return (
@@ -795,38 +310,37 @@ export default function GameRecordPage() {
           savedGames={seasonGames}
           onGameMetaChange={setGameMeta}
           onEntryChange={setCurrentEntry}
-          onSaveGame={handleSaveGame}
+          onSaveGame={crudHandlers.handleSaveGame}
           teamName={teamName}
           seasonYear={activePlayer.seasonYear}
           isEditingSavedEntry={editingSavedEntryId !== null}
           isEditingSavedPitchingEntry={editingSavedPitchingEntry !== null}
           editingSavedEntryId={editingSavedEntryId}
-          onStartEditSavedEntry={handleStartEditSavedEntry}
-          onUpdateSavedEntry={handleUpdateSavedEntry}
-          onUpdateSavedGame={handleSaveGame}
-          onUpdateSavedGameMeta={handleUpdateSavedGameMeta}
-          onCancelEditSavedEntry={handleCancelEditSavedEntry}
-          onDeleteSavedEntry={handleDeleteSavedEntry}
-          onDeleteSavedGame={handleDeleteSavedGame}
-          onStartEditSavedPitchingEntry={handleStartEditSavedPitchingEntry}
-          onUpdateSavedPitchingEntry={handleUpdateSavedPitchingEntry}
-          onCancelEditSavedPitchingEntry={handleCancelEditSavedPitchingEntry}
-          onDeleteSavedPitchingEntry={handleDeleteSavedPitchingEntry}
+          onStartEditSavedEntry={crudHandlers.handleStartEditSavedEntry}
+          onUpdateSavedEntry={crudHandlers.handleUpdateSavedEntry}
+          onUpdateSavedGame={crudHandlers.handleSaveGame}
+          onUpdateSavedGameMeta={crudHandlers.handleUpdateSavedGameMeta}
+          onCancelEditSavedEntry={crudHandlers.handleCancelEditSavedEntry}
+          onDeleteSavedEntry={crudHandlers.handleDeleteSavedEntry}
+          onDeleteSavedGame={crudHandlers.handleDeleteSavedGame}
+          onStartEditSavedPitchingEntry={crudHandlers.handleStartEditSavedPitchingEntry}
+          onUpdateSavedPitchingEntry={crudHandlers.handleUpdateSavedPitchingEntry}
+          onCancelEditSavedPitchingEntry={crudHandlers.handleCancelEditSavedPitchingEntry}
+          onDeleteSavedPitchingEntry={crudHandlers.handleDeleteSavedPitchingEntry}
           editingGamePositions={editingSavedEntry?.gamePositions}
           recordMode={recordMode}
           setRecordMode={setRecordMode}
           pitchingEntry={pitchingEntry}
           onPitchingEntryChange={setPitchingEntry}
-          onSavePitchingGame={handleSavePitchingGame}
+          onSavePitchingGame={crudHandlers.handleSavePitchingGame}
           isPitchingSaveDisabled={
-            !gameMeta.date.trim() ||
-            !gameMeta.opponent.trim() ||
+            !gameMeta.date.trim() || !gameMeta.opponent.trim() ||
             pitchingEntry.earnedRuns > pitchingEntry.runsAllowed
           }
           saveError={saveError}
           saveSuccess={saveSuccess}
           onClearSaveError={() => setSaveError("")}
-          onNewGame={handleNewGame}
+          onNewGame={crudHandlers.handleNewGame}
         />
       </main>
     </div>

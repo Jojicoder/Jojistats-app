@@ -5,14 +5,13 @@ import {
   getRoster,
   getTeamStats,
   MLB_SEASON,
-} from "./api"
+} from "../../api/mlb"
 import BatterZoneMap from "./BatterZoneMap"
 import MLBGameLog from "./MLBGameLog"
 import MLBTrendChart from "./MLBTrendChart"
+import MLBRosterSidebar from "./MLBRosterSidebar"
 import { enrichStats, getStatColor, HITTING_CARDS, PITCHING_CARDS, SP_PITCHING_CARDS, RP_PITCHING_CARDS, CL_PITCHING_CARDS } from "./playerStats"
 import type { GameLogSplit, MLBTeam, MLBTeamStats, RosterPlayer } from "./types"
-
-// ── Players ───────────────────────────────────────────────────────────
 
 type PlayersTabProps = {
   teams: MLBTeam[]
@@ -30,15 +29,10 @@ const POS_ORDER: Record<string, number> = {
 }
 
 function getDefaultStatsMode(player: RosterPlayer): "hitting" | "pitching" {
-  return ["P", "SP", "RP", "CL"].includes(player.position.abbreviation)
-    ? "pitching"
-    : "hitting"
+  return ["P", "SP", "RP", "CL"].includes(player.position.abbreviation) ? "pitching" : "hitting"
 }
 
-function inferPitchingRole(
-  player: RosterPlayer | null,
-  stats: Record<string, unknown> | null
-): PitchingRole | null {
+function inferPitchingRole(player: RosterPlayer | null, stats: Record<string, unknown> | null): PitchingRole | null {
   const pos = player?.position.abbreviation
   if (pos === "SP") return "starter"
   if (pos === "RP") return "reliever"
@@ -54,18 +48,6 @@ function inferPitchingRole(
   if (gamesStarted > 0) return "starter"
   if (holds > 0 || gamesFinished > 0 || stats) return "reliever"
   return null
-}
-
-function formatPitchingRole(role: PitchingRole | null) {
-  if (role === "starter") return "SP"
-  if (role === "reliever") return "RP"
-  if (role === "closer") return "CL"
-  return null
-}
-
-function formatRosterPosition(player: RosterPlayer, role?: PitchingRole | null) {
-  if (player.position.abbreviation === "P") return `P / ${formatPitchingRole(role ?? null) ?? "RP"}`
-  return formatPitchingRole(role ?? null) ?? player.position.abbreviation
 }
 
 export default function PlayersTab({
@@ -108,14 +90,14 @@ export default function PlayersTab({
       .then(([rosterData, teamStatsData]) => {
         setRoster(rosterData)
         setTeamStats(teamStatsData)
-        const pitchers = rosterData.filter((player) => player.position.abbreviation === "P")
+        const pitchers = rosterData.filter((p) => p.position.abbreviation === "P")
         void Promise.all(
-          pitchers.map(async (player) => {
+          pitchers.map(async (p) => {
             try {
-              const rawStats = await getPlayerStats(player.person.id, "pitching")
-              return [player.person.id, inferPitchingRole(player, rawStats)] as const
+              const rawStats = await getPlayerStats(p.person.id, "pitching")
+              return [p.person.id, inferPitchingRole(p, rawStats)] as const
             } catch {
-              return [player.person.id, null] as const
+              return [p.person.id, null] as const
             }
           })
         ).then((roles) => {
@@ -148,10 +130,7 @@ export default function PlayersTab({
     return copy.sort((a, b) => a.person.fullName.localeCompare(b.person.fullName))
   }, [roster, rosterSort])
 
-  const handleSelectPlayer = useCallback(async (
-    player: RosterPlayer,
-    mode: "hitting" | "pitching"
-  ) => {
+  const handleSelectPlayer = useCallback(async (player: RosterPlayer, mode: "hitting" | "pitching") => {
     const requestId = playerRequestId.current + 1
     playerRequestId.current = requestId
     setStatsMode(mode)
@@ -178,15 +157,9 @@ export default function PlayersTab({
   }, [])
 
   useEffect(() => {
-    if (
-      !initialPlayerId ||
-      rosterLoading ||
-      appliedInitialPlayerId.current === initialPlayerId
-    ) return
-
+    if (!initialPlayerId || rosterLoading || appliedInitialPlayerId.current === initialPlayerId) return
     const player = roster.find((candidate) => candidate.person.id === initialPlayerId)
     if (!player) return
-
     appliedInitialPlayerId.current = initialPlayerId
     void handleSelectPlayer(player, getDefaultStatsMode(player))
   }, [handleSelectPlayer, initialPlayerId, roster, rosterLoading])
@@ -198,12 +171,8 @@ export default function PlayersTab({
   }
 
   const pitchingRole = inferPitchingRole(selectedPlayer, stats)
-
   const pitchingRoleLabel =
-    pitchingRole === "starter" ? "SP"
-    : pitchingRole === "reliever" ? "RP"
-    : pitchingRole === "closer" ? "CL"
-    : null
+    pitchingRole === "starter" ? "SP" : pitchingRole === "reliever" ? "RP" : pitchingRole === "closer" ? "CL" : null
 
   const cards =
     statsMode === "hitting" ? HITTING_CARDS
@@ -218,74 +187,21 @@ export default function PlayersTab({
 
   return (
     <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-      {/* Sidebar: roster */}
       <div className="w-full space-y-3 lg:w-64 lg:shrink-0">
-        <div className="rounded-2xl bg-white p-4 shadow-sm">
-          {!selectedTeamId ? (
-            <p className="text-sm text-gray-400">Select a team from the dropdown above.</p>
-          ) : (
-            <>
-              <h2 className="text-base font-bold text-gray-900">Team Roster</h2>
-              <p className="mt-0.5 text-xs text-gray-400">
-                {rosterLoading ? "Loading..." : `${roster.length} players`}
-              </p>
-              {!rosterLoading && roster.length > 0 && (
-                <>
-                  <p className="mt-3 text-xs font-bold uppercase tracking-widest text-gray-400">Sort by</p>
-                  <select
-                    value={rosterSort}
-                    onChange={(e) => setRosterSort(e.target.value as RosterSort)}
-                    className="mt-1 mb-3 w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm text-gray-700 shadow-sm"
-                  >
-                    <option value="az">Name (A–Z)</option>
-                    <option value="pos">Position</option>
-                    <option value="num">Jersey Number</option>
-                  </select>
-                  <div className="max-h-80 space-y-2 overflow-y-auto lg:max-h-[60vh]">
-                    {sortedRoster.map((player) => {
-                      const isSelected = selectedPlayer?.person.id === player.person.id
-                      const rosterPitchingRole = isSelected
-                        ? pitchingRole
-                        : rosterPitchingRoles[player.person.id] ?? null
-                      return (
-                        <button
-                          key={player.person.id}
-                          type="button"
-                          onClick={() => handleSelectPlayer(player, getDefaultStatsMode(player))}
-                          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left transition ${
-                            isSelected ? "bg-green-900" : "bg-[#f7f8f3] hover:bg-[#eef0e9]"
-                          }`}
-                        >
-                          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold ${
-                            isSelected
-                              ? "bg-green-700 text-white"
-                              : "border-2 border-green-700 bg-white text-green-800"
-                          }`}>
-                            {player.jerseyNumber ?? "—"}
-                          </span>
-                          <span className="min-w-0">
-                            <span className={`block truncate text-sm font-bold ${isSelected ? "text-white" : "text-gray-900"}`}>
-                              {player.person.fullName}
-                            </span>
-                            <span className={`text-xs ${isSelected ? "text-green-300" : "text-gray-400"}`}>
-                              {formatRosterPosition(player, rosterPitchingRole)}
-                            </span>
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </>
-              )}
-              {rosterLoading && (
-                <p className="mt-3 text-xs text-gray-400">Loading roster...</p>
-              )}
-            </>
-          )}
-        </div>
+        <MLBRosterSidebar
+          selectedTeamId={selectedTeamId}
+          roster={roster}
+          rosterLoading={rosterLoading}
+          rosterSort={rosterSort}
+          sortedRoster={sortedRoster}
+          selectedPlayer={selectedPlayer}
+          pitchingRole={pitchingRole}
+          rosterPitchingRoles={rosterPitchingRoles}
+          onSortChange={setRosterSort}
+          onSelectPlayer={(player) => handleSelectPlayer(player, getDefaultStatsMode(player))}
+        />
       </div>
 
-      {/* Main: player stats */}
       <div className="min-w-0 flex-1">
         {!selectedPlayer ? (
           <div className="rounded-2xl bg-white p-6 shadow-sm text-sm text-gray-400">
@@ -309,28 +225,28 @@ export default function PlayersTab({
                     className="h-14 w-14 shrink-0 rounded-full border border-gray-100 object-cover [object-position:50%_40%] sm:h-16 sm:w-16"
                   />
                   <div>
-                  <p className="text-xs font-bold uppercase tracking-widest text-green-700">
-                    {selectedTeam?.name} · {MLB_SEASON}
-                  </p>
-                  <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
-                    {selectedPlayer.jerseyNumber && (
-                      <span className="mr-1 text-gray-400">#{selectedPlayer.jerseyNumber}</span>
-                    )}
-                    {selectedPlayer.person.fullName}
-                  </h1>
-                  <p className="mt-0.5 text-sm text-gray-400">
-                    {pitchingRoleLabel ?? selectedPlayer.position.abbreviation}
-                    {selectedPlayer.person.batSide?.code && (
-                      <span className="ml-2">
-                        · Bats {selectedPlayer.person.batSide.code === "S" ? "Switch" : selectedPlayer.person.batSide.code === "L" ? "Left" : "Right"}
-                      </span>
-                    )}
-                    {selectedPlayer.person.pitchHand?.code && (
-                      <span className="ml-2">
-                        · Throws {selectedPlayer.person.pitchHand.code === "L" ? "Left" : "Right"}
-                      </span>
-                    )}
-                  </p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-green-700">
+                      {selectedTeam?.name} · {MLB_SEASON}
+                    </p>
+                    <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
+                      {selectedPlayer.jerseyNumber && (
+                        <span className="mr-1 text-gray-400">#{selectedPlayer.jerseyNumber}</span>
+                      )}
+                      {selectedPlayer.person.fullName}
+                    </h1>
+                    <p className="mt-0.5 text-sm text-gray-400">
+                      {pitchingRoleLabel ?? selectedPlayer.position.abbreviation}
+                      {selectedPlayer.person.batSide?.code && (
+                        <span className="ml-2">
+                          · Bats {selectedPlayer.person.batSide.code === "S" ? "Switch" : selectedPlayer.person.batSide.code === "L" ? "Left" : "Right"}
+                        </span>
+                      )}
+                      {selectedPlayer.person.pitchHand?.code && (
+                        <span className="ml-2">
+                          · Throws {selectedPlayer.person.pitchHand.code === "L" ? "Left" : "Right"}
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="grid w-full grid-cols-2 rounded-xl border border-gray-200 bg-[#f7f8f3] p-1 sm:inline-flex sm:w-auto sm:shrink-0">
@@ -340,9 +256,7 @@ export default function PlayersTab({
                       type="button"
                       onClick={() => handleModeChange(m)}
                       className={`rounded-lg px-4 py-2 text-sm font-semibold capitalize transition ${
-                        statsMode === m
-                          ? "bg-green-900 text-white shadow-sm"
-                          : "text-gray-600 hover:text-green-900"
+                        statsMode === m ? "bg-green-900 text-white shadow-sm" : "text-gray-600 hover:text-green-900"
                       }`}
                     >
                       {m === "hitting" ? "Batting" : "Pitching"}
@@ -354,21 +268,15 @@ export default function PlayersTab({
               {stats && !statsLoading && (
                 <div className="mt-4 grid grid-cols-2 gap-3">
                   <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                      Games Played
-                    </p>
-                    <p className="mt-2 text-2xl font-extrabold text-green-950">
-                      {String(stats.gamesPlayed ?? "—")}
-                    </p>
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-400">Games Played</p>
+                    <p className="mt-2 text-2xl font-extrabold text-green-950">{String(stats.gamesPlayed ?? "—")}</p>
                   </div>
                   <div className="rounded-xl bg-[#f7f8f3] px-4 py-3">
                     <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
                       {statsMode === "hitting" ? "At Bats" : "Innings Pitched"}
                     </p>
                     <p className="mt-2 text-2xl font-extrabold text-green-950">
-                      {statsMode === "hitting"
-                        ? String(stats.atBats ?? "—")
-                        : String(stats.inningsPitched ?? "—")}
+                      {statsMode === "hitting" ? String(stats.atBats ?? "—") : String(stats.inningsPitched ?? "—")}
                     </p>
                   </div>
                 </div>
@@ -405,13 +313,9 @@ export default function PlayersTab({
                       const color = getStatColor(label, value, "mlb", statsMode === "pitching" ? pitchingRole : null)
                       return (
                         <div key={label} className={`min-w-0 rounded-xl p-3 sm:p-4 ${color.bg}`}>
-                          <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>
-                            {label}
-                          </p>
+                          <p className={`text-xs font-bold uppercase tracking-widest ${color.lbl}`}>{label}</p>
                           <p className="mt-0.5 text-xs text-gray-400">{desc}</p>
-                          <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${color.val}`}>
-                            {value}
-                          </p>
+                          <p className={`mt-3 break-words text-2xl font-extrabold tracking-tight sm:text-3xl ${color.val}`}>{value}</p>
                         </div>
                       )
                     })}
@@ -419,10 +323,7 @@ export default function PlayersTab({
                 </section>
                 <MLBTrendChart log={gameLog} mode={statsMode} teamStats={teamStats} />
                 {statsMode === "hitting" && (
-                  <BatterZoneMap
-                    playerId={selectedPlayer.person.id}
-                    batSide={selectedPlayer.person.batSide?.code}
-                  />
+                  <BatterZoneMap playerId={selectedPlayer.person.id} batSide={selectedPlayer.person.batSide?.code} />
                 )}
                 <MLBGameLog log={gameLog} mode={statsMode} />
               </>

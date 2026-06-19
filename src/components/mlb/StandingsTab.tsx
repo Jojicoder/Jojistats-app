@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { getStandings, MLB_SEASON } from "./api"
+import { getStandings, MLB_SEASON } from "../../api/mlb"
 import type { DivisionRecord } from "./types"
 
 // ── Standings ─────────────────────────────────────────────────────────

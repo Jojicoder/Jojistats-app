@@ -10,8 +10,9 @@ import type {
   SavedBattingGameEntry,
   SavedPitchingGameEntry,
 } from "../types"
-import type { EditGameTab, LivePlay, RecordGamePageProps } from "./RecordGamePage.types"
-import { createEmptyBattingLine, createEmptyPitchingLine, gamePositionOptions } from "./RecordGamePage.utils"
+import type { EditGameTab, LivePlay, RecordGamePageProps } from "../components/RecordGamePage.types"
+import { createEmptyBattingLine, createEmptyPitchingLine, gamePositionOptions } from "../components/gameConstants"
+import { validateScore } from "../utils/scoreValidation"
 
 type Input = {
   allPlayers: Player[]
@@ -237,20 +238,6 @@ export function useEditMode({
     setEditAddPitcherId("")
   }
 
-  const validateScore = (entries: { RBI: number }[]): boolean => {
-    if (gameMeta.teamScore == null) return true
-    const totalRbi = entries.reduce((sum, e) => sum + e.RBI, 0)
-    const errorRuns = gameMeta.errorRuns ?? 0
-    const expected = totalRbi + errorRuns
-    if (gameMeta.teamScore !== expected) {
-      window.alert(
-        `Score mismatch!\n\nTeam Score entered: ${gameMeta.teamScore}\nTotal RBI: ${totalRbi}${errorRuns > 0 ? ` + Error Runs: ${errorRuns}` : ""} = ${expected}\n\nPlease fix the score, RBI totals, or Error Runs before saving.`
-      )
-      return false
-    }
-    return true
-  }
-
   const handleSaveEditedGame = async () => {
     if (
       !onUpdateSavedGame ||
@@ -259,7 +246,7 @@ export function useEditMode({
       hasInvalidEditGameStats ||
       hasInvalidEditPitchingStats
     ) return
-    if (editGameEntries.length > 0 && !validateScore(editGameEntries)) return
+    if (editGameEntries.length > 0 && !validateScore(gameMeta, editGameEntries)) return
     if (!window.confirm("Save this game with these records?")) return
     try {
       setIsSaving(true)

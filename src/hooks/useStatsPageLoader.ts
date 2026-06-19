@@ -1,0 +1,386 @@
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useNavigate } from "react-router-dom"
+import {
+  fetchPlayers,
+  fetchPlayersByTeam,
+  fetchSavedEntriesByPlayer,
+  fetchTeams,
+  fetchPitchingEntriesByPlayer,
+  fetchTeamById,
+  fetchUserAccessByEmail,
+} from "../api/supabase-api"
+import { supabase } from "../api/supabase-client"
+import { applyGlobalTheme, isJunksTeam, JUNKS_THEME_STYLE, resetGlobalTheme } from "../components/teamTheme"
+import { createPlayer, updatePlayer, archivePlayer } from "../api/players"
+import type { PlayerRow, TeamRow } from "../api/supabase-api"
+import type {
+  Player,
+  Position,
+  SavedBattingGameEntry,
+  SavedPitchingGameEntry,
+  Team,
+} from "../types"
+
+/* -------------------- helpers -------------------- */
+
+function mapTeamRow(team: TeamRow): Team {
+  return {
+    id: String(team.id),
+    name: team.name,
+    isArchived: Boolean(team.is_archived),
+    currentSeasonYear: team.current_season_year,
+    league: team.league ?? null,
+  }
+}
+
+function mapPlayerRow(player: PlayerRow): Player {
+  return {
+    id: String(player.id),
+    teamId: String(player.team_id),
+    name: player.name,
+    jerseyNumber: player.jersey_number,
+    positions: (player.position ?? "UTIL").split(",").map((s) => s.trim()) as Position[],
+    seasonYear: player.season_year,
+    isArchived: Boolean(player.is_archived),
+    pitchingRole: player.pitching_role ?? null,
+  }
+}
+
+function sortPlayersByJersey(players: Player[]) {
+  return [...players].sort(
+    (a, b) => (a.jerseyNumber ?? 999) - (b.jerseyNumber ?? 999)
+  )
+}
+
+function isAssignedRole(
+  role: string | null | undefined
+): role is "player" | "recorder" | "manager" | "admin" {
+  return (
+    role === "player" ||
+    role === "recorder" ||
+    role === "manager" ||
+    role === "admin"
+  )
+}
+
+async function loadTeamEntries(teamId: string, seasonYear: number) {
+  const [batting, pitching] = await Promise.all([
+    fetchSavedEntriesByPlayer(Number(teamId), seasonYear),
+    fetchPitchingEntriesByPlayer(Number(teamId), seasonYear),
+  ])
+  return { batting, pitching }
+}
+
+async function loadVisiblePlayers(teamId: string | number, seasonYear: number) {
+  const rows = await fetchPlayers(Number(teamId), seasonYear)
+  return sortPlayersByJersey(rows.map(mapPlayerRow).filter((p) => !p.isArchived))
+}
+
+/* -------------------- hook -------------------- */
+
+export function useStatsPageLoader() {
+  const navigate = useNavigate()
+
+  const [teams, setTeams] = useState<Team[]>([])
+  const [players, setPlayers] = useState<Player[]>([])
+  const [activeTeamId, setActiveTeamId] = useState("")
+  const [activePlayerId, setActivePlayerId] = useState("")
+  const [savedEntriesByPlayer, setSavedEntriesByPlayer] = useState<
+    Record<string, SavedBattingGameEntry[]>
+  >({})
+  const [pitchingEntriesByPlayer, setPitchingEntriesByPlayer] = useState<
+    Record<string, SavedPitchingGameEntry[]>
+  >({})
+  const [mode, setMode] = useState<"batting" | "pitching">("batting")
+  const [isRestrictedUser, setIsRestrictedUser] = useState(false)
+  const [userRole, setUserRole] = useState<"player" | "recorder" | "manager" | "admin" | null>(null)
+  const [accessStatus, setAccessStatus] = useState<"public" | "assigned" | "awaiting">("public")
+  const [view, setView] = useState<"stats" | "myteam" | "record" | "setup" | "archive">("stats")
+  const [setupSeasonYear, setSetupSeasonYear] = useState(new Date().getFullYear())
+  const [setupActivePlayerId, setSetupActivePlayerId] = useState("")
+  const lastSetupTeamIdRef = useRef("")
+  const [isLoading, setIsLoading] = useState(true)
+  const [errorMessage, setErrorMessage] = useState("")
+
+  const activeTeam = teams.find((team) => team.id === activeTeamId) || null
+  const activePlayer = players.find((player) => player.id === activePlayerId) || null
+  const useJunksTheme = isJunksTeam(activeTeam?.name)
+
+  useEffect(() => {
+    if (useJunksTheme) {
+      applyGlobalTheme(JUNKS_THEME_STYLE)
+    } else {
+      resetGlobalTheme()
+    }
+    return resetGlobalTheme
+  }, [useJunksTheme])
+
+  useEffect(() => {
+    if (!players.length) return
+    const exists = players.find((p) => p.id === activePlayerId)
+    if (!exists) setActivePlayerId(players[0].id)
+  }, [players, activePlayerId])
+
+  useEffect(() => {
+    if (!activePlayer) return
+    const nextMode = activePlayer.positions.length === 1 && activePlayer.positions[0] === "P" ? "pitching" : "batting"
+    if (mode !== nextMode) setMode(nextMode)
+  }, [activePlayer?.id])
+
+  useEffect(() => {
+    if (!activeTeam || lastSetupTeamIdRef.current === activeTeam.id) return
+    lastSetupTeamIdRef.current = activeTeam.id
+    setSetupSeasonYear(activeTeam.currentSeasonYear)
+  }, [activeTeam])
+
+  /* -------------------- derived -------------------- */
+
+  const savedEntries = useMemo(() => {
+    if (!activePlayer) return []
+    return savedEntriesByPlayer[activePlayer.id] ?? []
+  }, [activePlayer, savedEntriesByPlayer])
+
+  const allTeamEntries = useMemo(
+    () => Object.values(savedEntriesByPlayer).flat(),
+    [savedEntriesByPlayer]
+  )
+
+  /* -------------------- initial load -------------------- */
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setIsLoading(true)
+        setErrorMessage("")
+        setAccessStatus("public")
+
+        const { data: authData } = await supabase.auth.getUser()
+        const userEmail = authData.user?.email?.trim().toLowerCase() ?? ""
+        const isAdmin = userEmail === "admin@jojistats.com"
+
+        if (isAdmin) {
+          navigate("/admin", { replace: true })
+          return
+        }
+
+        if (authData.user && !isAdmin) {
+          const access = await fetchUserAccessByEmail(userEmail)
+
+          if (!access || !isAssignedRole(access.role)) {
+            setTeams([])
+            setPlayers([])
+            setActiveTeamId("")
+            setActivePlayerId("")
+            setSavedEntriesByPlayer({})
+            setPitchingEntriesByPlayer({})
+            setIsRestrictedUser(true)
+            setUserRole(null)
+            setAccessStatus("awaiting")
+            setErrorMessage("No User Access has been assigned.")
+            return
+          }
+
+          const teamRow = await fetchTeamById(access.team_id)
+          const team = mapTeamRow(teamRow)
+          let playerRows = await fetchPlayers(access.team_id, team.currentSeasonYear)
+          if (playerRows.length === 0) {
+            playerRows = await fetchPlayersByTeam(access.team_id)
+          }
+          const visiblePlayers = sortPlayersByJersey(
+            playerRows.map(mapPlayerRow).filter((player) => !player.isArchived)
+          )
+
+          const assignedPlayer =
+            visiblePlayers.find((player) => player.id === String(access.player_id)) ??
+            visiblePlayers[0]
+
+          if (!assignedPlayer) {
+            setTeams([team])
+            setPlayers(visiblePlayers)
+            setActiveTeamId(team.id)
+            setActivePlayerId("")
+            setSavedEntriesByPlayer({})
+            setPitchingEntriesByPlayer({})
+            setIsRestrictedUser(true)
+            setErrorMessage("No players were found for this team.")
+            return
+          }
+
+          setIsRestrictedUser(true)
+          setAccessStatus("assigned")
+          setUserRole(access.role)
+          setTeams([team])
+          setActiveTeamId(team.id)
+          setPlayers(visiblePlayers)
+          setActivePlayerId(assignedPlayer.id)
+
+          try {
+            const { batting, pitching } = await loadTeamEntries(team.id, team.currentSeasonYear)
+            setSavedEntriesByPlayer(batting)
+            setPitchingEntriesByPlayer(pitching)
+          } catch (statsError) {
+            console.error(statsError)
+            setSavedEntriesByPlayer({})
+            setPitchingEntriesByPlayer({})
+          }
+
+          return
+        }
+
+        setIsRestrictedUser(false)
+        setUserRole(null)
+        setAccessStatus("public")
+        const teamRows = await fetchTeams()
+        const visibleTeams = teamRows.map(mapTeamRow).filter((team) => !team.isArchived)
+        setTeams(visibleTeams)
+
+        const firstTeam = visibleTeams[0]
+        if (!firstTeam) return
+
+        setActiveTeamId(firstTeam.id)
+
+        const playerRows = await fetchPlayers(Number(firstTeam.id), firstTeam.currentSeasonYear)
+        const visiblePlayers = sortPlayersByJersey(
+          playerRows.map(mapPlayerRow).filter((p) => !p.isArchived)
+        )
+        setPlayers(visiblePlayers)
+        setActivePlayerId(visiblePlayers[0]?.id ?? "")
+
+        try {
+          const { batting, pitching } = await loadTeamEntries(firstTeam.id, firstTeam.currentSeasonYear)
+          setSavedEntriesByPlayer(batting)
+          setPitchingEntriesByPlayer(pitching)
+        } catch (statsError) {
+          console.error(statsError)
+          setSavedEntriesByPlayer({})
+          setPitchingEntriesByPlayer({})
+        }
+      } catch (error) {
+        console.error(error)
+        setErrorMessage(
+          error instanceof Error
+            ? `Failed to load stats: ${error.message}`
+            : "Failed to load stats."
+        )
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    load()
+  }, [navigate])
+
+  /* -------------------- team switch -------------------- */
+
+  const handleChangeTeam = async (teamId: string) => {
+    if (isRestrictedUser) return
+
+    const nextTeam = teams.find((t) => t.id === teamId)
+    if (!nextTeam) return
+
+    try {
+      setIsLoading(true)
+      setActiveTeamId(teamId)
+
+      const playerRows = await fetchPlayers(Number(teamId), nextTeam.currentSeasonYear)
+      const visiblePlayers = sortPlayersByJersey(
+        playerRows.map(mapPlayerRow).filter((p) => !p.isArchived)
+      )
+      setPlayers(visiblePlayers)
+      setActivePlayerId(visiblePlayers[0]?.id ?? "")
+
+      try {
+        const { batting, pitching } = await loadTeamEntries(teamId, nextTeam.currentSeasonYear)
+        setSavedEntriesByPlayer(batting)
+        setPitchingEntriesByPlayer(pitching)
+      } catch (statsError) {
+        console.error(statsError)
+        setSavedEntriesByPlayer({})
+        setPitchingEntriesByPlayer({})
+      }
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error
+          ? `Failed to switch team: ${error.message}`
+          : "Failed to switch team"
+      )
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  /* -------------------- team setup -------------------- */
+
+  const handleSetupChangeSeason = async (year: number) => {
+    if (!activeTeam) return
+    setSetupSeasonYear(year)
+    setPlayers(await loadVisiblePlayers(activeTeamId, year))
+  }
+
+  const handleSetupAddPlayer = async (player: Player) => {
+    await createPlayer({
+      team_id: Number(player.teamId),
+      name: player.name,
+      jersey_number: player.jerseyNumber ?? null,
+      position: player.positions.join(","),
+      season_year: player.seasonYear,
+      is_archived: player.isArchived ? 1 : 0,
+      pitching_role: player.pitchingRole ?? null,
+    })
+    setPlayers(await loadVisiblePlayers(player.teamId, player.seasonYear))
+  }
+
+  const handleSetupUpdatePlayer = async (player: Player) => {
+    await updatePlayer(Number(player.id), {
+      team_id: Number(player.teamId),
+      name: player.name,
+      jersey_number: player.jerseyNumber ?? null,
+      position: player.positions.join(","),
+      season_year: player.seasonYear,
+      is_archived: player.isArchived ? 1 : 0,
+      pitching_role: player.pitchingRole ?? null,
+    })
+    setPlayers(await loadVisiblePlayers(player.teamId, player.seasonYear))
+  }
+
+  const handleSetupDeletePlayer = async (playerId: string) => {
+    if (!activeTeam) return
+    await archivePlayer(Number(playerId))
+    setPlayers(await loadVisiblePlayers(activeTeamId, setupSeasonYear))
+  }
+
+  return {
+    teams,
+    players,
+    activeTeamId,
+    setActiveTeamId,
+    activePlayerId,
+    setActivePlayerId,
+    savedEntriesByPlayer,
+    setSavedEntriesByPlayer,
+    pitchingEntriesByPlayer,
+    setPitchingEntriesByPlayer,
+    mode,
+    setMode,
+    isRestrictedUser,
+    userRole,
+    accessStatus,
+    view,
+    setView,
+    setupSeasonYear,
+    setupActivePlayerId,
+    setSetupActivePlayerId,
+    isLoading,
+    errorMessage,
+    activeTeam,
+    activePlayer,
+    useJunksTheme,
+    savedEntries,
+    allTeamEntries,
+    handleChangeTeam,
+    handleSetupChangeSeason,
+    handleSetupAddPlayer,
+    handleSetupUpdatePlayer,
+    handleSetupDeletePlayer,
+  }
+}

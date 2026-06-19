@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react"
-import { getGameLiveFeed, getPlayerRecentGamePks } from "./api"
+import { getGameLiveFeed, getPlayerRecentGamePks } from "../../api/mlb"
 
 // Strike zone grid boundaries (feet, catcher's view)
 // pX: negative = catcher's left, positive = catcher's right

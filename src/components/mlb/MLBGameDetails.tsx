@@ -1,172 +1,31 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
-import { getGameLiveFeed } from "./api"
+import { getGameLiveFeed } from "../../api/mlb"
 import type {
   MLBBoxscorePlayer,
   MLBGameLiveFeed,
   MLBOffense,
   MLBPlay,
-  MLBPlayEvent,
 } from "./types"
+import {
+  formatInning,
+  getAtBatResultStyle,
+  findPlayer,
+  findPlayerTeamId,
+  playerHref,
+  getRunnersBeforeAtBat,
+} from "./MLBGameDetailsUtils"
+import { PlayerHeadshot } from "./MLBPlayerHeadshot"
+import { ScoreHero } from "./MLBScoreHero"
+import { Scoreboard } from "./MLBScoreboard"
+import { LineupSidebar } from "./MLBLineupSidebar"
+import { PlayByPlay } from "./MLBPlayByPlay"
+import { PitchChart } from "./MLBPitchChart"
 
 type MLBGameDetailsProps = {
   gamePk: number
   isLive: boolean
   backHref: string
-}
-
-const PITCH_COLORS: Record<string, string> = {
-  FF: "#2563eb",
-  SI: "#0891b2",
-  FC: "#7c3aed",
-  SL: "#dc2626",
-  CU: "#ea580c",
-  CH: "#16a34a",
-  FS: "#0d9488",
-  KC: "#f59e0b",
-}
-
-function formatInning(play: MLBPlay) {
-  const half = play.about?.halfInning
-  const inning = play.about?.inning
-  if (!half || !inning) return ""
-  return `${half === "top" ? "Top" : "Bot"} ${inning}`
-}
-
-function getAtBatResultStyle(play?: MLBPlay) {
-  const eventType = play?.result?.eventType ?? ""
-  const event = play?.result?.event ?? "At-Bat Result"
-  const scoring = Boolean(play?.result?.rbi) || eventType.includes("home_run")
-  const hit = ["single", "double", "triple", "home_run"].includes(eventType)
-  const onBase = [
-    "walk",
-    "intent_walk",
-    "hit_by_pitch",
-    "catcher_interf",
-    "field_error",
-  ].includes(eventType)
-
-  if (scoring) {
-    return { label: event, box: "border-amber-300 bg-amber-50", badge: "bg-amber-500 text-white", text: "text-amber-950" }
-  }
-  if (hit) {
-    return { label: event, box: "border-emerald-300 bg-emerald-50", badge: "bg-emerald-600 text-white", text: "text-emerald-950" }
-  }
-  if (onBase) {
-    return { label: event, box: "border-blue-300 bg-blue-50", badge: "bg-blue-600 text-white", text: "text-blue-950" }
-  }
-  return { label: event, box: "border-gray-300 bg-gray-50", badge: "bg-gray-700 text-white", text: "text-gray-900" }
-}
-
-function playerImage(id?: number) {
-  return id
-    ? `https://img.mlbstatic.com/mlb-photos/image/upload/d_people:generic:headshot:67:current.png/w_213,q_auto:best/v1/people/${id}/headshot/67/current`
-    : ""
-}
-
-function teamLogoUrl(id?: number) {
-  return id ? `https://www.mlbstatic.com/team-logos/${id}.svg` : ""
-}
-
-function PlayerHeadshot({
-  id,
-  name = "",
-  className,
-}: {
-  id?: number
-  name?: string
-  className: string
-}) {
-  if (!id) {
-    return (
-      <div className={`flex items-center justify-center bg-gray-100 text-xs font-bold text-gray-400 ${className}`}>
-        TBD
-      </div>
-    )
-  }
-
-  return <img src={playerImage(id)} alt={name} className={className} />
-}
-
-function findPlayer(feed: MLBGameLiveFeed, playerId?: number): MLBBoxscorePlayer | undefined {
-  if (!playerId) return undefined
-  const key = `ID${playerId}`
-  return (
-    feed.liveData?.boxscore?.teams?.away?.players?.[key] ??
-    feed.liveData?.boxscore?.teams?.home?.players?.[key]
-  )
-}
-
-function findPlayerTeamId(feed: MLBGameLiveFeed, playerId?: number): number | undefined {
-  if (!playerId) return undefined
-  const key = `ID${playerId}`
-  if (feed.liveData?.boxscore?.teams?.away?.players?.[key]) {
-    return feed.gameData?.teams?.away?.id
-  }
-  if (feed.liveData?.boxscore?.teams?.home?.players?.[key]) {
-    return feed.gameData?.teams?.home?.id
-  }
-  return undefined
-}
-
-function playerHref(teamId: number | undefined, playerId: number | undefined): string | undefined {
-  if (!teamId || !playerId) return undefined
-  return `/mlb?teamId=${teamId}&view=players&playerId=${playerId}`
-}
-
-function getRunnersBeforeAtBat(
-  plays: MLBPlay[],
-  inning?: number,
-  half?: "top" | "bottom" | null,
-  atBatIndex?: number
-): MLBOffense {
-  const bases: Record<"1B" | "2B" | "3B", { id?: number; fullName?: string } | undefined> = {
-    "1B": undefined,
-    "2B": undefined,
-    "3B": undefined,
-  }
-
-  for (const play of plays) {
-    if (play.about?.inning !== inning || play.about?.halfInning !== half) {
-      continue
-    }
-
-    if (
-      atBatIndex !== undefined &&
-      play.atBatIndex !== undefined &&
-      play.atBatIndex >= atBatIndex
-    ) {
-      break
-    }
-
-    for (const runner of play.runners ?? []) {
-      const person = runner.details?.runner
-      const start = runner.movement?.start
-      const end = runner.movement?.end
-
-      if (person?.id !== undefined) {
-        for (const base of ["1B", "2B", "3B"] as const) {
-          if (bases[base]?.id === person.id) bases[base] = undefined
-        }
-      } else if (start === "1B" || start === "2B" || start === "3B") {
-        bases[start] = undefined
-      }
-
-      if (
-        !runner.movement?.isOut &&
-        person &&
-        (end === "1B" || end === "2B" || end === "3B")
-      ) {
-        bases[end] = person
-      }
-    }
-  }
-
-  return {
-    first: bases["1B"],
-    second: bases["2B"],
-    third: bases["3B"],
-  }
 }
 
 function BasesDiamond({ offense }: { offense?: MLBOffense }) {
@@ -280,402 +139,6 @@ function PlayerMatchup({
   )
 }
 
-function PitchChart({ events, expanded = false }: { events: MLBPlayEvent[]; expanded?: boolean }) {
-  const pitches = events.filter(
-    (event) =>
-      event.pitchData?.coordinates?.pX !== undefined &&
-      event.pitchData?.coordinates?.pZ !== undefined
-  )
-
-  if (pitches.length === 0) {
-    return (
-      <div className="rounded-xl bg-gray-50 px-4 py-5 text-sm text-gray-500">
-        <p className="font-semibold text-gray-700">Pitch location data is not available</p>
-        <p className="mt-1 text-xs text-gray-400">
-          Statcast tracking data is not available for this game (e.g. Spring Training, international games, or certain archived games).
-        </p>
-      </div>
-    )
-  }
-
-  return (
-    <div className={`grid gap-6 ${expanded ? "lg:grid-cols-[420px_1fr]" : "md:grid-cols-[360px_1fr]"}`}>
-      <div className={`relative mx-auto overflow-hidden rounded-xl bg-[#1a2e1a] ${
-        expanded
-          ? "h-80 w-full max-w-80 md:h-105 md:max-w-[22rem]"
-          : "h-64 w-full max-w-64 md:h-80 md:max-w-80"
-      }`}>
-        {/* Home plate area hint */}
-        <div className="absolute bottom-[6%] left-1/2 h-[7%] w-[34%] -translate-x-1/2 rounded-sm bg-[#2a3e2a] opacity-60" />
-        {/* Strike zone – wider and taller */}
-        <div className="absolute left-[12%] top-[8%] h-[74%] w-[76%] border-2 border-white/60 bg-white/5">
-          <span className="absolute left-1/3 top-0 h-full border-l border-white/25" />
-          <span className="absolute left-2/3 top-0 h-full border-l border-white/25" />
-          <span className="absolute left-0 top-1/3 w-full border-t border-white/25" />
-          <span className="absolute left-0 top-2/3 w-full border-t border-white/25" />
-        </div>
-        <p className="absolute left-1/2 top-[10%] -translate-x-1/2 text-xs font-bold uppercase tracking-widest text-white/40">Strike Zone</p>
-        {pitches.map((event, index) => {
-          const x = Math.max(4, Math.min(96, 50 + (event.pitchData?.coordinates?.pX ?? 0) * 23))
-          const z = Math.max(4, Math.min(96, 92 - (event.pitchData?.coordinates?.pZ ?? 0) * 20))
-          const code = event.details?.type?.code ?? ""
-          return (
-            <span
-              key={event.index ?? index}
-              title={`${index + 1}. ${event.details?.type?.description ?? "Pitch"} ${event.pitchData?.startSpeed?.toFixed(1) ?? ""} mph`}
-              className="absolute flex h-8 w-8 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 text-sm font-extrabold text-white shadow-lg"
-              style={{
-                left: `${x}%`,
-                top: `${z}%`,
-                backgroundColor: PITCH_COLORS[code] ?? "#4b5563",
-              }}
-            >
-              {index + 1}
-            </span>
-          )
-        })}
-      </div>
-
-      <ol className={expanded ? "max-h-96 space-y-2 overflow-y-auto pr-1" : "max-h-128 space-y-3 overflow-y-auto pr-1"}>
-        {pitches.map((event, index) => (
-          <li key={event.index ?? index} className="flex items-center justify-between gap-2 rounded-xl bg-gray-50 px-3 py-2.5 transition hover:bg-gray-100">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-extrabold text-white shadow-sm"
-                style={{ backgroundColor: PITCH_COLORS[event.details?.type?.code ?? ""] ?? "#4b5563" }}
-              >
-                {index + 1}
-              </span>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-gray-800">
-                  {event.details?.type?.description ?? "Pitch"}
-                </p>
-                <p className="truncate text-xs text-gray-500">
-                  {event.details?.description ?? ""}
-                </p>
-                <p className="text-xs text-gray-400">
-                  {event.pitchData?.startSpeed?.toFixed(1) ?? "—"} mph
-                  {event.pitchData?.breaks?.spinRate ? ` · ${Math.round(event.pitchData.breaks.spinRate)} rpm` : ""}
-                </p>
-              </div>
-            </div>
-            <span className="shrink-0 rounded-lg bg-white px-2.5 py-1 text-sm font-bold tabular-nums text-gray-500 shadow-sm ring-1 ring-gray-200">
-              {event.count?.balls ?? 0}-{event.count?.strikes ?? 0}
-            </span>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )
-}
-
-function ScoreHero({ feed, liveStatus, finalStatus }: {
-  feed: MLBGameLiveFeed
-  liveStatus: boolean
-  finalStatus: boolean
-}) {
-  const linescore = feed.liveData?.linescore
-  const away = feed.gameData?.teams?.away
-  const home = feed.gameData?.teams?.home
-  const awayScore = linescore?.teams?.away?.runs ?? 0
-  const homeScore = linescore?.teams?.home?.runs ?? 0
-  const awayWinning = finalStatus && awayScore > homeScore
-  const homeWinning = finalStatus && homeScore > awayScore
-
-  return (
-    <div className="flex items-center justify-between gap-2 py-1">
-      {/* Away team */}
-      <Link
-        to={away?.id ? `/mlb/teams/${away.id}` : "#"}
-        className={`flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 transition hover:bg-gray-50 ${finalStatus && !awayWinning ? "opacity-55" : ""}`}
-      >
-        {away?.id && (
-          <img
-            src={teamLogoUrl(away.id)}
-            alt={away.name}
-            className="h-10 w-10 shrink-0 object-contain sm:h-12 sm:w-12"
-          />
-        )}
-        <div className="min-w-0">
-          <p className="truncate text-sm font-bold text-gray-800">{away?.teamName ?? away?.name ?? "Away"}</p>
-          <p className="text-[10px] text-gray-400">{away?.abbreviation ?? "AWY"}</p>
-        </div>
-      </Link>
-
-      {/* Score */}
-      <div className="flex shrink-0 flex-col items-center gap-0.5">
-        <div className="flex items-center gap-2.5">
-          <span className={`text-3xl font-extrabold tabular-nums tracking-tight sm:text-4xl ${
-            finalStatus && awayWinning ? "text-gray-900" : finalStatus && !awayWinning ? "text-gray-400" : "text-gray-900"
-          }`}>
-            {awayScore}
-          </span>
-          <span className="text-lg font-light text-gray-300">–</span>
-          <span className={`text-3xl font-extrabold tabular-nums tracking-tight sm:text-4xl ${
-            finalStatus && homeWinning ? "text-gray-900" : finalStatus && !homeWinning ? "text-gray-400" : "text-gray-900"
-          }`}>
-            {homeScore}
-          </span>
-        </div>
-        {liveStatus && (
-          <div className="flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-            </span>
-            <span className="text-xs font-bold text-emerald-600">
-              {linescore?.inningHalf ?? ""} {linescore?.currentInningOrdinal ?? ""}
-            </span>
-          </div>
-        )}
-        {finalStatus && (
-          <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Final</span>
-        )}
-        {!liveStatus && !finalStatus && (
-          <span className="text-[10px] font-semibold text-blue-600">{feed.gameData?.status?.detailedState ?? ""}</span>
-        )}
-      </div>
-
-      {/* Home team */}
-      <Link
-        to={home?.id ? `/mlb/teams/${home.id}` : "#"}
-        className={`flex min-w-0 flex-1 flex-row-reverse items-center gap-2 rounded-xl p-1 transition hover:bg-gray-50 ${finalStatus && !homeWinning ? "opacity-55" : ""}`}
-      >
-        {home?.id && (
-          <img
-            src={teamLogoUrl(home.id)}
-            alt={home.name}
-            className="h-10 w-10 shrink-0 object-contain sm:h-12 sm:w-12"
-          />
-        )}
-        <div className="min-w-0 text-right">
-          <p className="truncate text-sm font-bold text-gray-800">{home?.teamName ?? home?.name ?? "Home"}</p>
-          <p className="text-[10px] text-gray-400">{home?.abbreviation ?? "HME"}</p>
-        </div>
-      </Link>
-    </div>
-  )
-}
-
-function Scoreboard({
-  feed,
-  selectedInning,
-  selectedHalf,
-  onSelectHalfInning,
-}: {
-  feed: MLBGameLiveFeed
-  selectedInning: number | null
-  selectedHalf: "top" | "bottom" | null
-  onSelectHalfInning: (inning: number, half: "top" | "bottom") => void
-}) {
-  const linescore = feed.liveData?.linescore
-  const innings = linescore?.innings ?? []
-  const allPlays = feed.liveData?.plays?.allPlays ?? []
-  const inningNumbers = innings.length > 0
-    ? innings.map((inning) => inning.num ?? 0)
-    : Array.from({ length: 9 }, (_, index) => index + 1)
-
-  function hasPlaysForHalf(inning: number, half: "top" | "bottom") {
-    return allPlays.some(
-      (play) => play.about?.inning === inning && play.about?.halfInning === half
-    )
-  }
-
-  return (
-    <div className="overflow-x-auto rounded-xl bg-gray-50 ring-1 ring-gray-100">
-      <table className="w-full min-w-155 text-center text-sm">
-        <thead>
-          <tr className="border-b border-gray-200 text-[10px] uppercase tracking-widest text-gray-400">
-            <th className="px-3 py-2.5 text-left">Team</th>
-            {inningNumbers.map((inning) => (
-              <th key={inning} className="px-2 py-2.5 font-bold">
-                {inning}
-              </th>
-            ))}
-            <th className="border-l border-gray-200 px-3 py-2.5 font-extrabold text-gray-600">R</th>
-            <th className="px-3 py-2.5 font-bold">H</th>
-            <th className="px-3 py-2.5 font-bold">E</th>
-          </tr>
-        </thead>
-        <tbody>
-          {(["away", "home"] as const).map((side, sideIndex) => {
-            const team = feed.gameData?.teams?.[side]
-            const total = linescore?.teams?.[side]
-            const half = side === "away" ? "top" : "bottom"
-            const isWinner = (side === "away" && (total?.runs ?? 0) > (linescore?.teams?.home?.runs ?? 0)) ||
-                             (side === "home" && (total?.runs ?? 0) > (linescore?.teams?.away?.runs ?? 0))
-            const isFinal = feed.gameData?.status?.abstractGameState === "Final"
-            return (
-              <tr key={side} className={`font-bold text-gray-800 ${sideIndex === 0 ? "" : "border-t border-gray-200"}`}>
-                <td className="px-3 py-3 text-left">
-                  <Link
-                    to={team?.id ? `/mlb/teams/${team.id}` : "#"}
-                    className="flex items-center gap-2 rounded-lg transition hover:opacity-75"
-                  >
-                    {team?.id && (
-                      <img src={teamLogoUrl(team.id)} alt="" className="h-6 w-6 object-contain" />
-                    )}
-                    <span className="max-w-36 truncate text-sm font-bold text-gray-900">{team?.name ?? side}</span>
-                    {isFinal && isWinner && (
-                      <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-emerald-700">W</span>
-                    )}
-                  </Link>
-                </td>
-                {inningNumbers.map((inning) => {
-                  const inningData = innings.find((entry) => entry.num === inning)?.[side]
-                  const isSelected = selectedInning === inning && selectedHalf === half
-                  const hasData = hasPlaysForHalf(inning, half)
-                  return (
-                    <td key={inning} className="px-1 py-1.5">
-                      <button
-                        type="button"
-                        onClick={() => onSelectHalfInning(inning, half)}
-                        disabled={!hasData}
-                        aria-label={`View ${half} of inning ${inning} play-by-play`}
-                        className={`h-8 min-w-8 rounded-lg px-2 text-sm font-bold transition ${
-                          isSelected
-                            ? "bg-green-600 text-white shadow-sm"
-                            : hasData
-                            ? "text-gray-700 hover:bg-white hover:shadow-sm"
-                            : "cursor-not-allowed text-gray-300"
-                        }`}
-                      >
-                        {inningData?.runs ?? "–"}
-                      </button>
-                    </td>
-                  )
-                })}
-                <td className="border-l border-gray-200 px-3 py-3 text-lg font-extrabold text-gray-900">{total?.runs ?? 0}</td>
-                <td className="px-3 py-3 text-gray-600">{total?.hits ?? 0}</td>
-                <td className="px-3 py-3 text-gray-400">{total?.errors ?? 0}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function LineupSidebar({ feed, currentBatterId, battingSide }: {
-  feed: MLBGameLiveFeed
-  currentBatterId?: number
-  battingSide: "away" | "home" | null
-}) {
-  const [viewSide, setViewSide] = useState<"away" | "home">(battingSide ?? "away")
-
-  const buildLineup = (side: "away" | "home") => {
-    const team = feed.liveData?.boxscore?.teams?.[side]
-    const order = team?.battingOrder ?? []
-    const players = team?.players ?? {}
-    const teamId = side === "away" ? feed.gameData?.teams?.away?.id : feed.gameData?.teams?.home?.id
-    const lineupBySlot = new Map<number, {
-      id: number
-      lastName: string
-      pos: string
-      avg: string
-      teamId?: number
-      orderNum: number
-    }>()
-
-    const addPlayer = (p: MLBBoxscorePlayer | undefined, fallbackSlot?: number) => {
-      const id = p?.person?.id
-      if (!id) return
-
-      const orderNum = Number(p?.battingOrder ?? "")
-      const slot = Number.isFinite(orderNum) && orderNum > 0
-        ? Math.floor(orderNum / 100)
-        : fallbackSlot
-      if (!slot || slot < 1 || slot > 9) return
-
-      const fullName = p?.person?.fullName ?? "—"
-      const current = lineupBySlot.get(slot)
-      if (current && Number.isFinite(orderNum) && orderNum < current.orderNum) return
-
-      lineupBySlot.set(slot, {
-        id,
-        lastName: fullName.split(" ").slice(1).join(" ") || fullName,
-        pos: p?.position?.abbreviation ?? "",
-        avg: p?.seasonStats?.batting?.avg ?? "",
-        teamId,
-        orderNum: Number.isFinite(orderNum) ? orderNum : fallbackSlot ?? slot,
-      })
-    }
-
-    Object.values(players).forEach((player) => addPlayer(player))
-    order.forEach((id, index) => addPlayer(players[`ID${id}`], index + 1))
-
-    return Array.from(lineupBySlot.entries())
-      .sort(([a], [b]) => a - b)
-      .map(([, player]) => player)
-  }
-
-  const awayAbbr = feed.gameData?.teams?.away?.abbreviation ?? "Away"
-  const homeAbbr = feed.gameData?.teams?.home?.abbreviation ?? "Home"
-  const awayLineup = buildLineup("away")
-  const homeLineup = buildLineup("home")
-
-  if (awayLineup.length === 0 && homeLineup.length === 0) return null
-
-  const lineup = viewSide === "away" ? awayLineup : homeLineup
-
-  return (
-    <section className="flex h-full min-h-0 flex-col rounded-2xl bg-white p-4 shadow-sm">
-      <p className="shrink-0 text-xs font-bold uppercase tracking-widest text-green-700">Lineup</p>
-
-      <div className="mt-2 shrink-0 grid grid-cols-2 rounded-xl bg-gray-100 p-1">
-        <button
-          type="button"
-          onClick={() => setViewSide("away")}
-          className={`rounded-lg py-2 text-sm font-bold transition ${viewSide === "away" ? "bg-white text-green-900 shadow-sm" : "text-gray-500"}`}
-        >
-          {awayAbbr}
-        </button>
-        <button
-          type="button"
-          onClick={() => setViewSide("home")}
-          className={`rounded-lg py-2 text-sm font-bold transition ${viewSide === "home" ? "bg-white text-green-900 shadow-sm" : "text-gray-500"}`}
-        >
-          {homeAbbr}
-        </button>
-      </div>
-
-      <div className="mt-2">
-        {lineup.map((player, index) => {
-          const isCurrent = viewSide === (battingSide ?? "away") && player.id === currentBatterId
-          const href = playerHref(player.teamId, player.id)
-          const inner = (
-            <div className={`flex items-center gap-2 rounded-lg px-2.5 py-2 transition ${
-              isCurrent ? "bg-green-900" : "hover:bg-gray-50"
-            }`}>
-              <span className={`w-5 shrink-0 text-center text-sm font-extrabold ${isCurrent ? "text-green-400" : "text-gray-400"}`}>
-                {index + 1}
-              </span>
-              <div className="min-w-0 flex-1">
-                <p className={`truncate text-base font-semibold leading-none ${isCurrent ? "text-white" : "text-gray-800"}`}>
-                  {player.lastName}
-                </p>
-                {player.avg && (
-                  <p className={`text-xs leading-tight ${isCurrent ? "text-green-300" : "text-gray-400"}`}>{player.avg}</p>
-                )}
-              </div>
-              <span className={`shrink-0 text-xs font-bold ${isCurrent ? "text-green-300" : "text-gray-400"}`}>
-                {player.pos}
-              </span>
-            </div>
-          )
-          return href ? (
-            <Link key={player.id} to={href} target="_blank" rel="noreferrer">{inner}</Link>
-          ) : (
-            <div key={player.id}>{inner}</div>
-          )
-        })}
-      </div>
-    </section>
-  )
-}
-
-
 function PreGameSummary({ feed }: { feed: MLBGameLiveFeed }) {
   const start = feed.gameData?.datetime?.dateTime
   const probable = feed.gameData?.probablePitchers
@@ -775,134 +238,6 @@ function Decisions({ feed }: { feed: MLBGameLiveFeed }) {
   )
 }
 
-function PlayByPlay({
-  plays,
-  selectedInning,
-  selectedHalf,
-  selectedAtBatIndex,
-  onClearInning,
-  onSelectAtBat,
-}: {
-  plays: MLBPlay[]
-  selectedInning: number | null
-  selectedHalf: "top" | "bottom" | null
-  selectedAtBatIndex: number | null
-  onClearInning: () => void
-  onSelectAtBat: (inning: number, half: "top" | "bottom", atBatIndex: number) => void
-}) {
-  const [showAll, setShowAll] = useState(false)
-  const groups = useMemo(() => {
-    const map = new Map<number, MLBPlay[]>()
-    plays.filter((play) => play.result?.description).forEach((play) => {
-      const inning = play.about?.inning ?? 0
-      map.set(inning, [...(map.get(inning) ?? []), play])
-    })
-    return [...map.entries()].sort((a, b) => b[0] - a[0])
-  }, [plays])
-  const selectedGroup = selectedInning === null || selectedHalf === null
-    ? null
-    : (() => {
-        const group = groups.find(([inning]) => inning === selectedInning)
-        if (!group) return undefined
-        return [
-          group[0],
-          group[1].filter((play) => play.about?.halfInning === selectedHalf),
-        ] as [number, MLBPlay[]]
-      })()
-  const visibleGroups = selectedInning !== null
-    ? selectedGroup ? [selectedGroup] : []
-    : showAll ? groups : groups.slice(0, 3)
-
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-widest text-green-700">Play-by-Play</p>
-          <h2 className="mt-0.5 text-lg font-extrabold text-gray-900">
-            {selectedInning && selectedHalf
-              ? `${selectedHalf === "top" ? "Top" : "Bottom"} ${selectedInning}`
-              : "Inning Summary"}
-          </h2>
-        </div>
-        {selectedInning !== null ? (
-          <button
-            type="button"
-            onClick={onClearInning}
-            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-500 transition hover:bg-gray-100"
-          >
-            All innings
-          </button>
-        ) : groups.length > 3 && (
-          <button
-            type="button"
-            onClick={() => setShowAll((current) => !current)}
-            className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 text-xs font-semibold text-gray-500 transition hover:bg-gray-100"
-          >
-            {showAll ? "Show recent" : "Show all"}
-          </button>
-        )}
-      </div>
-      <div className="mt-4 space-y-5">
-        {visibleGroups.map(([inning, inningPlays]) => (
-          <section key={inning}>
-            <div className="mb-2 flex items-center gap-2">
-              <div className="h-px flex-1 bg-gray-100" />
-              <h3 className="text-xs font-extrabold uppercase tracking-widest text-gray-400">Inning {inning}</h3>
-              <div className="h-px flex-1 bg-gray-100" />
-            </div>
-            <ol className="space-y-2">
-              {[...inningPlays].reverse().map((play, index) => {
-                const scoring = Boolean(play.result?.rbi) || (play.result?.eventType ?? "").includes("home_run")
-                const half = play.about?.halfInning as "top" | "bottom" | undefined
-                const canSelect = play.result?.event != null && half != null && play.atBatIndex != null
-                const isSelected = play.atBatIndex != null && play.atBatIndex === selectedAtBatIndex
-                return (
-                  <li
-                    key={`${play.atBatIndex ?? index}-${play.result?.description}`}
-                    className={`rounded-xl border transition ${
-                      scoring
-                        ? isSelected
-                          ? "border-amber-400 bg-amber-100"
-                          : "border-amber-200 bg-amber-50"
-                        : isSelected
-                        ? "border-green-300 bg-green-50"
-                        : "border-gray-100 bg-gray-50"
-                    } ${canSelect ? "cursor-pointer hover:shadow-sm" : ""}`}
-                    onClick={
-                      canSelect
-                        ? () => onSelectAtBat(inning, half!, play.atBatIndex!)
-                        : undefined
-                    }
-                  >
-                    <div className="flex items-start justify-between gap-3 px-3 py-2.5">
-                      <p className="text-sm text-gray-700">{play.result?.description}</p>
-                      <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-bold tabular-nums shadow-sm ring-1 ${
-                        isSelected ? "bg-green-600 text-white ring-green-500" : "bg-white text-gray-400 ring-gray-100"
-                      }`}>
-                        {formatInning(play)}
-                      </span>
-                    </div>
-                    {(play.result?.awayScore !== undefined || play.result?.homeScore !== undefined) && (
-                      <p className={`px-3 pb-2.5 text-xs font-bold ${scoring ? "text-amber-700" : "text-gray-400"}`}>
-                        {scoring && "★ "}Score {play.result?.awayScore ?? 0}–{play.result?.homeScore ?? 0}
-                      </p>
-                    )}
-                  </li>
-                )
-              })}
-            </ol>
-          </section>
-        ))}
-        {visibleGroups.length === 0 && (
-          <p className="py-4 text-center text-sm text-gray-400">
-            No play-by-play available for the selected half-inning.
-          </p>
-        )}
-      </div>
-    </div>
-  )
-}
-
 export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDetailsProps) {
   const [feed, setFeed] = useState<MLBGameLiveFeed | null>(null)
   const [error, setError] = useState("")
@@ -958,14 +293,14 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
   const inningPlays = selectedInning === null
     ? []
     : allPlays.filter(
-        (play) =>
+        (play: MLBPlay) =>
           play.about?.inning === selectedInning &&
           play.about?.halfInning === selectedHalf &&
-          play.result?.event != null   // exclude non-at-bat actions (pickoffs, steals, etc.)
+          play.result?.event != null
       )
   const selectedPlayPosition = selectedAtBatIndex === null
     ? -1
-    : inningPlays.findIndex((play) => play.atBatIndex === selectedAtBatIndex)
+    : inningPlays.findIndex((play: MLBPlay) => play.atBatIndex === selectedAtBatIndex)
   const displayedPlay = selectedPlayPosition >= 0
     ? inningPlays[selectedPlayPosition]
     : currentPlay
@@ -982,9 +317,10 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
   const batter = displayedPlay?.matchup?.batter ?? linescore?.offense?.batter
   const pitcher = displayedPlay?.matchup?.pitcher ?? linescore?.defense?.pitcher
   const resultStyle = getAtBatResultStyle(displayedPlay)
+
   const handleSelectHalfInning = (inning: number, half: "top" | "bottom") => {
     const playsForInning = allPlays.filter(
-      (play) =>
+      (play: MLBPlay) =>
         play.about?.inning === inning &&
         play.about?.halfInning === half &&
         play.result?.event != null
@@ -1026,9 +362,7 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
 
   return (
     <div className="space-y-4">
-      {/* Game header card */}
       <section className="overflow-hidden rounded-2xl bg-white shadow-sm">
-        {/* Top bar with controls */}
         <div className="flex flex-wrap items-center justify-between gap-2 border-b border-gray-100 px-4 py-2">
           <div>
             <p className="text-[9px] font-bold uppercase tracking-widest text-green-700 sm:text-[10px]">
@@ -1068,12 +402,10 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
 
         {error && feed && <p className="px-4 pt-2 text-right text-xs text-red-500">{error}</p>}
 
-        {/* Score hero */}
         <div className="px-4 py-1.5">
           <ScoreHero feed={feed} liveStatus={liveStatus} finalStatus={finalStatus} />
         </div>
 
-        {/* Venue + date bar */}
         <div className="border-t border-gray-100 bg-gray-50 px-4 py-1.5 text-center">
           <p className="text-xs text-gray-400">
             {feed.gameData?.venue?.name ?? ""}
@@ -1083,7 +415,6 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
           </p>
         </div>
 
-        {/* Scoreboard */}
         <div className="px-4 pb-3 pt-2">
           <Scoreboard
             feed={feed}
@@ -1097,7 +428,6 @@ export default function MLBGameDetails({ gamePk, isLive, backHref }: MLBGameDeta
       {previewStatus && <PreGameSummary feed={feed} />}
       {finalStatus && <Decisions feed={feed} />}
 
-      {/* For completed games with no at-bat selected, prompt the user */}
       {finalStatus && !viewingHistoricalAtBat && (
         <div className="rounded-2xl bg-white p-5 shadow-sm">
           <p className="text-[10px] font-bold uppercase tracking-widest text-green-700">Pitch Location</p>
