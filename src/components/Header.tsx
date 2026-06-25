@@ -198,6 +198,13 @@ export default function Header({
                   MLB
                 </Link>
 
+                <Link
+                  to="/sim"
+                  className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
+                >
+                  JBL
+                </Link>
+
                 {displayAccessRole === "recorder" && (
                   <Link
                     to="/record-game"
@@ -266,6 +273,13 @@ export default function Header({
                 className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
               >
                 MLB
+              </Link>
+
+              <Link
+                to="/sim"
+                className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
+              >
+                League
               </Link>
 
               <Link
