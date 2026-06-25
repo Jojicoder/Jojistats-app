@@ -279,7 +279,7 @@ export default function Header({
                 to="/sim"
                 className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
               >
-                League
+                JBL
               </Link>
 
               <Link
