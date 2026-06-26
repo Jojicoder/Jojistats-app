@@ -1,5 +1,4 @@
-import { useMemo, useState, type CSSProperties } from "react"
-import PageShell from "../components/PageShell"
+import { useMemo, useState } from "react"
 import {
   simulateSeason,
   DIVISIONS,
@@ -67,8 +66,6 @@ function DivisionTable({
   teams: TeamRecord[]
   playoffSeeds: PlayoffSeed[]
 }) {
-  const leader = teams[0]
-
   const getSeedNum = (name: string) => playoffSeeds.find((s) => s.team === name)?.seed
 
   return (
@@ -288,8 +285,6 @@ function ScheduleView({ season }: { season: SeasonResult }) {
   const [selectedTeam, setSelectedTeam] = useState<string>("all")
   const [dateFilter, setDateFilter] = useState<string>("")
 
-  const allTeams = Object.values(DIVISIONS).flat()
-
   const filtered = useMemo(() => {
     return season.results
       .filter((r) => selectedTeam === "all" || r.away === selectedTeam || r.home === selectedTeam)
@@ -474,8 +469,8 @@ export default function SeasonPage() {
   ]
 
   return (
-    <PageShell title="JBL シーズン">
-      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+    <div className="flex flex-1 flex-col bg-gray-50">
+      <div className="max-w-7xl mx-auto w-full px-4 py-6 space-y-6">
 
         {/* Header controls */}
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -581,6 +576,6 @@ export default function SeasonPage() {
           </>
         )}
       </div>
-    </PageShell>
+    </div>
   )
 }

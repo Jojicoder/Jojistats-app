@@ -208,7 +208,7 @@ function simulateGame(
 
   // No ties — if tied, play "extra innings" (coin-flip run)
   if (awayRuns === homeRuns) {
-    if (rng() < 0.5) awayRuns++ else homeRuns++
+    if (rng() < 0.5) { awayRuns++ } else { homeRuns++ }
   }
 
   return { date, away, home, awayRuns, homeRuns }
