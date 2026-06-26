@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+@keyframes fadeInPop {
+  from { opacity: 0; transform: scale(0.7); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
 /* Register MLB theme vars so browsers can interpolate them in transitions */
 @property --mlb-primary {
   syntax: '<color>';
