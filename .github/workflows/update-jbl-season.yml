@@ -1,6 +1,15 @@
 name: Update JBL Season JSON
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/update-jbl-season.yml"
+      - "docs/jbl-season-json.md"
+      - "scripts/validate-jbl-json.mjs"
+      - "src/sim/jblJsonTypes.ts"
+      - "package.json"
   workflow_dispatch:
     inputs:
       season:
@@ -27,7 +36,7 @@ jobs:
 
     env:
       SEASON: ${{ inputs.season || '2026' }}
-      GAME_LIMIT: ${{ inputs.game_limit || '0' }}
+      GAME_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.game_limit || github.event_name == 'push' && '3' || '0' }}
 
     steps:
       - name: Checkout frontend
