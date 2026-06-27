@@ -1,0 +1,82 @@
+name: Update JBL Season JSON
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season year to export"
+        required: true
+        default: "2026"
+      engine_ref:
+        description: "BaseballEngine branch/tag/SHA"
+        required: false
+        default: "main"
+      game_limit:
+        description: "Optional number of game files to export. Use 0 for full season."
+        required: false
+        default: "0"
+  schedule:
+    - cron: "0 15 * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  update-season:
+    runs-on: ubuntu-latest
+
+    env:
+      SEASON: ${{ inputs.season || '2026' }}
+      GAME_LIMIT: ${{ inputs.game_limit || '0' }}
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Checkout BaseballEngine
+        uses: actions/checkout@v4
+        with:
+          repository: Jojicoder/BaseballEngine
+          ref: ${{ inputs.engine_ref || 'main' }}
+          path: engine
+
+      - name: Install build dependencies
+        run: sudo apt-get update && sudo apt-get install -y g++ make
+
+      - name: Build C++ exporters
+        working-directory: engine/app
+        run: |
+          make game-export CXX=g++ CXXFLAGS="-std=c++17 -O2 -Wall -Wextra -Wpedantic -I../include"
+
+      - name: Export season and detailed games
+        run: |
+          set -euo pipefail
+          OUT_DIR="public/jbl/seasons/${SEASON}"
+          mkdir -p "${OUT_DIR}"
+
+          if [ "${GAME_LIMIT}" = "0" ]; then
+            engine/build/JojiGameExport --season "${SEASON}" --all-games --out-dir "${OUT_DIR}"
+          else
+            engine/build/JojiGameExport --season "${SEASON}" --all-games --limit "${GAME_LIMIT}" --out-dir "${OUT_DIR}"
+          fi
+
+      - name: Validate JBL JSON
+        run: node scripts/validate-jbl-json.mjs "${SEASON}"
+
+      - name: Build frontend
+        run: npm ci && npm run build
+
+      - name: Commit and push JSON update
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "public/jbl/seasons/${SEASON}" || true
+          if git diff --staged --quiet; then
+            echo "No JBL JSON changes to commit."
+            exit 0
+          fi
+          git commit -m "auto: update JBL season ${SEASON}"
+          git push
