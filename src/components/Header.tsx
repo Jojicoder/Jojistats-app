@@ -199,17 +199,10 @@ export default function Header({
                 </Link>
 
                 <Link
-                  to="/sim"
+                  to="/jbl"
                   className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
                 >
                   JBL
-                </Link>
-
-                <Link
-                  to="/season"
-                  className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
-                >
-                  Season
                 </Link>
 
                 {displayAccessRole === "recorder" && (
@@ -283,17 +276,10 @@ export default function Header({
               </Link>
 
               <Link
-                to="/sim"
+                to="/jbl"
                 className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
               >
                 JBL
-              </Link>
-
-              <Link
-                to="/season"
-                className="whitespace-nowrap px-2.5 text-xs font-semibold text-green-900 hover:text-green-600 xl:px-3 xl:text-sm"
-              >
-                Season
               </Link>
 
               <Link

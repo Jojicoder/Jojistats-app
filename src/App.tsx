@@ -85,6 +85,7 @@ export default function App() {
               <Route path="/player" element={<PlayerPage />} />
               <Route path="/seasons" element={<SeasonArchivePage />} />
               <Route path="/sim" element={<SimPage />} />
+              <Route path="/jbl" element={<SimPage />} />
               <Route path="/season" element={<SeasonPage />} />
               <Route path="/mlb" element={<MLBPage />} />
               <Route path="/mlb/teams/:teamId" element={<MLBTeamPage />} />
