@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "sync:jbl-json": "node scripts/sync-jbl-json-from-github.mjs",
     "validate:jbl-json": "node scripts/validate-jbl-json.mjs"
   },
   "dependencies": {

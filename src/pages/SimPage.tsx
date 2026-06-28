@@ -3,17 +3,22 @@ import { useSearchParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import StrikeZoneView, { type PitchDot, type SwingInfo } from "../components/StrikeZoneView"
 import FieldView, { type BallTraj } from "../components/FieldView"
+import {
+  simulateSeason,
+  DIVISIONS,
+  DIVISION_NAMES,
+  ALL_TEAMS,
+  type SeasonResult,
+  type TeamRecord,
+  type PlayoffSeries,
+  type PlayoffSeed,
+} from "../sim/jblSeason"
+import { getJblData, getJblVisibleGames, type JblStandingLeague, type JblTeam } from "../api/jbl"
+import type { JblGameJson } from "../sim/jblJsonTypes"
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-type SimTeam = {
-  name: string
-  wins: number
-  losses: number
-  pct: number
-  rsPerGame: number
-  raPerGame: number
-}
+type SimTeam = JblTeam
 
 type SimBatter = {
   name: string
@@ -60,13 +65,18 @@ type LeagueAvg = {
 type SimStats = {
   seasons: number
   teams: SimTeam[]
+  standings: JblStandingLeague[]
+  visibleThrough: string
+  visibleGameCount: number
+  allGamesCount: number
   battingLeaders: SimBatter[]
   pitchingLeaders: SimPitcher[]
   leagueAvg: LeagueAvg
 }
 
-type SimView = "team" | "players" | "today" | "standings"
+type SimView = "team" | "players" | "today" | "standings" | "season"
 type SimPlayerMode = "batting" | "pitching"
+type GameOption = { gameId: string; date: string; label: string }
 
 // ── Game replay types ──────────────────────────────────────────────────────
 
@@ -147,6 +157,7 @@ type SubstitutionEvent = {
 type GameEvent = HalfInningEvent | PitchEvent | PlayEvent | StolenBaseEvent | PickoffEvent | SubstitutionEvent
 
 type GameData = {
+  gameId?: string
   date: string
   away: string
   home: string
@@ -155,6 +166,247 @@ type GameData = {
   awayLineup: string[]
   homeLineup: string[]
   events: GameEvent[]
+}
+
+function normalizeGame(game: JblGameJson): GameData {
+  return {
+    gameId: game.gameId,
+    date: game.date,
+    away: game.away,
+    home: game.home,
+    finalScore: game.finalScore,
+    lineScore: game.lineScore,
+    awayLineup: game.awayLineup,
+    homeLineup: game.homeLineup,
+    events: game.events.map((event) => {
+      const isTop = "isTop" in event
+        ? Boolean((event as { isTop?: boolean }).isTop)
+        : "half" in event && event.half === "top"
+      if (event.type === "half_inning") {
+        return {
+          type: "half_inning",
+          inning: event.inning,
+          isTop,
+          score: event.score,
+        }
+      }
+      if (event.type === "pitch") {
+        return {
+          type: "pitch",
+          inning: event.inning,
+          isTop,
+          pitcher: event.pitcher,
+          batter: event.batter,
+          pitchType: event.pitchType,
+          outcome: event.outcome,
+          balls: event.ballsBefore,
+          strikes: event.strikesBefore,
+          outs: event.outsBefore,
+          score: event.scoreBefore,
+          bases: event.basesBefore,
+          velo: event.velo,
+          px: event.px,
+          pz: event.pz,
+          mx: event.mx,
+          mz: event.mz,
+          batHand: event.batHand,
+          pitchHand: event.pitchHand,
+        }
+      }
+      if (event.type === "play") {
+        const runsScored = Array.isArray(event.runsScored)
+          ? event.runsScored.length
+          : Number(event.runsScored ?? 0)
+        return {
+          type: "play",
+          inning: event.inning,
+          isTop,
+          batter: event.batter,
+          pitcher: event.pitcher,
+          result: event.result,
+          outs: event.outsAfter,
+          score: event.scoreAfter,
+          bases: event.basesAfter,
+          runsScored,
+          hit: event.hit
+            ? {
+                ev: event.hit.ev,
+                la: event.hit.la,
+                sa: event.hit.sa,
+                traj: event.hit.traj,
+              }
+            : undefined,
+        }
+      }
+      return {
+        type: "substitution",
+        inning: "inning" in event ? event.inning : 1,
+        isTop,
+        subType: "subType" in event ? event.subType : "defensive",
+        playerOut: "playerOut" in event ? event.playerOut : "",
+        playerIn: "playerIn" in event ? event.playerIn : "",
+        team: "team" in event && event.team === game.away ? "away" : "home",
+        score: { away: 0, home: 0 },
+        bases: { first: null, second: null, third: null },
+        outs: 0,
+      }
+    }),
+  }
+}
+
+function battingFromGames(games: JblGameJson[]): SimBatter[] {
+  const byName = new Map<string, {
+    name: string
+    team: string
+    ab: number
+    r: number
+    h: number
+    rbi: number
+    bb: number
+    so: number
+    hr: number
+  }>()
+
+  for (const game of games) {
+    for (const player of game.boxScore.batters) {
+      const key = `${player.team}:${player.name}`
+      const row = byName.get(key) ?? {
+        name: player.name,
+        team: player.team,
+        ab: 0,
+        r: 0,
+        h: 0,
+        rbi: 0,
+        bb: 0,
+        so: 0,
+        hr: 0,
+      }
+      row.ab += player.ab
+      row.r += player.runs ?? player.r ?? 0
+      row.h += player.h
+      row.rbi += player.rbi
+      row.bb += player.bb
+      row.so += player.so
+      row.hr += player.hr
+      byName.set(key, row)
+    }
+  }
+
+  return [...byName.values()]
+    .map((row) => {
+      const pa = row.ab + row.bb
+      const singles = Math.max(0, row.h - row.hr)
+      const totalBases = singles + row.hr * 4
+      const avg = row.ab > 0 ? row.h / row.ab : 0
+      const obp = pa > 0 ? (row.h + row.bb) / pa : 0
+      const slg = row.ab > 0 ? totalBases / row.ab : 0
+      const bip = row.ab - row.so - row.hr
+      return {
+        name: row.name,
+        team: row.team,
+        pa,
+        avg,
+        obp,
+        slg,
+        ops: obp + slg,
+        woba: pa > 0 ? (0.69 * row.bb + 0.88 * singles + 2.03 * row.hr) / pa : 0,
+        kPct: pa > 0 ? (row.so / pa) * 100 : 0,
+        bbPct: pa > 0 ? (row.bb / pa) * 100 : 0,
+        babip: bip > 0 ? (row.h - row.hr) / bip : 0,
+        rbi: row.rbi,
+        hr: row.hr,
+        sb: 0,
+      }
+    })
+    .sort((a, b) => b.ops - a.ops)
+}
+
+function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
+  const byName = new Map<string, {
+    name: string
+    team: string
+    ip: number
+    h: number
+    r: number
+    er: number
+    bb: number
+    so: number
+    hr: number
+    wins: number
+    saves: number
+    games: number
+  }>()
+
+  for (const game of games) {
+    for (const player of game.boxScore.pitchers) {
+      const key = `${player.team}:${player.name}`
+      const row = byName.get(key) ?? {
+        name: player.name,
+        team: player.team,
+        ip: 0,
+        h: 0,
+        r: 0,
+        er: 0,
+        bb: 0,
+        so: 0,
+        hr: 0,
+        wins: 0,
+        saves: 0,
+        games: 0,
+      }
+      row.ip += player.ip
+      row.h += player.h
+      row.r += player.r
+      row.er += player.er
+      row.bb += player.bb
+      row.so += player.so
+      row.hr += player.hr
+      row.wins += player.wins
+      row.saves += player.saves
+      row.games += 1
+      byName.set(key, row)
+    }
+  }
+
+  return [...byName.values()]
+    .map((row) => ({
+      name: row.name,
+      team: row.team,
+      gs: 0,
+      gr: row.games,
+      ip: row.ip,
+      w: row.wins,
+      era: row.ip > 0 ? (row.er * 9) / row.ip : 0,
+      whip: row.ip > 0 ? (row.bb + row.h) / row.ip : 0,
+      k9: row.ip > 0 ? (row.so * 9) / row.ip : 0,
+      bb9: row.ip > 0 ? (row.bb * 9) / row.ip : 0,
+      kPct: row.so + row.bb + row.h > 0 ? (row.so / (row.so + row.bb + row.h)) * 100 : 0,
+      bbPct: row.so + row.bb + row.h > 0 ? (row.bb / (row.so + row.bb + row.h)) * 100 : 0,
+      fip: row.ip > 0 ? ((13 * row.hr + 3 * row.bb - 2 * row.so) / row.ip) + 3.1 : 0,
+      sv: row.saves,
+    }))
+    .sort((a, b) => a.era - b.era)
+}
+
+function seasonToStats(
+  games: JblGameJson[],
+  teams: JblTeam[],
+  standings: JblStandingLeague[],
+  visibleThrough: string,
+  allGamesCount: number,
+  visibleGameCount = games.length,
+): SimStats {
+  return {
+    seasons: 1,
+    teams,
+    standings,
+    visibleThrough,
+    visibleGameCount,
+    allGamesCount,
+    battingLeaders: battingFromGames(games),
+    pitchingLeaders: pitchingFromGames(games),
+    leagueAvg: { kPct: 0, bbPct: 0, avg: 0, babip: 0, era: 0 },
+  }
 }
 
 // ── Team color map ─────────────────────────────────────────────────────────
@@ -236,59 +488,151 @@ function teamBadge(name: string) {
 
 // ── Standings ──────────────────────────────────────────────────────────────
 
-function StandingsView({ teams }: { teams: SimTeam[] }) {
-  const sorted = [...teams].sort((a, b) => b.pct - a.pct)
-  const leader = sorted[0]
+function sortStandingsTeams(teams: SimTeam[]) {
+  const leagueOrder = new Map(ALL_TEAMS.map((team, index) => [team, index]))
+  return [...teams].sort((a, b) => {
+    if (a.hasStats !== b.hasStats) return a.hasStats ? -1 : 1
+    if (b.pct !== a.pct) return b.pct - a.pct
+    if (b.wins !== a.wins) return b.wins - a.wins
+    return (leagueOrder.get(a.name) ?? 0) - (leagueOrder.get(b.name) ?? 0)
+  })
+}
 
+function StandingsCard({ title, teams }: { title: string; teams: SimTeam[] }) {
+  const sorted = sortStandingsTeams(teams)
+  const leader = sorted.find((team) => team.hasStats)
+
+  return (
+    <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-black/5">
+      <div className="px-4 py-3">
+        <h3 className="text-xs font-black uppercase tracking-widest text-green-900">{title}</h3>
+      </div>
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-100 text-xs font-bold text-gray-400">
+            <th className="px-4 pb-2 text-left">Team</th>
+            <th className="px-2 pb-2 text-right">W</th>
+            <th className="px-2 pb-2 text-right">L</th>
+            <th className="px-2 pb-2 text-right">PCT</th>
+            <th className="px-4 pb-2 text-right">GB</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((team, index) => {
+            const c = teamColors(team.name)
+            const gamesBehind = leader && team.hasStats
+              ? ((leader.wins - team.wins) + (team.losses - leader.losses)) / 2
+              : 0
+            const gb = !team.hasStats || index === 0 ? "—" : gamesBehind.toFixed(1)
+
+            return (
+              <tr key={team.name} className="border-b border-gray-50 last:border-0">
+                <td className="px-4 py-2.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {teamBadge(team.name)}
+                    <span className="truncate font-bold text-gray-700" style={{ color: c.primary }}>
+                      {team.name}
+                    </span>
+                  </div>
+                </td>
+                <td className="px-2 py-2.5 text-right font-mono font-semibold text-gray-700">{team.wins}</td>
+                <td className="px-2 py-2.5 text-right font-mono text-gray-500">{team.losses}</td>
+                <td className="px-2 py-2.5 text-right font-mono text-gray-500">
+                  {team.hasStats ? team.pct.toFixed(3) : "—"}
+                </td>
+                <td className="px-4 py-2.5 text-right font-mono text-gray-400">{gb}</td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function StandingsView({ standings = [] }: { standings?: JblStandingLeague[] }) {
+  if (standings.length === 0) {
+    return (
+      <div className="rounded-2xl bg-white p-6 text-sm text-gray-500 shadow-sm">
+        No JBL standings are available.
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-5 lg:grid-cols-3">
+      {standings.map((league) => (
+        <section key={league.name} className="space-y-3">
+          <h2 className="px-1 text-sm font-black uppercase tracking-[0.18em] text-green-900">
+            {league.name.toUpperCase()}
+          </h2>
+          <StandingsCard
+            title={league.name.replace(" Division", "")}
+            teams={league.teams}
+          />
+        </section>
+      ))}
+    </div>
+  )
+}
+
+// ── Season Sim tab ─────────────────────────────────────────────────────────
+
+function SeasonDivTable({ divKey, teams, seeds }: { divKey: string; teams: TeamRecord[]; seeds: PlayoffSeed[] }) {
+  const getSeed = (name: string) => seeds.find((s) => s.team === name)?.seed
   return (
     <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100">
-        <h2 className="text-sm font-extrabold uppercase tracking-widest text-gray-500">
-          JBL — All Teams
-        </h2>
+        <h3 className="text-sm font-extrabold uppercase tracking-widest text-gray-500">{DIVISION_NAMES[divKey]}</h3>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="text-xs font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">
-              <th className="py-2 pl-1 pr-2 text-left w-6"></th>
-              <th className="py-2 pl-3 pr-2 text-left w-8">#</th>
-              <th className="py-2 px-2 text-left">Team</th>
-              <th className="py-2 px-3 text-right">W</th>
-              <th className="py-2 px-3 text-right">L</th>
-              <th className="py-2 px-3 text-right">PCT</th>
-              <th className="py-2 px-3 text-right">GB</th>
-              <th className="py-2 px-3 text-right">RS/G</th>
-              <th className="py-2 px-4 text-right">RA/G</th>
+            <tr className="text-[10px] font-bold uppercase tracking-wider text-gray-400 border-b border-gray-100">
+              <th className="py-2 pl-1 w-1" />
+              <th className="py-2 pl-3 pr-2 text-left">Team</th>
+              <th className="py-2 px-2 text-right">W</th>
+              <th className="py-2 px-2 text-right">L</th>
+              <th className="py-2 px-2 text-right">PCT</th>
+              <th className="py-2 px-2 text-right">GB</th>
+              <th className="py-2 px-2 text-right">L10</th>
+              <th className="py-2 px-2 text-right">Str</th>
+              <th className="py-2 px-3 text-right hidden sm:table-cell">H</th>
+              <th className="py-2 px-3 text-right hidden sm:table-cell">A</th>
+              <th className="py-2 px-3 text-right hidden md:table-cell">Div</th>
             </tr>
           </thead>
           <tbody>
-            {sorted.map((team, i) => {
-              const gb = i === 0 ? "—" : ((leader.wins - team.wins) / 2).toFixed(1)
-              const c = teamColors(team.name)
+            {teams.map((t, i) => {
+              const c = teamColors(t.name)
+              const gb = i === 0 ? "—" : t.gb.toFixed(1)
+              const seedNum = getSeed(t.name)
+              const streakStr = t.streak > 0 ? `W${t.streak}` : `L${Math.abs(t.streak)}`
               return (
-                <tr
-                  key={team.name}
-                  className="border-b border-gray-50 last:border-0 transition-colors"
-                  style={{ background: i === 0 ? `${c.primary}10` : undefined }}
-                >
-                  {/* left stripe */}
-                  <td className="py-0 pl-0 pr-0 w-1">
-                    <div className="h-full w-1 min-h-[40px]" style={{ background: `linear-gradient(to bottom, ${c.primary}, ${c.secondary})` }} />
+                <tr key={t.name} className="border-b border-gray-50 last:border-0" style={{ background: i === 0 ? `${c.primary}0d` : undefined }}>
+                  <td className="py-0 w-1">
+                    <div className="h-full w-1 min-h-[36px]" style={{ background: `linear-gradient(to bottom, ${c.primary}, ${c.secondary})` }} />
                   </td>
-                  <td className="py-2.5 pl-3 pr-2 text-gray-400 font-mono text-xs">{i + 1}</td>
-                  <td className="py-2.5 px-2">
-                    <div className="flex items-center gap-2">
-                      {teamBadge(team.name)}
-                      <span className="font-semibold" style={{ color: c.primary }}>{team.name}</span>
+                  <td className="py-2 pl-3 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      {teamBadge(t.name)}
+                      <span className="font-semibold text-[13px]" style={{ color: c.primary }}>{t.name}</span>
+                      {seedNum && (
+                        <span className="text-[9px] font-bold px-1 py-0.5 rounded bg-gray-100 text-gray-500">
+                          #{seedNum}{seedNum <= 3 ? " 🏆" : " 🃏"}
+                        </span>
+                      )}
                     </div>
                   </td>
-                  <td className="py-2.5 px-3 text-right font-mono font-bold text-gray-800">{team.wins.toFixed(1)}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-gray-500">{team.losses.toFixed(1)}</td>
-                  <td className="py-2.5 px-3 text-right font-mono font-semibold" style={{ color: c.primary }}>{team.pct.toFixed(3)}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-gray-400">{gb}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-green-700">{team.rsPerGame.toFixed(2)}</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-red-600">{team.raPerGame.toFixed(2)}</td>
+                  <td className="py-2 px-2 text-right font-mono font-bold text-gray-800 text-[13px]">{t.wins}</td>
+                  <td className="py-2 px-2 text-right font-mono text-gray-500 text-[13px]">{t.losses}</td>
+                  <td className="py-2 px-2 text-right font-mono font-semibold text-[13px]" style={{ color: c.primary }}>{t.pct.toFixed(3)}</td>
+                  <td className="py-2 px-2 text-right font-mono text-gray-400 text-[13px]">{gb}</td>
+                  <td className="py-2 px-2 text-right font-mono text-[12px] text-gray-600">{t.last10W}-{t.last10L}</td>
+                  <td className="py-2 px-2 text-right font-mono text-[12px] font-semibold" style={{ color: t.streak > 0 ? "#16a34a" : "#dc2626" }}>{streakStr}</td>
+                  <td className="py-2 px-3 text-right font-mono text-[12px] text-gray-500 hidden sm:table-cell">{t.homeWins}-{t.homeLosses}</td>
+                  <td className="py-2 px-3 text-right font-mono text-[12px] text-gray-500 hidden sm:table-cell">{t.awayWins}-{t.awayLosses}</td>
+                  <td className="py-2 px-3 text-right font-mono text-[12px] text-gray-500 hidden md:table-cell">{t.divWins}-{t.divLosses}</td>
                 </tr>
               )
             })}
@@ -298,6 +642,182 @@ function StandingsView({ teams }: { teams: SimTeam[] }) {
     </div>
   )
 }
+
+function SeasonSeriesCard({ series, label }: { series: PlayoffSeries; label: string }) {
+  return (
+    <div className="rounded-xl bg-white shadow-sm overflow-hidden border border-gray-100">
+      <div className="px-3 py-1.5 bg-gray-50 border-b border-gray-100 flex items-center gap-2">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{label}</span>
+        <span className="text-[10px] text-gray-400">Best-of-{series.format}</span>
+      </div>
+      {[
+        { team: series.higher, wins: series.higherWins },
+        { team: series.lower,  wins: series.lowerWins  },
+      ].map(({ team, wins }) => {
+        const c = teamColors(team)
+        return (
+          <div key={team} className="flex items-center gap-2 px-3 py-2 border-b border-gray-50 last:border-0"
+            style={{ background: series.winner === team ? `${c.primary}10` : undefined }}>
+            {teamBadge(team)}
+            <span className="flex-1 text-sm font-semibold truncate" style={{ color: c.primary }}>{team}</span>
+            <span className="font-mono text-lg font-extrabold" style={{ color: series.winner === team ? c.primary : "#9ca3af" }}>{wins}</span>
+            {series.winner === team && <span className="text-xs">✓</span>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+function SeasonTab() {
+  const [season, setSeason] = useState<SeasonResult | null>(null)
+  const [running, setRunning] = useState(false)
+  const [seasonView, setSeasonView] = useState<"divisions" | "playoffs">("divisions")
+
+  function run() {
+    setRunning(true)
+    setTimeout(() => {
+      setSeason(simulateSeason(undefined, 2026))
+      setRunning(false)
+    }, 10)
+  }
+
+  if (!season && !running) {
+    return (
+      <div className="rounded-2xl bg-white shadow-sm p-12 text-center">
+        <p className="text-4xl mb-4">⚾</p>
+        <p className="font-semibold text-gray-600 mb-1">JBL 2026 レギュラーシーズン（162試合×18チーム）</p>
+        <p className="text-sm text-gray-400 mb-6">ブラウザ内でシミュレート・即時実行</p>
+        <button
+          onClick={run}
+          className="rounded-xl px-8 py-3 text-sm font-bold text-white"
+          style={{ background: "linear-gradient(135deg, #8b5cf6, #6366f1)" }}
+        >
+          シーズンをシミュレート
+        </button>
+      </div>
+    )
+  }
+
+  if (running) {
+    return (
+      <div className="rounded-2xl bg-white shadow-sm p-12 text-center">
+        <p className="text-sm text-gray-400 animate-pulse">2926 試合をシミュレート中…</p>
+      </div>
+    )
+  }
+
+  const { divisionStandings, playoffs, records } = season!
+  const champion = playoffs.champion
+
+  return (
+    <div className="space-y-5">
+      {/* summary */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "総試合数", value: season!.results.length.toLocaleString() },
+          { label: "全体1位", value: records[0].name.split(" ").slice(-1)[0], sub: `${records[0].wins}勝${records[0].losses}敗` },
+          { label: "チャンピオン", value: champion?.split(" ").slice(-1)[0] ?? "—" },
+          { label: "最多勝利", value: `${records[0].wins}勝`, sub: records[0].name },
+        ].map((item) => (
+          <div key={item.label} className="rounded-xl bg-white shadow-sm p-4 text-center">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">{item.label}</p>
+            <p className="mt-1 text-xl font-extrabold text-gray-900 leading-tight">{item.value}</p>
+            {item.sub && <p className="text-[10px] text-gray-400 mt-0.5">{item.sub}</p>}
+          </div>
+        ))}
+      </div>
+
+      {/* sub-tab */}
+      <div className="flex gap-2">
+        {(["divisions", "playoffs"] as const).map((v) => (
+          <button
+            key={v}
+            onClick={() => setSeasonView(v)}
+            className="rounded-lg px-4 py-1.5 text-sm font-semibold transition-all"
+            style={seasonView === v
+              ? { background: "#8b5cf6", color: "#fff" }
+              : { background: "#f3f4f6", color: "#6b7280" }}
+          >
+            {v === "divisions" ? "地区別順位" : "プレーオフ"}
+          </button>
+        ))}
+        <button
+          onClick={run}
+          className="ml-auto rounded-lg px-4 py-1.5 text-sm font-semibold text-gray-500 bg-gray-100 hover:bg-gray-200"
+        >
+          再シミュレート
+        </button>
+      </div>
+
+      {seasonView === "divisions" && (
+        <div className="space-y-5">
+          {Object.keys(DIVISIONS).map((divKey) => (
+            <SeasonDivTable
+              key={divKey}
+              divKey={divKey}
+              teams={divisionStandings[divKey]}
+              seeds={playoffs.seeds}
+            />
+          ))}
+        </div>
+      )}
+
+      {seasonView === "playoffs" && (
+        <div className="space-y-5">
+          <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
+            <div className="px-4 py-3 border-b border-gray-100">
+              <h3 className="text-sm font-extrabold uppercase tracking-widest text-gray-500">プレーオフ出場チーム</h3>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3">
+              {playoffs.seeds.map((s) => {
+                const c = teamColors(s.team)
+                return (
+                  <div key={s.team} className="flex items-center gap-3 px-4 py-3 border-b border-r border-gray-50">
+                    <span className="text-2xl font-extrabold font-mono" style={{ color: c.primary }}>#{s.seed}</span>
+                    <div>
+                      <div className="flex items-center gap-1.5">{teamBadge(s.team)}<span className="text-xs font-bold" style={{ color: c.primary }}>{s.team}</span></div>
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="text-[10px] text-gray-400 font-mono">{s.record}</span>
+                        <span className="text-[9px] px-1 py-0.5 rounded bg-gray-100 text-gray-400 font-bold">{s.qualifier === "div" ? "地区優勝" : "WC"}</span>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <div className="space-y-3">
+              <p className="text-[11px] font-extrabold uppercase tracking-widest text-gray-400">ワイルドカード (Bo3)</p>
+              {playoffs.wildCardRound.map((s, i) => <SeasonSeriesCard key={i} series={s} label={`WC${i + 1}`} />)}
+            </div>
+            <div className="space-y-3">
+              <p className="text-[11px] font-extrabold uppercase tracking-widest text-gray-400">準決勝 (Bo5)</p>
+              {playoffs.semifinal.map((s, i) => <SeasonSeriesCard key={i} series={s} label={`SF${i + 1}`} />)}
+            </div>
+            <div className="space-y-3">
+              <p className="text-[11px] font-extrabold uppercase tracking-widest text-gray-400">JBL 日本シリーズ (Bo7)</p>
+              {playoffs.final && <SeasonSeriesCard series={playoffs.final} label="FINAL" />}
+              {champion && (
+                <div className="rounded-xl overflow-hidden shadow-md">
+                  <div className="px-4 py-4 text-center"
+                    style={{ background: `linear-gradient(135deg, ${teamColors(champion).primary}, ${teamColors(champion).secondary})`, color: teamColors(champion).accent }}>
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-80">🏆 JBL チャンピオン</p>
+                    <p className="text-lg font-extrabold mt-1">{champion}</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Stat tile ───────────────────────────────────────────────────────────────
 
 function StatTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
@@ -363,7 +883,7 @@ function JblTeamOverview({
         {/* stats tiles */}
         <div className="bg-white p-5">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
-            <StatTile label="W-L" value={`${team.wins.toFixed(1)}-${team.losses.toFixed(1)}`} />
+            <StatTile label="W-L" value={`${team.wins}-${team.losses}`} />
             <StatTile label="PCT" value={team.pct.toFixed(3)} />
             <StatTile label="RS/G" value={team.rsPerGame.toFixed(2)} />
             <StatTile label="RA/G" value={team.raPerGame.toFixed(2)} />
@@ -384,7 +904,7 @@ function JblTeamOverview({
               >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-gray-900">{p.name}</p>
-                  <p className="text-xs text-gray-400">OPS {p.ops.toFixed(3)} · HR/162 {((p.hr / (p.pa / 4.3)) * 162).toFixed(0)}</p>
+                  <p className="text-xs text-gray-400">OPS {p.ops.toFixed(3)} · HR {p.hr}</p>
                 </div>
                 <span className="font-mono text-sm font-black" style={{ color: c.primary }}>{p.avg.toFixed(3)}</span>
               </div>
@@ -470,17 +990,13 @@ function BattingView({ batters }: { batters: SimBatter[] }) {
               <th className="py-2 px-3 text-right">BABIP</th>
               <th className="py-2 px-3 text-right">K%</th>
               <th className="py-2 px-3 text-right">BB%</th>
-              <th className="py-2 px-3 text-right">HR/162</th>
-              <th className="py-2 px-3 text-right">RBI/162</th>
-              <th className="py-2 px-4 text-right">SB/162</th>
+              <th className="py-2 px-3 text-right">HR</th>
+              <th className="py-2 px-3 text-right">RBI</th>
+              <th className="py-2 px-4 text-right">SB</th>
             </tr>
           </thead>
           <tbody>
             {batters.map((p, i) => {
-              const gamesEquiv = p.pa / 4.3
-              const hrPer162  = (p.hr  / gamesEquiv * 162).toFixed(0)
-              const rbiPer162 = (p.rbi / gamesEquiv * 162).toFixed(0)
-              const sbPer162  = (p.sb  / gamesEquiv * 162).toFixed(0)
               return (
                 <tr key={p.name} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="py-2.5 pl-4 pr-2 text-gray-400 font-mono text-xs">{i + 1}</td>
@@ -494,9 +1010,9 @@ function BattingView({ batters }: { batters: SimBatter[] }) {
                   <td className="py-2.5 px-3 text-right font-mono text-gray-500">{p.babip.toFixed(3)}</td>
                   <td className="py-2.5 px-3 text-right font-mono text-red-500">{p.kPct.toFixed(1)}%</td>
                   <td className="py-2.5 px-3 text-right font-mono text-sky-600">{p.bbPct.toFixed(1)}%</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-red-600">{hrPer162}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-gray-600">{rbiPer162}</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-amber-600">{sbPer162}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-red-600">{p.hr}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-gray-600">{p.rbi}</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-amber-600">{p.sb}</td>
                 </tr>
               )
             })}
@@ -523,8 +1039,8 @@ function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
               <th className="py-2 px-2 text-left">Player</th>
               <th className="py-2 px-2 text-left">Tm</th>
               <th className="py-2 px-3 text-right">Role</th>
-              <th className="py-2 px-3 text-right">W/162</th>
-              <th className="py-2 px-3 text-right">IP/162</th>
+              <th className="py-2 px-3 text-right">W</th>
+              <th className="py-2 px-3 text-right">IP</th>
               <th className="py-2 px-3 text-right">ERA</th>
               <th className="py-2 px-3 text-right">FIP</th>
               <th className="py-2 px-3 text-right">WHIP</th>
@@ -532,16 +1048,11 @@ function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
               <th className="py-2 px-3 text-right">BB/9</th>
               <th className="py-2 px-3 text-right">K%</th>
               <th className="py-2 px-3 text-right">BB%</th>
-              <th className="py-2 px-4 text-right">SV/162</th>
+              <th className="py-2 px-4 text-right">SV</th>
             </tr>
           </thead>
           <tbody>
             {pitchers.map((p, i) => {
-              const totalGames = p.gs + p.gr
-              const gamesEquiv = totalGames > 0 ? totalGames : 1
-              const wPer162   = (p.w  / gamesEquiv * 162).toFixed(0)
-              const ipPer162  = (p.ip / gamesEquiv * 162).toFixed(1)
-              const svPer162  = (p.sv / gamesEquiv * 162).toFixed(0)
               const role = p.sv > 0 ? "CL" : p.gs > p.gr ? "SP" : "RP"
               const roleColor = role === "CL" ? "text-red-600" : role === "SP" ? "text-blue-700" : "text-gray-500"
               return (
@@ -550,8 +1061,8 @@ function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
                   <td className="py-2.5 px-2 font-semibold text-gray-800 whitespace-nowrap">{p.name}</td>
                   <td className="py-2.5 px-2">{teamBadge(p.team)}</td>
                   <td className={`py-2.5 px-3 text-right font-bold text-xs ${roleColor}`}>{role}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-gray-700">{wPer162}</td>
-                  <td className="py-2.5 px-3 text-right font-mono text-gray-700">{ipPer162}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-gray-700">{p.w}</td>
+                  <td className="py-2.5 px-3 text-right font-mono text-gray-700">{p.ip.toFixed(1)}</td>
                   <td className="py-2.5 px-3 text-right font-mono font-bold text-blue-700">{p.era.toFixed(2)}</td>
                   <td className="py-2.5 px-3 text-right font-mono text-indigo-600">{p.fip.toFixed(2)}</td>
                   <td className="py-2.5 px-3 text-right font-mono text-gray-700">{p.whip.toFixed(2)}</td>
@@ -559,7 +1070,7 @@ function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
                   <td className="py-2.5 px-3 text-right font-mono text-red-500">{p.bb9.toFixed(1)}</td>
                   <td className="py-2.5 px-3 text-right font-mono text-green-600">{p.kPct.toFixed(1)}%</td>
                   <td className="py-2.5 px-3 text-right font-mono text-red-400">{p.bbPct.toFixed(1)}%</td>
-                  <td className="py-2.5 px-4 text-right font-mono text-amber-600">{svPer162}</td>
+                  <td className="py-2.5 px-4 text-right font-mono text-amber-600">{p.sv}</td>
                 </tr>
               )
             })}
@@ -1230,43 +1741,101 @@ function GameView({ game, isVisible }: { game: GameData; isVisible: boolean }) {
 export default function SimPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view") as SimView | null
-  const validViews: SimView[] = ["team", "players", "today", "standings"]
+  const validViews: SimView[] = ["team", "players", "today", "standings", "season"]
   const [activeView, setActiveView] = useState<SimView>(
     validViews.includes(requestedView as SimView) ? (requestedView as SimView) : "team"
   )
   const [playerMode, setPlayerMode] = useState<SimPlayerMode>("batting")
   const [selectedTeamName, setSelectedTeamName] = useState("")
   const [stats, setStats] = useState<SimStats | null>(null)
-  const [gameDates, setGameDates] = useState<string[]>([])
-  const [selectedDate, setSelectedDate] = useState<string>("")
+  const [gameOptions, setGameOptions] = useState<GameOption[]>([])
+  const [selectedGameId, setSelectedGameId] = useState<string>("")
+  const [gamesById, setGamesById] = useState<Record<string, GameData>>({})
   const [game, setGame] = useState<GameData | null>(null)
   const [error, setError] = useState("")
+  const [detailedStatsLoaded, setDetailedStatsLoaded] = useState(false)
+  const [detailedStatsLoading, setDetailedStatsLoading] = useState(false)
 
   useEffect(() => {
-    fetch("/sim-stats.json")
-      .then((r) => r.json())
-      .then((data: SimStats) => {
-        setStats(data)
-        setSelectedTeamName((current) => current || data.teams[0]?.name || "")
-      })
-      .catch(() => setError("Failed to load sim stats."))
-    fetch("/games/index.json")
-      .then((r) => r.json())
-      .then((dates: string[]) => {
-        setGameDates(dates)
-        if (dates.length > 0) setSelectedDate(dates[0])
-      })
-      .catch(() => {})
+    if (!requestedView || !validViews.includes(requestedView)) return
+    if (requestedView !== activeView) setActiveView(requestedView)
+  }, [requestedView, activeView])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadJblJson() {
+      try {
+        const { season, games, teams, standings, allGamesCount, visibleGameCount, visibleThrough } = await getJblData()
+        if (cancelled) return
+
+        const normalizedGames = Object.fromEntries(
+          games.map((loadedGame) => [loadedGame.gameId, normalizeGame(loadedGame)])
+        )
+        const options = season.schedule
+          .filter((scheduledGame) => scheduledGame.date === visibleThrough)
+          .filter((scheduledGame) => normalizedGames[scheduledGame.gameId])
+          .map((scheduledGame) => ({
+            gameId: scheduledGame.gameId,
+            date: scheduledGame.date,
+            label: `${scheduledGame.date} · ${scheduledGame.away} at ${scheduledGame.home}`,
+          }))
+        const nextStats = seasonToStats([], teams, standings, visibleThrough, allGamesCount, visibleGameCount)
+
+        setStats(nextStats)
+        setGamesById(normalizedGames)
+        setGameOptions(options)
+        setSelectedTeamName((current) => current || nextStats.teams[0]?.name || "")
+        setSelectedGameId((current) => current || options[0]?.gameId || "")
+      } catch {
+        if (!cancelled) setError("Failed to load JBL season JSON.")
+      }
+    }
+
+    loadJblJson()
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   useEffect(() => {
-    if (!selectedDate) return
-    setGame(null)
-    fetch(`/games/game-${selectedDate}.json`)
-      .then((r) => r.json())
-      .then(setGame)
-      .catch(() => {})
-  }, [selectedDate])
+    if (!stats || detailedStatsLoaded || detailedStatsLoading) return
+    if (activeView !== "team" && activeView !== "players") return
+
+    let cancelled = false
+    setDetailedStatsLoading(true)
+
+    getJblVisibleGames(stats.visibleThrough)
+      .then((visibleGames) => {
+        if (cancelled) return
+        setStats((current) => {
+          if (!current) return current
+          return seasonToStats(
+            visibleGames,
+            current.teams,
+            current.standings,
+            current.visibleThrough,
+            current.allGamesCount,
+            current.visibleGameCount,
+          )
+        })
+        setDetailedStatsLoaded(true)
+      })
+      .catch(() => {
+        if (!cancelled) setError("Failed to load JBL player stats.")
+      })
+      .finally(() => {
+        if (!cancelled) setDetailedStatsLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeView, detailedStatsLoaded, detailedStatsLoading, stats])
+
+  useEffect(() => {
+    setGame(selectedGameId ? gamesById[selectedGameId] ?? null : null)
+  }, [gamesById, selectedGameId])
 
   const handleChangeView = (view: string) => {
     const next = view as SimView
@@ -1318,34 +1887,41 @@ export default function SimPage() {
       {/* GameView は常にマウントしてタイマーを維持、非表示時は hidden */}
       {game && (
         <div className={activeView === "today" ? undefined : "hidden"}>
-          {gameDates.length > 1 && (
+          {gameOptions.length > 1 && (
             <div className="mb-3 flex items-center gap-2">
               <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Game</span>
               <select
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
+                value={selectedGameId}
+                onChange={(e) => setSelectedGameId(e.target.value)}
                 className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700 font-mono"
               >
-                {gameDates.map((d) => (
-                  <option key={d} value={d}>{d}</option>
+                {gameOptions.map((option) => (
+                  <option key={option.gameId} value={option.gameId}>{option.label}</option>
                 ))}
               </select>
             </div>
           )}
-          <GameView key={selectedDate} game={game} isVisible={activeView === "today"} />
+          <GameView key={selectedGameId} game={game} isVisible={activeView === "today"} />
         </div>
       )}
       {activeView === "today" && !game && (
         <div className="p-4 text-sm text-gray-500">Loading game data...</div>
       )}
 
-      {activeView !== "today" && (
+      {activeView === "season" && <SeasonTab />}
+
+      {activeView !== "today" && activeView !== "season" && (
         <>
           {!stats && !error && (
             <div className="p-4 text-sm text-gray-500">Loading...</div>
           )}
           {stats && (
             <>
+              {(activeView === "team" || activeView === "players") && detailedStatsLoading && (
+                <div className="mb-4 rounded-2xl bg-white p-4 text-sm text-gray-500 shadow-sm">
+                  Loading player stats through {stats.visibleThrough}...
+                </div>
+              )}
               {activeView === "team" && (
                 <JblTeamOverview
                   team={selectedTeam}
@@ -1361,7 +1937,7 @@ export default function SimPage() {
                   onModeChange={setPlayerMode}
                 />
               )}
-              {activeView === "standings" && <StandingsView teams={stats.teams} />}
+              {activeView === "standings" && <StandingsView standings={stats.standings} />}
             </>
           )}
         </>
