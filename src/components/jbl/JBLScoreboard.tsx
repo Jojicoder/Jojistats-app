@@ -36,6 +36,7 @@ export default function JBLScoreboard({
   lineScore,
   finalScore,
   events,
+  isGameOver,
   selectedInning,
   selectedIsTop,
   onSelectHalfInning,
@@ -47,6 +48,10 @@ export default function JBLScoreboard({
   lineScore: { away: (number | null)[]; home: (number | null)[] }
   finalScore: { away: number; home: number }
   events: GameEvent[]
+  // Whether it's safe to call a winner — a "current score" fed in while
+  // the real result is still hidden (unrevealed live game) can have either
+  // side ahead, and that's not the same thing as the game being over.
+  isGameOver: boolean
   selectedInning: number | null
   selectedIsTop: boolean | null
   onSelectHalfInning: (inning: number, isTop: boolean) => void
@@ -54,8 +59,8 @@ export default function JBLScoreboard({
   const inningCount = Math.max(lineScore.away.length, lineScore.home.length, 9)
   const inningNumbers = Array.from({ length: inningCount }, (_, i) => i + 1)
   const { awayHits, homeHits, awayErrors, homeErrors } = countHitsAndErrors(events)
-  const awayWon = finalScore.away > finalScore.home
-  const homeWon = finalScore.home > finalScore.away
+  const awayWon = isGameOver && finalScore.away > finalScore.home
+  const homeWon = isGameOver && finalScore.home > finalScore.away
   const isFinal = awayWon || homeWon
 
   function hasEventsForHalf(inning: number, isTop: boolean) {
