@@ -3,7 +3,7 @@ import StrikeZoneView, { type PitchDot, type SwingInfo } from "../StrikeZoneView
 import FieldView, { type BallTraj } from "../FieldView"
 import { teamColors } from "./teamTheme"
 import JBLScoreboard from "./JBLScoreboard"
-import { gameStorageKey, markGameWatched } from "./gameReveal"
+import { gameStorageKey, isGameRevealed, markGameWatched } from "./gameReveal"
 import type {
   GameData,
   GameEvent,
@@ -447,6 +447,23 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
   const currentOuts   = eventState?.outs ?? lastPitch?.outs  ?? lastPlay?.outs  ?? 0
   const currentInning = lastHalf?.inning ?? 1
   const currentTop    = lastHalf?.isTop  ?? true
+
+  // The scoreboard must not spoil a game that isn't revealed yet — the
+  // full lineScore/finalScore/events are the *final* result no matter how
+  // far the replay has actually gotten, so once revealed is false they'd
+  // show future innings and the end score before the replay reaches them.
+  const revealed = isDone || isGameRevealed(game.date, gameKey)
+  const halfOrder = (inning: number, isTop: boolean) => inning * 2 + (isTop ? 0 : 1)
+  const scoreboardLineScore = useMemo(() => {
+    if (revealed) return game.lineScore
+    const currentOrder = halfOrder(currentInning, currentTop)
+    const mask = (arr: (number | null)[], isTop: boolean) =>
+      arr.map((v, i) => (halfOrder(i + 1, isTop) < currentOrder ? v : null))
+    return { away: mask(game.lineScore.away, true), home: mask(game.lineScore.home, false) }
+  }, [revealed, game.lineScore, currentInning, currentTop])
+  const scoreboardFinalScore = revealed ? game.finalScore : currentScore
+  const scoreboardEvents = revealed ? events : events.slice(0, idx)
+
   const pitcher       = lastPitch?.pitcher ?? lastPlay?.pitcher ?? ""
   const batter        = lastPitch?.batter  ?? lastPlay?.batter  ?? ""
   const balls         = lastPitch?.balls   ?? 0
@@ -844,9 +861,10 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
             home={game.home}
             awayColor={awayColor}
             homeColor={homeColor}
-            lineScore={game.lineScore}
-            finalScore={game.finalScore}
-            events={events}
+            lineScore={scoreboardLineScore}
+            finalScore={scoreboardFinalScore}
+            events={scoreboardEvents}
+            isGameOver={isDone}
             selectedInning={selectedInning}
             selectedIsTop={selectedIsTop}
             onSelectHalfInning={selectHalfInning}
