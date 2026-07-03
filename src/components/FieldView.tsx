@@ -21,7 +21,6 @@ type Props = {
   defenders?: Partial<Record<string, string>>
   bases?: { first: string | null; second: string | null; third: string | null }
   runnerAdvances?: RunnerAdvance[]
-  throwTo?: BaseName
   fielderColor?: string
   fielderSecondaryColor?: string
   fielderAccentColor?: string
@@ -195,7 +194,6 @@ export default function FieldView({
   defenders = {},
   bases,
   runnerAdvances = [],
-  throwTo,
   fielderColor = "#1d4ed8",
   fielderSecondaryColor = "#1e293b",
   fielderAccentColor = "#e0f2fe",
@@ -263,12 +261,16 @@ export default function FieldView({
     // diamond) instead of sitting still — the batter's path above is
     // handled separately since it's tied to the primary fielder's throw.
     const basePoints: Record<BaseName, Point> = { home, first: firstBase, second: secondBase, third: thirdBase }
-    // Every base an out is recorded at this play — the primary force/tag
-    // (throwTo) plus any other runner explicitly marked out, e.g. the second
-    // leg of a double play. Capped at two legs; triple plays just show the
-    // first two throws rather than a third relay.
+    // Every base an out is *actually recorded* at this play, in the order
+    // runnerAdvances lists them (the lead runner's force/tag first, then
+    // any relay for a double play). Deliberately not seeded from throwTo —
+    // that field is where the defense *aimed* the throw, which fires even
+    // on a routine backup throw or a missed attempt where the runner ends
+    // up safe. Drawing a throw there regardless of outcome made clean hits
+    // look like the defense was in a close, possibly-losing race at a base
+    // nobody was ever out at. Capped at two legs; triple plays just show
+    // the first two throws rather than a third relay.
     const outTargets: BaseName[] = []
-    if (throwTo) outTargets.push(throwTo)
     for (const advance of runnerAdvances) {
       if (advance.result === "out" && !outTargets.includes(advance.to)) outTargets.push(advance.to)
     }
@@ -637,7 +639,7 @@ export default function FieldView({
       cancelAnimationFrame(animIdRef.current)
       resizeObserver?.disconnect()
     }
-  }, [bases, defenders, launchAngle, result, traj, runnerAdvances, throwTo, fielderColor, fielderSecondaryColor, fielderAccentColor, runnerColor, runnerAccentColor])
+  }, [bases, defenders, launchAngle, result, traj, runnerAdvances, fielderColor, fielderSecondaryColor, fielderAccentColor, runnerColor, runnerAccentColor])
 
   const outsOnPlay = runnerAdvances.filter((a) => a.result === "out").length
   const rl = result ? resultLabel(result, outsOnPlay) : null
