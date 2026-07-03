@@ -86,15 +86,21 @@ jobs:
           OUT_DIR="public/jbl/seasons/${SEASON}"
           mkdir -p "${OUT_DIR}"
 
+          # rebuild = wipe whatever's exported so far and re-run --incremental
+          # from a clean directory. --all-games has no --through bound, so
+          # using it here used to dump the *entire* season (including
+          # months of "future" games) in one shot instead of stopping at
+          # today/THROUGH like every other run does.
           if [ "${MODE}" = "rebuild" ]; then
-            engine/build/JojiGameExport --season "${SEASON}" --all-games --out-dir "${OUT_DIR}"
-          else
-            THROUGH_ARGS=()
-            if [ -n "${THROUGH}" ]; then
-              THROUGH_ARGS+=(--through "${THROUGH}")
-            fi
-            engine/build/JojiGameExport --season "${SEASON}" --incremental --out-dir "${OUT_DIR}" "${THROUGH_ARGS[@]}"
+            rm -rf "${OUT_DIR}"
+            mkdir -p "${OUT_DIR}"
           fi
+
+          THROUGH_ARGS=()
+          if [ -n "${THROUGH}" ]; then
+            THROUGH_ARGS+=(--through "${THROUGH}")
+          fi
+          engine/build/JojiGameExport --season "${SEASON}" --incremental --out-dir "${OUT_DIR}" "${THROUGH_ARGS[@]}"
 
       - name: Validate JBL JSON
         if: github.event_name != 'push'
