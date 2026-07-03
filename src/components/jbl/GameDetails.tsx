@@ -3,6 +3,7 @@ import StrikeZoneView, { type PitchDot, type SwingInfo } from "../StrikeZoneView
 import FieldView, { type BallTraj } from "../FieldView"
 import { teamColors } from "./teamTheme"
 import JBLScoreboard from "./JBLScoreboard"
+import { gameStorageKey, markGameWatched } from "./gameReveal"
 import type {
   GameData,
   GameEvent,
@@ -386,7 +387,8 @@ function buildLog(events: GameEvent[], upTo: number): LogEntry[] {
 
 export default function GameDetails({ game, isVisible }: { game: GameData; isVisible: boolean }) {
   const events = game.events
-  const storageKey = `jbl-game-idx-${game.date}`
+  const gameKey = gameStorageKey(game.gameId, game.away, game.home, game.date)
+  const storageKey = `jbl-game-idx-${gameKey}`
 
   const [idx, setIdx] = useState(() => {
     const saved = localStorage.getItem(storageKey)
@@ -427,6 +429,14 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
   }, [events, idx])
 
   const isDone        = idx >= events.length
+
+  // Someone actually watched this specific game through to the end — lets
+  // the schedule list reveal its score early instead of waiting for the
+  // shared nightly reveal window.
+  useEffect(() => {
+    if (isDone) markGameWatched(gameKey)
+  }, [isDone, gameKey])
+
   const currentEvent = idx > 0 ? events[idx - 1] : null
   const previousEvent = idx > 1 ? events[idx - 2] : null
   const eventState = currentEvent?.type === "stolen_base" || currentEvent?.type === "pickoff"
