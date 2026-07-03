@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import StrikeZoneView, { type PitchDot, type SwingInfo } from "../StrikeZoneView"
 import FieldView, { type BallTraj } from "../FieldView"
 import { teamColors } from "./teamTheme"
+import JBLScoreboard from "./JBLScoreboard"
 import type {
   GameData,
   GameEvent,
@@ -395,6 +396,8 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
   const [speed, setSpeed] = useState(GAME_SPEED)
   const [paused, setPaused] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [selectedInning, setSelectedInning] = useState<number | null>(null)
+  const [selectedIsTop, setSelectedIsTop] = useState<boolean | null>(null)
   const [announcement, setAnnouncement] = useState<{ label: string; sub: string; color: string } | null>(null)
   const logRef = useRef<HTMLDivElement>(null)
   const liveViewRef = useRef<HTMLDivElement>(null)
@@ -689,6 +692,25 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
     }
   }
 
+  // Jump the replay straight to a half-inning clicked in the scoreboard —
+  // pauses it there like scrubbing a video, rather than letting auto-advance
+  // immediately carry on past the spot the user wanted to look at.
+  const selectHalfInning = (inning: number, isTop: boolean) => {
+    const target = events.findIndex(ev => ev.type === "half_inning" && ev.inning === inning && ev.isTop === isTop)
+    if (target === -1) return
+    // idx marks "everything before this has been processed" — landing
+    // exactly on the half_inning event's own index would leave it
+    // unprocessed, so currentTop/currentInning (derived by scanning
+    // events[0..idx-1]) would still show the *previous* half-inning.
+    const landingIdx = target + 1
+    setSelectedInning(inning)
+    setSelectedIsTop(isTop)
+    setPaused(true)
+    setIdx(landingIdx)
+    setLog(buildLog(events, landingIdx))
+    setAnnouncement(null)
+  }
+
   const awayShort = game.away.split(" ").slice(-1)[0].toUpperCase()
   const homeShort = game.home.split(" ").slice(-1)[0].toUpperCase()
   const awayUniformColors = teamColors(game.away, "away")
@@ -806,35 +828,20 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
           </div>
         </div>
 
-        {isDone && (
-          <div className="border-t border-gray-100 overflow-x-auto px-4 pb-4">
-            <table className="text-xs font-mono text-center mx-auto">
-              <thead>
-                <tr className="text-gray-400">
-                  <th className="pr-3 text-left font-semibold py-1">Team</th>
-                  {game.lineScore.away.map((_, i) => (
-                    <th key={i} className="w-6 py-1">{i + 1}</th>
-                  ))}
-                  <th className="pl-2 py-1 font-bold">R</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { label: awayShort, runs: game.lineScore.away, total: game.finalScore.away, color: awayColor },
-                  { label: homeShort, runs: game.lineScore.home, total: game.finalScore.home, color: homeColor },
-                ].map(({ label, runs, total, color }) => (
-                  <tr key={label}>
-                    <td className="pr-3 text-left font-bold py-1" style={{ color }}>{label}</td>
-                    {runs.map((r, i) => (
-                      <td key={i} className="w-6 py-1 text-gray-600">{r ?? "X"}</td>
-                    ))}
-                    <td className="pl-2 py-1 font-black text-gray-800">{total}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div className="border-t border-gray-100 px-4 pb-4 pt-3">
+          <JBLScoreboard
+            away={game.away}
+            home={game.home}
+            awayColor={awayColor}
+            homeColor={homeColor}
+            lineScore={game.lineScore}
+            finalScore={game.finalScore}
+            events={events}
+            selectedInning={selectedInning}
+            selectedIsTop={selectedIsTop}
+            onSelectHalfInning={selectHalfInning}
+          />
+        </div>
       </div>
 
       {/* Live at-bat status + visualization */}
