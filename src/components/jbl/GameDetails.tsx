@@ -193,6 +193,19 @@ function baseRunDistanceFt(result: string): number {
   return 0
 }
 
+// Diamond-path distance in feet between two bases, following the edges
+// (never cutting across the infield) — matches how FieldView measures a
+// baserunner's path, close enough for timing purposes even though this
+// function only counts whole 90ft hops rather than exact coordinates.
+function baseHopDistanceFt(from: "home" | "first" | "second" | "third", to: "home" | "first" | "second" | "third"): number {
+  const order = ["home", "first", "second", "third"] as const
+  const fromIdx = order.indexOf(from)
+  const toIdx = to === "home" && from !== "home" ? 4 : order.indexOf(to)
+  return Math.max(0, toIdx - fromIdx) * 90
+}
+
+const EXTRA_RUNNER_SPEED_FT_PER_S = 26 // keep in sync with FieldView.tsx
+
 function playAnimationDelay(ev: PlayEvent): number {
   if (!ev.hit) return 2400
 
@@ -207,7 +220,22 @@ function playAnimationDelay(ev: PlayEvent): number {
   const runFeet = baseRunDistanceFt(ev.result)
   const runnerMs = runFeet > 0 ? (runFeet / (result.includes("home run") ? 44 : 32)) * 1000 : 0
 
-  return Math.min(9200, Math.max(defenseMs, flightMs + runnerMs) + 900)
+  // Runners already on base (not the batter) get their own animation in
+  // FieldView, on their own clock — a safe runner from 2nd/3rd needs just
+  // as much time on screen to visibly complete that run as the batter
+  // does, or this event advances (and the play cuts to "CHANGE"/the next
+  // batter) before they've actually arrived.
+  const isHitPlay = /home run|triple|double|single|beats out|error|fielder's choice/.test(result)
+  const extraRunnerStartMs = grounder ? Math.max(0, flightMs - 150) : !isHitPlay ? flightMs + 150 : 280
+  const extraRunnerFinishMs = ev.runnerAdvances
+    .filter((a) => a.from !== "home")
+    .reduce((max, a) => {
+      const distFt = baseHopDistanceFt(a.from, a.to)
+      const durMs = Math.max(260, (distFt / EXTRA_RUNNER_SPEED_FT_PER_S) * 1000)
+      return Math.max(max, extraRunnerStartMs + durMs)
+    }, 0)
+
+  return Math.min(9200, Math.max(defenseMs, flightMs + runnerMs, extraRunnerFinishMs) + 900)
 }
 
 function chanceLabel(bases: PitchEvent["bases"]) {

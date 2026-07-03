@@ -40,7 +40,13 @@ type Fielder = {
   active: boolean
 }
 
-function resultLabel(result: string): { main: LabelMeta; isHit: boolean } | null {
+function resultLabel(result: string, outsOnPlay = 0): { main: LabelMeta; isHit: boolean } | null {
+  // The raw result text is just "grounds out" whether it's a routine out or
+  // a double/triple play — the multi-out plays only show up by counting how
+  // many runners were actually retired, so that takes priority over the
+  // per-batted-ball-type text below.
+  if (outsOnPlay >= 3) return { main: { text: "TRIPLE PLAY", color: "#f87171", shadow: "#7f1d1d" }, isHit: false }
+  if (outsOnPlay >= 2) return { main: { text: "DOUBLE PLAY", color: "#f97316", shadow: "#78350f" }, isHit: false }
   const r = result.toLowerCase()
   if (r.includes("home run"))               return { main: { text: "HOME RUN",        color: "#fbbf24", shadow: "#78350f" }, isHit: true }
   if (r.includes("triple"))                 return { main: { text: "TRIPLE",           color: "#34d399", shadow: "#064e3b" }, isHit: true }
@@ -277,6 +283,14 @@ export default function FieldView({
     const THROW_SPEED_FT_PER_S = 150
     const THROW_REACTION_MS = 140
     const LONG_THROW_FT = 180
+    // When the play is a hit but a *different* runner is thrown out
+    // advancing an extra base, the routine reaction delay had the fielder's
+    // throw start almost immediately after the catch — reading as the ball
+    // beating the batter to the bag on what's supposed to be a clean hit.
+    // Holding the throw back longer here lets the single/double itself
+    // register first, then plays out the separate extra-base gamble after.
+    const isHitWithExtraOut = hitRunPath.length > 0 && outTargets.length > 0
+    const HIT_WITH_OUT_REACTION_MS = 900
     // A throw longer than an infielder's routine range is relayed through a
     // cutoff man roughly two-thirds of the way in, rather than one throw
     // flying the entire distance — same as a real outfield assist.
@@ -284,7 +298,7 @@ export default function FieldView({
       distance(from, to) > LONG_THROW_FT ? [from, pointLerp(from, to, 0.6), to] : [from, to]
     const throwSegments: { from: Point; to: Point; startMs: number; durMs: number }[] = []
     {
-      let cursor = THROW_REACTION_MS
+      let cursor = isHitWithExtraOut ? HIT_WITH_OUT_REACTION_MS : THROW_REACTION_MS
       let legOrigin = primary.target
       for (const base of outTargets.slice(0, 2)) {
         const legTarget = basePoints[base]
@@ -457,8 +471,10 @@ export default function FieldView({
         const p = project(runnerPos)
         // Stay the neutral team color while still in motion — only flip to
         // red/out or green/safe once the runner has actually reached the
-        // base and the call is made, not for the whole run there.
-        const dotColor = runner && runnerT >= 1
+        // base and the call is made, not for the whole run there. "held"
+        // means nothing happened (they just stayed put) — that's not a
+        // safe/out verdict, so it stays neutral too, not green.
+        const dotColor = runner && runnerT >= 1 && runner.advance.result !== "held"
           ? (runner.advance.result === "out" ? OUT_COLOR : SAFE_COLOR)
           : runnerColor
         ctx.beginPath()
@@ -623,7 +639,13 @@ export default function FieldView({
     }
   }, [bases, defenders, launchAngle, result, traj, runnerAdvances, throwTo, fielderColor, fielderSecondaryColor, fielderAccentColor, runnerColor, runnerAccentColor])
 
-  const rl = result ? resultLabel(result) : null
+  const outsOnPlay = runnerAdvances.filter((a) => a.result === "out").length
+  const rl = result ? resultLabel(result, outsOnPlay) : null
+  // A hit can still cost the defense an out — a runner already on base
+  // gambling for an extra one and getting thrown out. That's a real,
+  // common play, but showing only "SINGLE" right before the half-inning
+  // ends on it reads as a non sequitur without calling out who was out.
+  const outOnPlay = runnerAdvances.find((a) => a.result === "out")
 
   return (
     <div className="relative w-full h-full">
@@ -644,6 +666,18 @@ export default function FieldView({
           >
             {rl.main.text}
           </span>
+          {rl.isHit && outOnPlay && (
+            <span
+              className="font-black uppercase tracking-widest select-none"
+              style={{
+                fontSize: "1.3rem",
+                color: "#f87171",
+                textShadow: "0 0 16px #7f1d1d88, 0 2px 6px rgba(0,0,0,0.9)",
+              }}
+            >
+              {shortName(outOnPlay.runner)} out at {outOnPlay.to}
+            </span>
+          )}
           {swing && swing.detail !== "FOUL" && swing.detail !== "MISS" && swing.detail !== "MEET" && (
             <div className="flex items-center gap-3">
               <span
