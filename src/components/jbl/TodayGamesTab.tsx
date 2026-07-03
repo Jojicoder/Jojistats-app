@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Link, useSearchParams } from "react-router-dom"
 import { getJblScheduleForDate, jblTeamSlug, type JblScheduleGame } from "../../api/jbl"
 import { teamBadge, teamColors } from "./teamTheme"
+import { gameStorageKey, isGameRevealed } from "./gameReveal"
 
 function formatLocalDate(date: Date) {
   const year = date.getFullYear()
@@ -196,10 +197,20 @@ export default function TodayGamesTab({
             // on a white card.
             const awayColor = teamColors(game.away).primary
             const homeColor = teamColors(game.home).primary
-            const awayWon = Boolean(game.finalScore && game.finalScore.away > game.finalScore.home)
-            const homeWon = Boolean(game.finalScore && game.finalScore.home > game.finalScore.away)
-            const isFinal = game.status === "final" || Boolean(game.finalScore)
-            const statusLabel = isFinal ? "Final" : "Scheduled"
+            const isActuallyFinal = game.status === "final" || Boolean(game.finalScore)
+            // The whole day's games are simulated to completion in one
+            // batch, so a "final" result is sitting there the moment the
+            // date exists — hide it behind the same reveal a real
+            // broadcast would have (or until someone actually watches the
+            // replay) so today's games aren't spoiled on sight.
+            const revealed = !isActuallyFinal || isGameRevealed(
+              game.date,
+              gameStorageKey(game.gameId, game.away, game.home, game.date),
+            )
+            const isFinal = isActuallyFinal && revealed
+            const awayWon = Boolean(isFinal && game.finalScore && game.finalScore.away > game.finalScore.home)
+            const homeWon = Boolean(isFinal && game.finalScore && game.finalScore.home > game.finalScore.away)
+            const statusLabel = isFinal ? "Final" : isActuallyFinal ? "Live" : "Scheduled"
             const winnerColor = awayWon ? awayColor : homeWon ? homeColor : "#14532d"
 
             return (
