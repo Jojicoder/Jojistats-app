@@ -693,8 +693,12 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
   const homeShort = game.home.split(" ").slice(-1)[0].toUpperCase()
   const awayUniformColors = teamColors(game.away, "away")
   const homeUniformColors = teamColors(game.home, "home")
-  const awayColor = awayUniformColors.primary
-  const homeColor = homeUniformColors.primary
+  // Brand identity color for text labels (score digits, abbreviations,
+  // lineup highlight) — not a uniform simulation, so always the default
+  // color set. The away set includes near-white colors for some teams
+  // (e.g. Bronx Wolves), which would be invisible as text on a white card.
+  const awayColor = teamColors(game.away).primary
+  const homeColor = teamColors(game.home).primary
   const scoreFlashColor = scoringSide === "away" ? awayColor : scoringSide === "home" ? homeColor : "transparent"
   const scoreFlashStyle = {
     "--jbl-score-flash": `color-mix(in srgb, ${scoreFlashColor} 24%, transparent)`,

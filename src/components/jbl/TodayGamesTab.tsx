@@ -189,8 +189,13 @@ export default function TodayGamesTab({
       {sortedGames && sortedGames.length > 0 && (
         <div key={selectedDate} className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {sortedGames.map((game, index) => {
-            const awayColor = teamColors(game.away, "away").primary
-            const homeColor = teamColors(game.home, "home").primary
+            // Brand identity color for the "which team is this" label/score
+            // text — not a uniform simulation, so always the home (default)
+            // color set. The away set includes near-white colors for some
+            // teams (e.g. Bronx Wolves), which would be invisible as text
+            // on a white card.
+            const awayColor = teamColors(game.away).primary
+            const homeColor = teamColors(game.home).primary
             const awayWon = Boolean(game.finalScore && game.finalScore.away > game.finalScore.home)
             const homeWon = Boolean(game.finalScore && game.finalScore.home > game.finalScore.away)
             const isFinal = game.status === "final" || Boolean(game.finalScore)
