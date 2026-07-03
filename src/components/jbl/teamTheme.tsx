@@ -1,0 +1,106 @@
+import type { CSSProperties } from "react"
+
+export type TeamColors = { primary: string; secondary: string; accent: string }
+
+const NAVY_DARK = "#0f172a"
+const NAVY_SLATE = "#1e293b"
+const NAVY_MIDNIGHT = "#0f111a"
+const NAVY_ROYAL = "#1e3a8a"
+
+const TEAM_HOME_COLORS: Record<string, TeamColors> = {
+  // North Division — New York
+  "Brooklyn Hammers":       { primary: "#3b82f6", secondary: "#1e3a8a", accent: "#fbbf24" },
+  "Bronx Wolves":           { primary: "#ef4444", secondary: "#1f2937", accent: "#94a3b8" },
+  "Queens Titans":          { primary: "#10b981", secondary: "#065f46", accent: "#ffffff" },
+  "Harlem Eagles":          { primary: "#f97316", secondary: "#1c1917", accent: "#fef3c7" },
+  "Staten Island Foxes":    { primary: "#eab308", secondary: "#1e3a8a", accent: "#ffffff" },
+  "Newark Knights":         { primary: "#8b5cf6", secondary: "#1e1b4b", accent: "#c4b5fd" },
+  // Mid Division — Philadelphia
+  "Fishtown Ferals":        { primary: "#14b8a6", secondary: "#0f172a", accent: "#a3e635" },
+  "Kensington Iron":        { primary: "#f59e0b", secondary: "#374151", accent: "#ffffff" },
+  "Germantown Colonials":   { primary: "#a855f7", secondary: "#1e1b4b", accent: "#fbbf24" },
+  "Manayunk Runners":       { primary: "#22c55e", secondary: "#14532d", accent: "#ffffff" },
+  "Fairmount Rams":         { primary: "#ec4899", secondary: "#1f2937", accent: "#ffffff" },
+  "South Philly Stallions": { primary: "#64748b", secondary: "#1f2937", accent: "#fbbf24" },
+  // South Division — DC / MD / VA
+  "Georgetown Ravens":      { primary: "#06b6d4", secondary: "#0c4a6e", accent: "#ffffff" },
+  "Capitol Hill Senators":  { primary: "#be123c", secondary: "#1e3a8a", accent: "#ffffff" },
+  "Anacostia Kings":        { primary: "#84cc16", secondary: "#1f2937", accent: "#fbbf24" },
+  "Alexandria Cannons":     { primary: "#6366f1", secondary: "#1e1b4b", accent: "#c7d2fe" },
+  "Bethesda Blaze":         { primary: "#f43f5e", secondary: "#1f2937", accent: "#fb923c" },
+  "Silver Spring Ghosts":   { primary: "#94a3b8", secondary: "#1e293b", accent: "#ffffff" },
+}
+
+const TEAM_AWAY_COLORS: Record<string, TeamColors> = {
+  // North Division — New York
+  "Brooklyn Hammers":       { primary: "#4b4b43", secondary: "#ef4444", accent: "#ffffff" },
+  "Bronx Wolves":           { primary: "#ffffff", secondary: NAVY_ROYAL,  accent: "#fbbf24" },
+  "Queens Titans":          { primary: "#27303f", secondary: "#f97316", accent: "#facc15" },
+  "Harlem Eagles":          { primary: NAVY_ROYAL,  secondary: "#6366f1", accent: "#ffffff" },
+  "Staten Island Foxes":    { primary: "#1c1917", secondary: "#f97316", accent: "#fef3c7" },
+  "Newark Knights":         { primary: "#f59e0b", secondary: "#451a03", accent: "#ffffff" },
+  // Mid Division — Philadelphia
+  "Fishtown Ferals":        { primary: "#b45309", secondary: NAVY_SLATE, accent: "#a3e635" },
+  "Kensington Iron":        { primary: "#e2e8f0", secondary: "#374151", accent: "#1c1917" },
+  "Germantown Colonials":   { primary: "#e6dfd3", secondary: "#b91c1c", accent: NAVY_DARK },
+  "Manayunk Runners":       { primary: "#64748b", secondary: "#db2777", accent: "#fdf2f8" },
+  "Fairmount Rams":         { primary: "#0284c7", secondary: NAVY_MIDNIGHT, accent: "#facc15" },
+  "South Philly Stallions": { primary: "#78350f", secondary: "#1c1917", accent: "#ffffff" },
+  // South Division — DC / MD / VA
+  "Georgetown Ravens":      { primary: "#191026", secondary: "#be123c", accent: "#fbbf24" },
+  "Capitol Hill Senators":  { primary: "#0d9488", secondary: NAVY_SLATE, accent: "#ffffff" },
+  "Anacostia Kings":        { primary: "#4c1d95", secondary: "#312e81", accent: "#ffffff" },
+  "Alexandria Cannons":     { primary: "#ea580c", secondary: "#27272a", accent: "#fef3c7" },
+  "Bethesda Blaze":         { primary: "#06b6d4", secondary: NAVY_ROYAL,  accent: "#ffffff" },
+  "Silver Spring Ghosts":   { primary: "#cbd5e1", secondary: "#4c1d95", accent: "#10b981" },
+}
+
+export function teamColors(name: string, side: "home" | "away" = "home"): TeamColors {
+  const table = side === "away" ? TEAM_AWAY_COLORS : TEAM_HOME_COLORS
+  return table[name] ?? { primary: "#6b7280", secondary: "#374151", accent: "#ffffff" }
+}
+
+function readableTextColor(hex: string) {
+  const value = hex.replace("#", "")
+  const red = Number.parseInt(value.slice(0, 2), 16)
+  const green = Number.parseInt(value.slice(2, 4), 16)
+  const blue = Number.parseInt(value.slice(4, 6), 16)
+  const luminance = (red * 299 + green * 587 + blue * 114) / 1000
+  return luminance > 155 ? "#111827" : "#ffffff"
+}
+
+export function jblThemeStyle(teamName: string): CSSProperties {
+  const colors = teamColors(teamName)
+  const seed = teamName.split("").reduce((sum, char) => sum + char.charCodeAt(0), 0)
+  const accentX = 18 + (seed * 17) % 64
+  const accentY = 4 + (seed * 11) % 38
+  const patternAngle = 118 + (seed * 13) % 44
+
+  return {
+    "--mlb-primary": colors.primary,
+    "--mlb-secondary": colors.secondary,
+    "--mlb-background": colors.primary,
+    "--mlb-on-primary": readableTextColor(colors.primary),
+    "--mlb-accent": colors.accent,
+    "--mlb-accent-x": `${accentX}%`,
+    "--mlb-accent-y": `${accentY}%`,
+    "--mlb-pattern-angle": `${patternAngle}deg`,
+  } as CSSProperties
+}
+
+export function teamBadge(name: string) {
+  const c = teamColors(name)
+  const abbr = name.split(" ").slice(-1)[0].slice(0, 3).toUpperCase()
+  return (
+    <span
+      className="inline-block rounded px-1.5 py-0.5 text-[10px] font-black tracking-wide"
+      style={{
+        background: `linear-gradient(135deg, ${c.primary}, ${c.secondary})`,
+        color: c.accent,
+        border: `1px solid ${c.primary}88`,
+      }}
+    >
+      {abbr}
+    </span>
+  )
+}

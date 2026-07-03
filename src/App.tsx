@@ -27,7 +27,9 @@ const SeasonArchivePage = lazy(() => import("./pages/SeasonArchivePage"))
 const MLBPage = lazy(() => import("./pages/MLBPage"))
 const MLBTeamPage = lazy(() => import("./pages/MLBTeamPage"))
 const MLBGamePage = lazy(() => import("./pages/MLBGamePage"))
-const SimPage = lazy(() => import("./pages/SimPage"))
+const JBLPage = lazy(() => import("./pages/JBLPage"))
+const JBLTeamPage = lazy(() => import("./pages/JBLTeamPage"))
+const JBLGamePage = lazy(() => import("./pages/JBLGamePage"))
 const SeasonPage = lazy(() => import("./pages/SeasonPage"))
 
 function PageFallback() {
@@ -84,8 +86,10 @@ export default function App() {
               <Route path="/manager" element={<TeamManagerPage />} />
               <Route path="/player" element={<PlayerPage />} />
               <Route path="/seasons" element={<SeasonArchivePage />} />
-              <Route path="/sim" element={<SimPage />} />
-              <Route path="/jbl" element={<SimPage />} />
+              <Route path="/sim" element={<Navigate to="/jbl" replace />} />
+              <Route path="/jbl" element={<JBLPage />} />
+              <Route path="/jbl/teams/:teamId" element={<JBLTeamPage />} />
+              <Route path="/jbl/games/:gameId" element={<JBLGamePage />} />
               <Route path="/season" element={<SeasonPage />} />
               <Route path="/mlb" element={<MLBPage />} />
               <Route path="/mlb/teams/:teamId" element={<MLBTeamPage />} />

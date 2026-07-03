@@ -73,10 +73,36 @@ export type JblPlayEvent = {
   }
 }
 
+export type JblStolenBaseEvent = {
+  type: "stolen_base"
+  inning: number
+  half: JblHalf
+  runner: string
+  base: "second" | "third" | "home"
+  success: boolean
+  score: { away: number; home: number }
+  bases: JblBases
+  outs: number
+}
+
+export type JblPickoffEvent = {
+  type: "pickoff"
+  inning: number
+  half: JblHalf
+  runner: string
+  base: "first" | "second" | "third"
+  out: boolean
+  score: { away: number; home: number }
+  bases: JblBases
+  outs: number
+}
+
 export type JblGameEvent =
   | { type: "half_inning"; inning: number; half: JblHalf; score: { away: number; home: number } }
   | JblPitchEvent
   | JblPlayEvent
+  | JblStolenBaseEvent
+  | JblPickoffEvent
   | {
       type: "substitution"
       inning: number

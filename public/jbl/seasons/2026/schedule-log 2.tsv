@@ -1,0 +1,765 @@
+2026-001	2026-04-01	16	1	Bethesda Blaze	Queens Titans	Queens Coliseum	8	2	games/2026-001.json
+2026-002	2026-04-01	15	2	Alexandria Cannons	Brooklyn Hammers	Iron Yard	6	8	games/2026-002.json
+2026-003	2026-04-01	12	5	Georgetown Ravens	Staten Island Foxes	Fox Field	3	2	games/2026-003.json
+2026-004	2026-04-01	9	8	Manayunk Runners	Germantown Colonials	Colonial Field	0	1	games/2026-004.json
+2026-005	2026-04-01	17	0	Silver Spring Ghosts	Newark Knights	Knights Field	4	0	games/2026-005.json
+2026-006	2026-04-01	10	7	Fairmount Rams	Kensington Iron	Iron Works	3	9	games/2026-006.json
+2026-007	2026-04-01	13	4	Capitol Hill Senators	Harlem Eagles	Eagle Park	4	2	games/2026-007.json
+2026-008	2026-04-01	14	3	Anacostia Kings	Bronx Wolves	Wolf Den	12	1	games/2026-008.json
+2026-009	2026-04-01	11	6	South Philly Stallions	Fishtown Ferals	Ferals Field	1	5	games/2026-009.json
+2026-010	2026-04-02	7	8	Kensington Iron	Germantown Colonials	Colonial Field	2	1	games/2026-010.json
+2026-011	2026-04-02	1	14	Queens Titans	Anacostia Kings	Kings Yard	6	5	games/2026-011.json
+2026-012	2026-04-02	6	9	Fishtown Ferals	Manayunk Runners	Canal Park	6	1	games/2026-012.json
+2026-013	2026-04-02	5	10	Staten Island Foxes	Fairmount Rams	Fairmount Field	2	3	games/2026-013.json
+2026-014	2026-04-02	4	11	Harlem Eagles	South Philly Stallions	Stallions Field	1	5	games/2026-014.json
+2026-015	2026-04-02	2	13	Brooklyn Hammers	Capitol Hill Senators	Capitol Park	4	3	games/2026-015.json
+2026-016	2026-04-02	17	15	Silver Spring Ghosts	Alexandria Cannons	Cannon Field	5	1	games/2026-016.json
+2026-017	2026-04-02	0	16	Newark Knights	Bethesda Blaze	Blaze Arena	6	1	games/2026-017.json
+2026-018	2026-04-02	3	12	Bronx Wolves	Georgetown Ravens	Ravens Nest	6	4	games/2026-018.json
+2026-019	2026-04-03	10	3	Fairmount Rams	Bronx Wolves	Wolf Den	0	1	games/2026-019.json
+2026-020	2026-04-03	11	2	South Philly Stallions	Brooklyn Hammers	Iron Yard	2	3	games/2026-020.json
+2026-021	2026-04-03	14	16	Anacostia Kings	Bethesda Blaze	Blaze Arena	9	2	games/2026-021.json
+2026-022	2026-04-03	8	5	Germantown Colonials	Staten Island Foxes	Fox Field	1	2	games/2026-022.json
+2026-023	2026-04-03	13	17	Capitol Hill Senators	Silver Spring Ghosts	Silver Spring Stadium	3	2	games/2026-023.json
+2026-024	2026-04-03	12	1	Georgetown Ravens	Queens Titans	Queens Coliseum	0	1	games/2026-024.json
+2026-025	2026-04-03	7	6	Kensington Iron	Fishtown Ferals	Ferals Field	2	6	games/2026-025.json
+2026-026	2026-04-03	15	0	Alexandria Cannons	Newark Knights	Knights Field	2	0	games/2026-026.json
+2026-027	2026-04-03	9	4	Manayunk Runners	Harlem Eagles	Eagle Park	4	0	games/2026-027.json
+2026-028	2026-04-04	1	10	Queens Titans	Fairmount Rams	Fairmount Field	7	5	games/2026-028.json
+2026-029	2026-04-04	0	14	Newark Knights	Anacostia Kings	Kings Yard	4	1	games/2026-029.json
+2026-030	2026-04-04	16	12	Bethesda Blaze	Georgetown Ravens	Ravens Nest	4	3	games/2026-030.json
+2026-031	2026-04-04	5	6	Staten Island Foxes	Fishtown Ferals	Ferals Field	7	8	games/2026-031.json
+2026-032	2026-04-04	15	13	Alexandria Cannons	Capitol Hill Senators	Capitol Park	5	4	games/2026-032.json
+2026-033	2026-04-04	3	8	Bronx Wolves	Germantown Colonials	Colonial Field	7	1	games/2026-033.json
+2026-034	2026-04-04	2	9	Brooklyn Hammers	Manayunk Runners	Canal Park	3	5	games/2026-034.json
+2026-035	2026-04-04	4	7	Harlem Eagles	Kensington Iron	Iron Works	5	3	games/2026-035.json
+2026-036	2026-04-04	17	11	Silver Spring Ghosts	South Philly Stallions	Stallions Field	4	0	games/2026-036.json
+2026-037	2026-04-05	10	16	Fairmount Rams	Bethesda Blaze	Blaze Arena	0	2	games/2026-037.json
+2026-038	2026-04-05	11	15	South Philly Stallions	Alexandria Cannons	Cannon Field	10	7	games/2026-038.json
+2026-039	2026-04-05	9	17	Manayunk Runners	Silver Spring Ghosts	Silver Spring Stadium	1	2	games/2026-039.json
+2026-040	2026-04-05	13	0	Capitol Hill Senators	Newark Knights	Knights Field	3	4	games/2026-040.json
+2026-041	2026-04-05	8	1	Germantown Colonials	Queens Titans	Queens Coliseum	3	1	games/2026-041.json
+2026-042	2026-04-05	5	4	Staten Island Foxes	Harlem Eagles	Eagle Park	4	2	games/2026-042.json
+2026-043	2026-04-05	12	14	Georgetown Ravens	Anacostia Kings	Kings Yard	5	6	games/2026-043.json
+2026-044	2026-04-05	7	2	Kensington Iron	Brooklyn Hammers	Iron Yard	4	1	games/2026-044.json
+2026-045	2026-04-05	6	3	Fishtown Ferals	Bronx Wolves	Wolf Den	3	0	games/2026-045.json
+2026-046	2026-04-06	1	6	Queens Titans	Fishtown Ferals	Ferals Field	1	2	games/2026-046.json
+2026-047	2026-04-06	3	4	Bronx Wolves	Harlem Eagles	Eagle Park	3	4	games/2026-047.json
+2026-048	2026-04-06	17	7	Silver Spring Ghosts	Kensington Iron	Iron Works	4	3	games/2026-048.json
+2026-049	2026-04-06	0	12	Newark Knights	Georgetown Ravens	Ravens Nest	4	2	games/2026-049.json
+2026-050	2026-04-06	2	5	Brooklyn Hammers	Staten Island Foxes	Fox Field	1	3	games/2026-050.json
+2026-051	2026-04-06	16	8	Bethesda Blaze	Germantown Colonials	Colonial Field	3	2	games/2026-051.json
+2026-052	2026-04-06	14	10	Anacostia Kings	Fairmount Rams	Fairmount Field	1	2	games/2026-052.json
+2026-053	2026-04-06	13	11	Capitol Hill Senators	South Philly Stallions	Stallions Field	2	3	games/2026-053.json
+2026-054	2026-04-06	15	9	Alexandria Cannons	Manayunk Runners	Canal Park	2	3	games/2026-054.json
+2026-055	2026-04-07	3	2	Bronx Wolves	Brooklyn Hammers	Iron Yard	0	2	games/2026-055.json
+2026-056	2026-04-07	9	13	Manayunk Runners	Capitol Hill Senators	Capitol Park	7	0	games/2026-056.json
+2026-057	2026-04-07	4	1	Harlem Eagles	Queens Titans	Queens Coliseum	2	1	games/2026-057.json
+2026-058	2026-04-07	8	14	Germantown Colonials	Anacostia Kings	Kings Yard	4	1	games/2026-058.json
+2026-059	2026-04-07	5	17	Staten Island Foxes	Silver Spring Ghosts	Silver Spring Stadium	2	4	games/2026-059.json
+2026-060	2026-04-07	11	0	South Philly Stallions	Newark Knights	Knights Field	8	4	games/2026-060.json
+2026-061	2026-04-07	10	12	Fairmount Rams	Georgetown Ravens	Ravens Nest	0	4	games/2026-061.json
+2026-062	2026-04-07	6	16	Fishtown Ferals	Bethesda Blaze	Blaze Arena	6	4	games/2026-062.json
+2026-063	2026-04-07	7	15	Kensington Iron	Alexandria Cannons	Cannon Field	6	7	games/2026-063.json
+2026-064	2026-04-08	14	6	Anacostia Kings	Fishtown Ferals	Ferals Field	8	3	games/2026-064.json
+2026-065	2026-04-08	12	8	Georgetown Ravens	Germantown Colonials	Colonial Field	8	2	games/2026-065.json
+2026-066	2026-04-08	16	4	Bethesda Blaze	Harlem Eagles	Eagle Park	2	6	games/2026-066.json
+2026-067	2026-04-08	11	9	South Philly Stallions	Manayunk Runners	Canal Park	6	5	games/2026-067.json
+2026-068	2026-04-08	15	5	Alexandria Cannons	Staten Island Foxes	Fox Field	3	4	games/2026-068.json
+2026-069	2026-04-08	1	2	Queens Titans	Brooklyn Hammers	Iron Yard	10	4	games/2026-069.json
+2026-070	2026-04-08	0	10	Newark Knights	Fairmount Rams	Fairmount Field	1	0	games/2026-070.json
+2026-071	2026-04-08	17	3	Silver Spring Ghosts	Bronx Wolves	Wolf Den	4	1	games/2026-071.json
+2026-072	2026-04-08	13	7	Capitol Hill Senators	Kensington Iron	Iron Works	5	9	games/2026-072.json
+2026-073	2026-04-09	4	14	Harlem Eagles	Anacostia Kings	Kings Yard	3	2	games/2026-073.json
+2026-074	2026-04-09	3	15	Bronx Wolves	Alexandria Cannons	Cannon Field	8	2	games/2026-074.json
+2026-075	2026-04-09	9	0	Manayunk Runners	Newark Knights	Knights Field	4	0	games/2026-075.json
+2026-076	2026-04-09	6	12	Fishtown Ferals	Georgetown Ravens	Ravens Nest	3	5	games/2026-076.json
+2026-077	2026-04-09	2	16	Brooklyn Hammers	Bethesda Blaze	Blaze Arena	5	0	games/2026-077.json
+2026-078	2026-04-09	1	17	Queens Titans	Silver Spring Ghosts	Silver Spring Stadium	3	1	games/2026-078.json
+2026-079	2026-04-09	7	11	Kensington Iron	South Philly Stallions	Stallions Field	1	0	games/2026-079.json
+2026-080	2026-04-09	5	13	Staten Island Foxes	Capitol Hill Senators	Capitol Park	8	5	games/2026-080.json
+2026-081	2026-04-09	8	10	Germantown Colonials	Fairmount Rams	Fairmount Field	5	6	games/2026-081.json
+2026-082	2026-04-10	9	7	Manayunk Runners	Kensington Iron	Iron Works	2	1	games/2026-082.json
+2026-083	2026-04-10	0	8	Newark Knights	Germantown Colonials	Colonial Field	14	11	games/2026-083.json
+2026-084	2026-04-10	14	2	Anacostia Kings	Brooklyn Hammers	Iron Yard	6	4	games/2026-084.json
+2026-085	2026-04-10	11	5	South Philly Stallions	Staten Island Foxes	Fox Field	8	9	games/2026-085.json
+2026-086	2026-04-10	10	6	Fairmount Rams	Fishtown Ferals	Ferals Field	5	4	games/2026-086.json
+2026-087	2026-04-10	15	1	Alexandria Cannons	Queens Titans	Queens Coliseum	0	3	games/2026-087.json
+2026-088	2026-04-10	16	17	Bethesda Blaze	Silver Spring Ghosts	Silver Spring Stadium	4	3	games/2026-088.json
+2026-089	2026-04-10	12	4	Georgetown Ravens	Harlem Eagles	Eagle Park	1	9	games/2026-089.json
+2026-090	2026-04-10	13	3	Capitol Hill Senators	Bronx Wolves	Wolf Den	8	2	games/2026-090.json
+2026-091	2026-04-11	17	14	Silver Spring Ghosts	Anacostia Kings	Kings Yard	6	5	games/2026-091.json
+2026-092	2026-04-11	7	0	Kensington Iron	Newark Knights	Knights Field	6	4	games/2026-092.json
+2026-093	2026-04-11	1	13	Queens Titans	Capitol Hill Senators	Capitol Park	4	5	games/2026-093.json
+2026-094	2026-04-11	6	8	Fishtown Ferals	Germantown Colonials	Colonial Field	6	0	games/2026-094.json
+2026-095	2026-04-11	16	15	Bethesda Blaze	Alexandria Cannons	Cannon Field	3	4	games/2026-095.json
+2026-096	2026-04-11	2	12	Brooklyn Hammers	Georgetown Ravens	Ravens Nest	5	1	games/2026-096.json
+2026-097	2026-04-11	4	10	Harlem Eagles	Fairmount Rams	Fairmount Field	3	4	games/2026-097.json
+2026-098	2026-04-11	3	11	Bronx Wolves	South Philly Stallions	Stallions Field	6	5	games/2026-098.json
+2026-099	2026-04-11	5	9	Staten Island Foxes	Manayunk Runners	Canal Park	5	1	games/2026-099.json
+2026-100	2026-04-13	14	15	Anacostia Kings	Alexandria Cannons	Cannon Field	0	6	games/2026-100.json
+2026-101	2026-04-13	7	5	Kensington Iron	Staten Island Foxes	Fox Field	1	7	games/2026-101.json
+2026-102	2026-04-13	10	2	Fairmount Rams	Brooklyn Hammers	Iron Yard	11	6	games/2026-102.json
+2026-103	2026-04-13	9	3	Manayunk Runners	Bronx Wolves	Wolf Den	0	3	games/2026-103.json
+2026-104	2026-04-13	13	16	Capitol Hill Senators	Bethesda Blaze	Blaze Arena	0	1	games/2026-104.json
+2026-105	2026-04-13	12	17	Georgetown Ravens	Silver Spring Ghosts	Silver Spring Stadium	6	2	games/2026-105.json
+2026-106	2026-04-13	8	4	Germantown Colonials	Harlem Eagles	Eagle Park	1	6	games/2026-106.json
+2026-107	2026-04-13	0	6	Newark Knights	Fishtown Ferals	Ferals Field	1	4	games/2026-107.json
+2026-108	2026-04-13	11	1	South Philly Stallions	Queens Titans	Queens Coliseum	5	3	games/2026-108.json
+2026-109	2026-04-14	17	10	Silver Spring Ghosts	Fairmount Rams	Fairmount Field	4	0	games/2026-109.json
+2026-110	2026-04-14	5	0	Staten Island Foxes	Newark Knights	Knights Field	3	6	games/2026-110.json
+2026-111	2026-04-14	1	9	Queens Titans	Manayunk Runners	Canal Park	2	5	games/2026-111.json
+2026-112	2026-04-14	16	11	Bethesda Blaze	South Philly Stallions	Stallions Field	10	2	games/2026-112.json
+2026-113	2026-04-14	2	8	Brooklyn Hammers	Germantown Colonials	Colonial Field	3	5	games/2026-113.json
+2026-114	2026-04-14	14	13	Anacostia Kings	Capitol Hill Senators	Capitol Park	1	0	games/2026-114.json
+2026-115	2026-04-14	3	7	Bronx Wolves	Kensington Iron	Iron Works	4	3	games/2026-115.json
+2026-116	2026-04-14	15	12	Alexandria Cannons	Georgetown Ravens	Ravens Nest	8	1	games/2026-116.json
+2026-117	2026-04-14	4	6	Harlem Eagles	Fishtown Ferals	Ferals Field	4	3	games/2026-117.json
+2026-118	2026-04-15	0	4	Newark Knights	Harlem Eagles	Eagle Park	4	5	games/2026-118.json
+2026-119	2026-04-15	12	13	Georgetown Ravens	Capitol Hill Senators	Capitol Park	7	6	games/2026-119.json
+2026-120	2026-04-15	5	3	Staten Island Foxes	Bronx Wolves	Wolf Den	5	6	games/2026-120.json
+2026-121	2026-04-15	10	15	Fairmount Rams	Alexandria Cannons	Cannon Field	12	3	games/2026-121.json
+2026-122	2026-04-15	9	16	Manayunk Runners	Bethesda Blaze	Blaze Arena	0	3	games/2026-122.json
+2026-123	2026-04-15	6	2	Fishtown Ferals	Brooklyn Hammers	Iron Yard	4	2	games/2026-123.json
+2026-124	2026-04-15	7	1	Kensington Iron	Queens Titans	Queens Coliseum	2	4	games/2026-124.json
+2026-125	2026-04-15	8	17	Germantown Colonials	Silver Spring Ghosts	Silver Spring Stadium	7	3	games/2026-125.json
+2026-126	2026-04-15	11	14	South Philly Stallions	Anacostia Kings	Kings Yard	3	5	games/2026-126.json
+2026-127	2026-04-16	16	7	Bethesda Blaze	Kensington Iron	Iron Works	0	1	games/2026-127.json
+2026-128	2026-04-16	13	10	Capitol Hill Senators	Fairmount Rams	Fairmount Field	2	3	games/2026-128.json
+2026-129	2026-04-16	17	6	Silver Spring Ghosts	Fishtown Ferals	Ferals Field	5	4	games/2026-129.json
+2026-130	2026-04-16	1	5	Queens Titans	Staten Island Foxes	Fox Field	2	0	games/2026-130.json
+2026-131	2026-04-16	14	9	Anacostia Kings	Manayunk Runners	Canal Park	3	2	games/2026-131.json
+2026-132	2026-04-16	3	0	Bronx Wolves	Newark Knights	Knights Field	6	0	games/2026-132.json
+2026-133	2026-04-16	2	4	Brooklyn Hammers	Harlem Eagles	Eagle Park	14	5	games/2026-133.json
+2026-134	2026-04-16	15	8	Alexandria Cannons	Germantown Colonials	Colonial Field	1	9	games/2026-134.json
+2026-135	2026-04-16	12	11	Georgetown Ravens	South Philly Stallions	Stallions Field	5	6	games/2026-135.json
+2026-136	2026-04-17	5	16	Staten Island Foxes	Bethesda Blaze	Blaze Arena	2	5	games/2026-136.json
+2026-137	2026-04-17	6	15	Fishtown Ferals	Alexandria Cannons	Cannon Field	1	2	games/2026-137.json
+2026-138	2026-04-17	4	17	Harlem Eagles	Silver Spring Ghosts	Silver Spring Stadium	0	5	games/2026-138.json
+2026-139	2026-04-17	0	2	Newark Knights	Brooklyn Hammers	Iron Yard	10	3	games/2026-139.json
+2026-140	2026-04-17	8	13	Germantown Colonials	Capitol Hill Senators	Capitol Park	5	4	games/2026-140.json
+2026-141	2026-04-17	3	1	Bronx Wolves	Queens Titans	Queens Coliseum	4	7	games/2026-141.json
+2026-142	2026-04-17	9	12	Manayunk Runners	Georgetown Ravens	Ravens Nest	1	2	games/2026-142.json
+2026-143	2026-04-17	7	14	Kensington Iron	Anacostia Kings	Kings Yard	1	6	games/2026-143.json
+2026-144	2026-04-17	10	11	Fairmount Rams	South Philly Stallions	Stallions Field	5	8	games/2026-144.json
+2026-145	2026-04-18	15	4	Alexandria Cannons	Harlem Eagles	Eagle Park	1	0	games/2026-145.json
+2026-146	2026-04-18	14	5	Anacostia Kings	Staten Island Foxes	Fox Field	1	2	games/2026-146.json
+2026-147	2026-04-18	17	2	Silver Spring Ghosts	Brooklyn Hammers	Iron Yard	5	9	games/2026-147.json
+2026-148	2026-04-18	13	6	Capitol Hill Senators	Fishtown Ferals	Ferals Field	5	12	games/2026-148.json
+2026-149	2026-04-18	12	7	Georgetown Ravens	Kensington Iron	Iron Works	3	6	games/2026-149.json
+2026-150	2026-04-18	16	3	Bethesda Blaze	Bronx Wolves	Wolf Den	0	4	games/2026-150.json
+2026-151	2026-04-18	10	9	Fairmount Rams	Manayunk Runners	Canal Park	4	2	games/2026-151.json
+2026-152	2026-04-18	1	0	Queens Titans	Newark Knights	Knights Field	8	10	games/2026-152.json
+2026-153	2026-04-18	11	8	South Philly Stallions	Germantown Colonials	Colonial Field	5	3	games/2026-153.json
+2026-154	2026-04-19	2	15	Brooklyn Hammers	Alexandria Cannons	Cannon Field	18	3	games/2026-154.json
+2026-155	2026-04-19	5	12	Staten Island Foxes	Georgetown Ravens	Ravens Nest	2	7	games/2026-155.json
+2026-156	2026-04-19	1	16	Queens Titans	Bethesda Blaze	Blaze Arena	1	4	games/2026-156.json
+2026-157	2026-04-19	6	11	Fishtown Ferals	South Philly Stallions	Stallions Field	8	3	games/2026-157.json
+2026-158	2026-04-19	3	14	Bronx Wolves	Anacostia Kings	Kings Yard	8	4	games/2026-158.json
+2026-159	2026-04-19	4	13	Harlem Eagles	Capitol Hill Senators	Capitol Park	1	2	games/2026-159.json
+2026-160	2026-04-19	7	10	Kensington Iron	Fairmount Rams	Fairmount Field	5	4	games/2026-160.json
+2026-161	2026-04-19	8	9	Germantown Colonials	Manayunk Runners	Canal Park	3	5	games/2026-161.json
+2026-162	2026-04-19	0	17	Newark Knights	Silver Spring Ghosts	Silver Spring Stadium	1	0	games/2026-162.json
+2026-163	2026-04-20	14	1	Anacostia Kings	Queens Titans	Queens Coliseum	2	7	games/2026-163.json
+2026-164	2026-04-20	8	7	Germantown Colonials	Kensington Iron	Iron Works	6	1	games/2026-164.json
+2026-165	2026-04-20	12	3	Georgetown Ravens	Bronx Wolves	Wolf Den	6	7	games/2026-165.json
+2026-166	2026-04-20	13	2	Capitol Hill Senators	Brooklyn Hammers	Iron Yard	1	0	games/2026-166.json
+2026-167	2026-04-20	15	17	Alexandria Cannons	Silver Spring Ghosts	Silver Spring Stadium	3	1	games/2026-167.json
+2026-168	2026-04-20	9	6	Manayunk Runners	Fishtown Ferals	Ferals Field	6	4	games/2026-168.json
+2026-169	2026-04-20	16	0	Bethesda Blaze	Newark Knights	Knights Field	3	4	games/2026-169.json
+2026-170	2026-04-20	10	5	Fairmount Rams	Staten Island Foxes	Fox Field	12	5	games/2026-170.json
+2026-171	2026-04-20	11	4	South Philly Stallions	Harlem Eagles	Eagle Park	1	0	games/2026-171.json
+2026-172	2026-04-21	17	13	Silver Spring Ghosts	Capitol Hill Senators	Capitol Park	2	3	games/2026-172.json
+2026-173	2026-04-21	4	9	Harlem Eagles	Manayunk Runners	Canal Park	0	3	games/2026-173.json
+2026-174	2026-04-21	3	10	Bronx Wolves	Fairmount Rams	Fairmount Field	7	2	games/2026-174.json
+2026-175	2026-04-21	1	12	Queens Titans	Georgetown Ravens	Ravens Nest	14	2	games/2026-175.json
+2026-176	2026-04-21	5	8	Staten Island Foxes	Germantown Colonials	Colonial Field	2	13	games/2026-176.json
+2026-177	2026-04-21	16	14	Bethesda Blaze	Anacostia Kings	Kings Yard	4	10	games/2026-177.json
+2026-178	2026-04-21	0	15	Newark Knights	Alexandria Cannons	Cannon Field	5	3	games/2026-178.json
+2026-179	2026-04-21	2	11	Brooklyn Hammers	South Philly Stallions	Stallions Field	13	0	games/2026-179.json
+2026-180	2026-04-21	6	7	Fishtown Ferals	Kensington Iron	Iron Works	6	4	games/2026-180.json
+2026-181	2026-04-22	10	1	Fairmount Rams	Queens Titans	Queens Coliseum	2	3	games/2026-181.json
+2026-182	2026-04-22	11	17	South Philly Stallions	Silver Spring Ghosts	Silver Spring Stadium	3	2	games/2026-182.json
+2026-183	2026-04-22	14	0	Anacostia Kings	Newark Knights	Knights Field	2	4	games/2026-183.json
+2026-184	2026-04-22	6	5	Fishtown Ferals	Staten Island Foxes	Fox Field	9	1	games/2026-184.json
+2026-185	2026-04-22	9	2	Manayunk Runners	Brooklyn Hammers	Iron Yard	4	0	games/2026-185.json
+2026-186	2026-04-22	12	16	Georgetown Ravens	Bethesda Blaze	Blaze Arena	3	0	games/2026-186.json
+2026-187	2026-04-22	7	4	Kensington Iron	Harlem Eagles	Eagle Park	1	2	games/2026-187.json
+2026-188	2026-04-22	8	3	Germantown Colonials	Bronx Wolves	Wolf Den	0	3	games/2026-188.json
+2026-189	2026-04-22	13	15	Capitol Hill Senators	Alexandria Cannons	Cannon Field	5	1	games/2026-189.json
+2026-190	2026-04-24	1	8	Queens Titans	Germantown Colonials	Colonial Field	6	0	games/2026-190.json
+2026-191	2026-04-24	17	9	Silver Spring Ghosts	Manayunk Runners	Canal Park	3	2	games/2026-191.json
+2026-192	2026-04-24	15	11	Alexandria Cannons	South Philly Stallions	Stallions Field	0	1	games/2026-192.json
+2026-193	2026-04-24	14	12	Anacostia Kings	Georgetown Ravens	Ravens Nest	13	3	games/2026-193.json
+2026-194	2026-04-24	3	6	Bronx Wolves	Fishtown Ferals	Ferals Field	2	5	games/2026-194.json
+2026-195	2026-04-24	16	10	Bethesda Blaze	Fairmount Rams	Fairmount Field	5	2	games/2026-195.json
+2026-196	2026-04-24	0	13	Newark Knights	Capitol Hill Senators	Capitol Park	6	4	games/2026-196.json
+2026-197	2026-04-24	4	5	Harlem Eagles	Staten Island Foxes	Fox Field	1	0	games/2026-197.json
+2026-198	2026-04-24	2	7	Brooklyn Hammers	Kensington Iron	Iron Works	9	2	games/2026-198.json
+2026-199	2026-04-25	10	14	Fairmount Rams	Anacostia Kings	Kings Yard	10	9	games/2026-199.json
+2026-200	2026-04-25	4	3	Harlem Eagles	Bronx Wolves	Wolf Den	1	3	games/2026-200.json
+2026-201	2026-04-25	8	16	Germantown Colonials	Bethesda Blaze	Blaze Arena	1	4	games/2026-201.json
+2026-202	2026-04-25	6	1	Fishtown Ferals	Queens Titans	Queens Coliseum	4	3	games/2026-202.json
+2026-203	2026-04-25	12	0	Georgetown Ravens	Newark Knights	Knights Field	1	4	games/2026-203.json
+2026-204	2026-04-25	9	15	Manayunk Runners	Alexandria Cannons	Cannon Field	4	0	games/2026-204.json
+2026-205	2026-04-25	7	17	Kensington Iron	Silver Spring Ghosts	Silver Spring Stadium	0	3	games/2026-205.json
+2026-206	2026-04-25	11	13	South Philly Stallions	Capitol Hill Senators	Capitol Park	0	3	games/2026-206.json
+2026-207	2026-04-25	5	2	Staten Island Foxes	Brooklyn Hammers	Iron Yard	2	1	games/2026-207.json
+2026-208	2026-04-26	16	6	Bethesda Blaze	Fishtown Ferals	Ferals Field	3	4	games/2026-208.json
+2026-209	2026-04-26	17	5	Silver Spring Ghosts	Staten Island Foxes	Fox Field	0	2	games/2026-209.json
+2026-210	2026-04-26	14	8	Anacostia Kings	Germantown Colonials	Colonial Field	3	1	games/2026-210.json
+2026-211	2026-04-26	15	7	Alexandria Cannons	Kensington Iron	Iron Works	3	2	games/2026-211.json
+2026-212	2026-04-26	12	10	Georgetown Ravens	Fairmount Rams	Fairmount Field	8	6	games/2026-212.json
+2026-213	2026-04-26	13	9	Capitol Hill Senators	Manayunk Runners	Canal Park	1	2	games/2026-213.json
+2026-214	2026-04-26	2	3	Brooklyn Hammers	Bronx Wolves	Wolf Den	8	6	games/2026-214.json
+2026-215	2026-04-26	0	11	Newark Knights	South Philly Stallions	Stallions Field	8	0	games/2026-215.json
+2026-216	2026-04-26	1	4	Queens Titans	Harlem Eagles	Eagle Park	1	2	games/2026-216.json
+2026-217	2026-04-27	2	1	Brooklyn Hammers	Queens Titans	Queens Coliseum	2	8	games/2026-217.json
+2026-218	2026-04-27	9	11	Manayunk Runners	South Philly Stallions	Stallions Field	1	7	games/2026-218.json
+2026-219	2026-04-27	3	17	Bronx Wolves	Silver Spring Ghosts	Silver Spring Stadium	7	4	games/2026-219.json
+2026-220	2026-04-27	7	13	Kensington Iron	Capitol Hill Senators	Capitol Park	1	0	games/2026-220.json
+2026-221	2026-04-27	6	14	Fishtown Ferals	Anacostia Kings	Kings Yard	7	1	games/2026-221.json
+2026-222	2026-04-27	4	16	Harlem Eagles	Bethesda Blaze	Blaze Arena	0	4	games/2026-222.json
+2026-223	2026-04-27	8	12	Germantown Colonials	Georgetown Ravens	Ravens Nest	4	6	games/2026-223.json
+2026-224	2026-04-27	10	0	Fairmount Rams	Newark Knights	Knights Field	1	5	games/2026-224.json
+2026-225	2026-04-27	5	15	Staten Island Foxes	Alexandria Cannons	Cannon Field	7	8	games/2026-225.json
+2026-226	2026-04-28	10	8	Fairmount Rams	Germantown Colonials	Colonial Field	12	1	games/2026-226.json
+2026-227	2026-04-28	11	7	South Philly Stallions	Kensington Iron	Iron Works	3	1	games/2026-227.json
+2026-228	2026-04-28	16	2	Bethesda Blaze	Brooklyn Hammers	Iron Yard	0	1	games/2026-228.json
+2026-229	2026-04-28	17	1	Silver Spring Ghosts	Queens Titans	Queens Coliseum	6	4	games/2026-229.json
+2026-230	2026-04-28	0	9	Newark Knights	Manayunk Runners	Canal Park	10	11	games/2026-230.json
+2026-231	2026-04-28	14	4	Anacostia Kings	Harlem Eagles	Eagle Park	0	3	games/2026-231.json
+2026-232	2026-04-28	15	3	Alexandria Cannons	Bronx Wolves	Wolf Den	6	3	games/2026-232.json
+2026-233	2026-04-28	13	5	Capitol Hill Senators	Staten Island Foxes	Fox Field	3	2	games/2026-233.json
+2026-234	2026-04-28	12	6	Georgetown Ravens	Fishtown Ferals	Ferals Field	0	11	games/2026-234.json
+2026-235	2026-04-29	17	16	Silver Spring Ghosts	Bethesda Blaze	Blaze Arena	4	13	games/2026-235.json
+2026-236	2026-04-29	7	9	Kensington Iron	Manayunk Runners	Canal Park	6	1	games/2026-236.json
+2026-237	2026-04-29	5	11	Staten Island Foxes	South Philly Stallions	Stallions Field	0	3	games/2026-237.json
+2026-238	2026-04-29	3	13	Bronx Wolves	Capitol Hill Senators	Capitol Park	4	3	games/2026-238.json
+2026-239	2026-04-29	4	12	Harlem Eagles	Georgetown Ravens	Ravens Nest	2	3	games/2026-239.json
+2026-240	2026-04-29	2	14	Brooklyn Hammers	Anacostia Kings	Kings Yard	6	3	games/2026-240.json
+2026-241	2026-04-29	1	15	Queens Titans	Alexandria Cannons	Cannon Field	3	4	games/2026-241.json
+2026-242	2026-04-29	6	10	Fishtown Ferals	Fairmount Rams	Fairmount Field	3	1	games/2026-242.json
+2026-243	2026-04-29	8	0	Germantown Colonials	Newark Knights	Knights Field	3	5	games/2026-243.json
+2026-244	2026-04-30	12	2	Georgetown Ravens	Brooklyn Hammers	Iron Yard	0	3	games/2026-244.json
+2026-245	2026-04-30	9	5	Manayunk Runners	Staten Island Foxes	Fox Field	11	7	games/2026-245.json
+2026-246	2026-04-30	13	1	Capitol Hill Senators	Queens Titans	Queens Coliseum	0	1	games/2026-246.json
+2026-247	2026-04-30	11	3	South Philly Stallions	Bronx Wolves	Wolf Den	4	6	games/2026-247.json
+2026-248	2026-04-30	14	17	Anacostia Kings	Silver Spring Ghosts	Silver Spring Stadium	6	0	games/2026-248.json
+2026-249	2026-04-30	10	4	Fairmount Rams	Harlem Eagles	Eagle Park	1	2	games/2026-249.json
+2026-250	2026-04-30	0	7	Newark Knights	Kensington Iron	Iron Works	0	2	games/2026-250.json
+2026-251	2026-04-30	15	16	Alexandria Cannons	Bethesda Blaze	Blaze Arena	4	6	games/2026-251.json
+2026-252	2026-04-30	8	6	Germantown Colonials	Fishtown Ferals	Ferals Field	6	2	games/2026-252.json
+2026-253	2026-05-01	6	0	Fishtown Ferals	Newark Knights	Knights Field	5	8	games/2026-253.json
+2026-254	2026-05-01	15	14	Alexandria Cannons	Anacostia Kings	Kings Yard	0	3	games/2026-254.json
+2026-255	2026-05-01	5	7	Staten Island Foxes	Kensington Iron	Iron Works	3	7	games/2026-255.json
+2026-256	2026-05-01	17	12	Silver Spring Ghosts	Georgetown Ravens	Ravens Nest	5	4	games/2026-256.json
+2026-257	2026-05-01	4	8	Harlem Eagles	Germantown Colonials	Colonial Field	1	3	games/2026-257.json
+2026-258	2026-05-01	2	10	Brooklyn Hammers	Fairmount Rams	Fairmount Field	0	2	games/2026-258.json
+2026-259	2026-05-01	3	9	Bronx Wolves	Manayunk Runners	Canal Park	6	12	games/2026-259.json
+2026-260	2026-05-01	1	11	Queens Titans	South Philly Stallions	Stallions Field	6	0	games/2026-260.json
+2026-261	2026-05-01	16	13	Bethesda Blaze	Capitol Hill Senators	Capitol Park	9	2	games/2026-261.json
+2026-262	2026-05-02	12	15	Georgetown Ravens	Alexandria Cannons	Cannon Field	5	2	games/2026-262.json
+2026-263	2026-05-02	6	4	Fishtown Ferals	Harlem Eagles	Eagle Park	5	1	games/2026-263.json
+2026-264	2026-05-02	8	2	Germantown Colonials	Brooklyn Hammers	Iron Yard	5	3	games/2026-264.json
+2026-265	2026-05-02	10	17	Fairmount Rams	Silver Spring Ghosts	Silver Spring Stadium	4	0	games/2026-265.json
+2026-266	2026-05-02	13	14	Capitol Hill Senators	Anacostia Kings	Kings Yard	4	6	games/2026-266.json
+2026-267	2026-05-02	11	16	South Philly Stallions	Bethesda Blaze	Blaze Arena	4	8	games/2026-267.json
+2026-268	2026-05-02	9	1	Manayunk Runners	Queens Titans	Queens Coliseum	5	3	games/2026-268.json
+2026-269	2026-05-02	7	3	Kensington Iron	Bronx Wolves	Wolf Den	6	2	games/2026-269.json
+2026-270	2026-05-02	0	5	Newark Knights	Staten Island Foxes	Fox Field	6	8	games/2026-270.json
+2026-271	2026-05-03	16	9	Bethesda Blaze	Manayunk Runners	Canal Park	1	3	games/2026-271.json
+2026-272	2026-05-03	4	0	Harlem Eagles	Newark Knights	Knights Field	7	0	games/2026-272.json
+2026-273	2026-05-03	13	12	Capitol Hill Senators	Georgetown Ravens	Ravens Nest	7	4	games/2026-273.json
+2026-274	2026-05-03	17	8	Silver Spring Ghosts	Germantown Colonials	Colonial Field	3	5	games/2026-274.json
+2026-275	2026-05-03	14	11	Anacostia Kings	South Philly Stallions	Stallions Field	0	1	games/2026-275.json
+2026-276	2026-05-03	1	7	Queens Titans	Kensington Iron	Iron Works	6	3	games/2026-276.json
+2026-277	2026-05-03	3	5	Bronx Wolves	Staten Island Foxes	Fox Field	0	1	games/2026-277.json
+2026-278	2026-05-03	2	6	Brooklyn Hammers	Fishtown Ferals	Ferals Field	8	2	games/2026-278.json
+2026-279	2026-05-03	15	10	Alexandria Cannons	Fairmount Rams	Fairmount Field	2	8	games/2026-279.json
+2026-280	2026-05-05	4	2	Harlem Eagles	Brooklyn Hammers	Iron Yard	1	3	games/2026-280.json
+2026-281	2026-05-05	7	16	Kensington Iron	Bethesda Blaze	Blaze Arena	1	2	games/2026-281.json
+2026-282	2026-05-05	5	1	Staten Island Foxes	Queens Titans	Queens Coliseum	0	7	games/2026-282.json
+2026-283	2026-05-05	11	12	South Philly Stallions	Georgetown Ravens	Ravens Nest	3	1	games/2026-283.json
+2026-284	2026-05-05	10	13	Fairmount Rams	Capitol Hill Senators	Capitol Park	2	1	games/2026-284.json
+2026-285	2026-05-05	8	15	Germantown Colonials	Alexandria Cannons	Cannon Field	3	2	games/2026-285.json
+2026-286	2026-05-05	6	17	Fishtown Ferals	Silver Spring Ghosts	Silver Spring Stadium	5	4	games/2026-286.json
+2026-287	2026-05-05	0	3	Newark Knights	Bronx Wolves	Wolf Den	4	2	games/2026-287.json
+2026-288	2026-05-05	9	14	Manayunk Runners	Anacostia Kings	Kings Yard	1	4	games/2026-288.json
+2026-289	2026-05-06	13	8	Capitol Hill Senators	Germantown Colonials	Colonial Field	3	5	games/2026-289.json
+2026-290	2026-05-06	15	6	Alexandria Cannons	Fishtown Ferals	Ferals Field	3	1	games/2026-290.json
+2026-291	2026-05-06	17	4	Silver Spring Ghosts	Harlem Eagles	Eagle Park	3	2	games/2026-291.json
+2026-292	2026-05-06	16	5	Bethesda Blaze	Staten Island Foxes	Fox Field	3	4	games/2026-292.json
+2026-293	2026-05-06	14	7	Anacostia Kings	Kensington Iron	Iron Works	4	1	games/2026-293.json
+2026-294	2026-05-06	11	10	South Philly Stallions	Fairmount Rams	Fairmount Field	1	3	games/2026-294.json
+2026-295	2026-05-06	1	3	Queens Titans	Bronx Wolves	Wolf Den	1	7	games/2026-295.json
+2026-296	2026-05-06	12	9	Georgetown Ravens	Manayunk Runners	Canal Park	4	7	games/2026-296.json
+2026-297	2026-05-06	2	0	Brooklyn Hammers	Newark Knights	Knights Field	11	9	games/2026-297.json
+2026-298	2026-05-07	6	13	Fishtown Ferals	Capitol Hill Senators	Capitol Park	4	1	games/2026-298.json
+2026-299	2026-05-07	4	15	Harlem Eagles	Alexandria Cannons	Cannon Field	1	0	games/2026-299.json
+2026-300	2026-05-07	2	17	Brooklyn Hammers	Silver Spring Ghosts	Silver Spring Stadium	4	0	games/2026-300.json
+2026-301	2026-05-07	5	14	Staten Island Foxes	Anacostia Kings	Kings Yard	0	1	games/2026-301.json
+2026-302	2026-05-07	8	11	Germantown Colonials	South Philly Stallions	Stallions Field	2	6	games/2026-302.json
+2026-303	2026-05-07	3	16	Bronx Wolves	Bethesda Blaze	Blaze Arena	4	3	games/2026-303.json
+2026-304	2026-05-07	7	12	Kensington Iron	Georgetown Ravens	Ravens Nest	6	7	games/2026-304.json
+2026-305	2026-05-07	0	1	Newark Knights	Queens Titans	Queens Coliseum	3	0	games/2026-305.json
+2026-306	2026-05-07	9	10	Manayunk Runners	Fairmount Rams	Fairmount Field	1	3	games/2026-306.json
+2026-307	2026-05-08	12	5	Georgetown Ravens	Staten Island Foxes	Fox Field	2	3	games/2026-307.json
+2026-308	2026-05-08	15	2	Alexandria Cannons	Brooklyn Hammers	Iron Yard	3	5	games/2026-308.json
+2026-309	2026-05-08	10	7	Fairmount Rams	Kensington Iron	Iron Works	1	2	games/2026-309.json
+2026-310	2026-05-08	9	8	Manayunk Runners	Germantown Colonials	Colonial Field	2	0	games/2026-310.json
+2026-311	2026-05-08	11	6	South Philly Stallions	Fishtown Ferals	Ferals Field	2	10	games/2026-311.json
+2026-312	2026-05-08	14	3	Anacostia Kings	Bronx Wolves	Wolf Den	3	6	games/2026-312.json
+2026-313	2026-05-08	13	4	Capitol Hill Senators	Harlem Eagles	Eagle Park	0	6	games/2026-313.json
+2026-314	2026-05-08	16	1	Bethesda Blaze	Queens Titans	Queens Coliseum	1	0	games/2026-314.json
+2026-315	2026-05-08	17	0	Silver Spring Ghosts	Newark Knights	Knights Field	5	2	games/2026-315.json
+2026-316	2026-05-09	3	12	Bronx Wolves	Georgetown Ravens	Ravens Nest	3	6	games/2026-316.json
+2026-317	2026-05-09	1	14	Queens Titans	Anacostia Kings	Kings Yard	6	2	games/2026-317.json
+2026-318	2026-05-09	5	10	Staten Island Foxes	Fairmount Rams	Fairmount Field	8	1	games/2026-318.json
+2026-319	2026-05-09	4	11	Harlem Eagles	South Philly Stallions	Stallions Field	2	3	games/2026-319.json
+2026-320	2026-05-09	7	8	Kensington Iron	Germantown Colonials	Colonial Field	10	8	games/2026-320.json
+2026-321	2026-05-09	17	15	Silver Spring Ghosts	Alexandria Cannons	Cannon Field	0	3	games/2026-321.json
+2026-322	2026-05-09	6	9	Fishtown Ferals	Manayunk Runners	Canal Park	5	1	games/2026-322.json
+2026-323	2026-05-09	2	13	Brooklyn Hammers	Capitol Hill Senators	Capitol Park	4	1	games/2026-323.json
+2026-324	2026-05-09	0	16	Newark Knights	Bethesda Blaze	Blaze Arena	2	4	games/2026-324.json
+2026-325	2026-05-10	10	3	Fairmount Rams	Bronx Wolves	Wolf Den	6	7	games/2026-325.json
+2026-326	2026-05-10	7	6	Kensington Iron	Fishtown Ferals	Ferals Field	5	7	games/2026-326.json
+2026-327	2026-05-10	13	17	Capitol Hill Senators	Silver Spring Ghosts	Silver Spring Stadium	8	7	games/2026-327.json
+2026-328	2026-05-10	15	0	Alexandria Cannons	Newark Knights	Knights Field	1	6	games/2026-328.json
+2026-329	2026-05-10	11	2	South Philly Stallions	Brooklyn Hammers	Iron Yard	1	3	games/2026-329.json
+2026-330	2026-05-10	14	16	Anacostia Kings	Bethesda Blaze	Blaze Arena	9	5	games/2026-330.json
+2026-331	2026-05-10	8	5	Germantown Colonials	Staten Island Foxes	Fox Field	2	1	games/2026-331.json
+2026-332	2026-05-10	9	4	Manayunk Runners	Harlem Eagles	Eagle Park	2	1	games/2026-332.json
+2026-333	2026-05-10	12	1	Georgetown Ravens	Queens Titans	Queens Coliseum	1	6	games/2026-333.json
+2026-334	2026-05-11	17	11	Silver Spring Ghosts	South Philly Stallions	Stallions Field	2	9	games/2026-334.json
+2026-335	2026-05-11	0	14	Newark Knights	Anacostia Kings	Kings Yard	10	3	games/2026-335.json
+2026-336	2026-05-11	2	9	Brooklyn Hammers	Manayunk Runners	Canal Park	1	0	games/2026-336.json
+2026-337	2026-05-11	16	12	Bethesda Blaze	Georgetown Ravens	Ravens Nest	1	6	games/2026-337.json
+2026-338	2026-05-11	5	6	Staten Island Foxes	Fishtown Ferals	Ferals Field	5	10	games/2026-338.json
+2026-339	2026-05-11	4	7	Harlem Eagles	Kensington Iron	Iron Works	2	6	games/2026-339.json
+2026-340	2026-05-11	15	13	Alexandria Cannons	Capitol Hill Senators	Capitol Park	6	3	games/2026-340.json
+2026-341	2026-05-11	3	8	Bronx Wolves	Germantown Colonials	Colonial Field	6	3	games/2026-341.json
+2026-342	2026-05-11	1	10	Queens Titans	Fairmount Rams	Fairmount Field	3	1	games/2026-342.json
+2026-343	2026-05-12	13	0	Capitol Hill Senators	Newark Knights	Knights Field	0	9	games/2026-343.json
+2026-344	2026-05-12	8	1	Germantown Colonials	Queens Titans	Queens Coliseum	0	2	games/2026-344.json
+2026-345	2026-05-12	10	16	Fairmount Rams	Bethesda Blaze	Blaze Arena	0	4	games/2026-345.json
+2026-346	2026-05-12	9	17	Manayunk Runners	Silver Spring Ghosts	Silver Spring Stadium	6	4	games/2026-346.json
+2026-347	2026-05-12	6	3	Fishtown Ferals	Bronx Wolves	Wolf Den	6	5	games/2026-347.json
+2026-348	2026-05-12	11	15	South Philly Stallions	Alexandria Cannons	Cannon Field	1	0	games/2026-348.json
+2026-349	2026-05-12	12	14	Georgetown Ravens	Anacostia Kings	Kings Yard	3	2	games/2026-349.json
+2026-350	2026-05-12	5	4	Staten Island Foxes	Harlem Eagles	Eagle Park	5	0	games/2026-350.json
+2026-351	2026-05-12	7	2	Kensington Iron	Brooklyn Hammers	Iron Yard	10	4	games/2026-351.json
+2026-352	2026-05-13	2	5	Brooklyn Hammers	Staten Island Foxes	Fox Field	8	2	games/2026-352.json
+2026-353	2026-05-13	13	11	Capitol Hill Senators	South Philly Stallions	Stallions Field	0	9	games/2026-353.json
+2026-354	2026-05-13	15	9	Alexandria Cannons	Manayunk Runners	Canal Park	1	3	games/2026-354.json
+2026-355	2026-05-13	17	7	Silver Spring Ghosts	Kensington Iron	Iron Works	0	2	games/2026-355.json
+2026-356	2026-05-13	0	12	Newark Knights	Georgetown Ravens	Ravens Nest	5	6	games/2026-356.json
+2026-357	2026-05-13	16	8	Bethesda Blaze	Germantown Colonials	Colonial Field	6	4	games/2026-357.json
+2026-358	2026-05-13	3	4	Bronx Wolves	Harlem Eagles	Eagle Park	2	1	games/2026-358.json
+2026-359	2026-05-13	1	6	Queens Titans	Fishtown Ferals	Ferals Field	2	0	games/2026-359.json
+2026-360	2026-05-13	14	10	Anacostia Kings	Fairmount Rams	Fairmount Field	3	13	games/2026-360.json
+2026-361	2026-05-14	7	15	Kensington Iron	Alexandria Cannons	Cannon Field	0	1	games/2026-361.json
+2026-362	2026-05-14	5	17	Staten Island Foxes	Silver Spring Ghosts	Silver Spring Stadium	0	7	games/2026-362.json
+2026-363	2026-05-14	8	14	Germantown Colonials	Anacostia Kings	Kings Yard	4	5	games/2026-363.json
+2026-364	2026-05-14	4	1	Harlem Eagles	Queens Titans	Queens Coliseum	1	3	games/2026-364.json
+2026-365	2026-05-14	6	16	Fishtown Ferals	Bethesda Blaze	Blaze Arena	3	5	games/2026-365.json
+2026-366	2026-05-14	11	0	South Philly Stallions	Newark Knights	Knights Field	2	3	games/2026-366.json
+2026-367	2026-05-14	3	2	Bronx Wolves	Brooklyn Hammers	Iron Yard	7	2	games/2026-367.json
+2026-368	2026-05-14	10	12	Fairmount Rams	Georgetown Ravens	Ravens Nest	4	7	games/2026-368.json
+2026-369	2026-05-14	9	13	Manayunk Runners	Capitol Hill Senators	Capitol Park	0	1	games/2026-369.json
+2026-370	2026-05-16	13	7	Capitol Hill Senators	Kensington Iron	Iron Works	1	2	games/2026-370.json
+2026-371	2026-05-16	0	10	Newark Knights	Fairmount Rams	Fairmount Field	3	1	games/2026-371.json
+2026-372	2026-05-16	1	2	Queens Titans	Brooklyn Hammers	Iron Yard	1	3	games/2026-372.json
+2026-373	2026-05-16	12	8	Georgetown Ravens	Germantown Colonials	Colonial Field	5	3	games/2026-373.json
+2026-374	2026-05-16	14	6	Anacostia Kings	Fishtown Ferals	Ferals Field	3	14	games/2026-374.json
+2026-375	2026-05-16	11	9	South Philly Stallions	Manayunk Runners	Canal Park	5	3	games/2026-375.json
+2026-376	2026-05-16	15	5	Alexandria Cannons	Staten Island Foxes	Fox Field	3	2	games/2026-376.json
+2026-377	2026-05-16	16	4	Bethesda Blaze	Harlem Eagles	Eagle Park	5	3	games/2026-377.json
+2026-378	2026-05-16	17	3	Silver Spring Ghosts	Bronx Wolves	Wolf Den	0	1	games/2026-378.json
+2026-379	2026-05-17	6	12	Fishtown Ferals	Georgetown Ravens	Ravens Nest	3	10	games/2026-379.json
+2026-380	2026-05-17	1	17	Queens Titans	Silver Spring Ghosts	Silver Spring Stadium	5	2	games/2026-380.json
+2026-381	2026-05-17	5	13	Staten Island Foxes	Capitol Hill Senators	Capitol Park	5	10	games/2026-381.json
+2026-382	2026-05-17	8	10	Germantown Colonials	Fairmount Rams	Fairmount Field	4	5	games/2026-382.json
+2026-383	2026-05-17	7	11	Kensington Iron	South Philly Stallions	Stallions Field	1	2	games/2026-383.json
+2026-384	2026-05-17	3	15	Bronx Wolves	Alexandria Cannons	Cannon Field	9	1	games/2026-384.json
+2026-385	2026-05-17	4	14	Harlem Eagles	Anacostia Kings	Kings Yard	3	1	games/2026-385.json
+2026-386	2026-05-17	9	0	Manayunk Runners	Newark Knights	Knights Field	1	2	games/2026-386.json
+2026-387	2026-05-17	2	16	Brooklyn Hammers	Bethesda Blaze	Blaze Arena	5	3	games/2026-387.json
+2026-388	2026-05-18	10	6	Fairmount Rams	Fishtown Ferals	Ferals Field	4	2	games/2026-388.json
+2026-389	2026-05-18	14	2	Anacostia Kings	Brooklyn Hammers	Iron Yard	3	8	games/2026-389.json
+2026-390	2026-05-18	16	17	Bethesda Blaze	Silver Spring Ghosts	Silver Spring Stadium	5	1	games/2026-390.json
+2026-391	2026-05-18	15	1	Alexandria Cannons	Queens Titans	Queens Coliseum	0	1	games/2026-391.json
+2026-392	2026-05-18	12	4	Georgetown Ravens	Harlem Eagles	Eagle Park	1	10	games/2026-392.json
+2026-393	2026-05-18	11	5	South Philly Stallions	Staten Island Foxes	Fox Field	2	8	games/2026-393.json
+2026-394	2026-05-18	13	3	Capitol Hill Senators	Bronx Wolves	Wolf Den	1	4	games/2026-394.json
+2026-395	2026-05-18	9	7	Manayunk Runners	Kensington Iron	Iron Works	6	4	games/2026-395.json
+2026-396	2026-05-18	0	8	Newark Knights	Germantown Colonials	Colonial Field	4	2	games/2026-396.json
+2026-397	2026-05-19	1	13	Queens Titans	Capitol Hill Senators	Capitol Park	5	6	games/2026-397.json
+2026-398	2026-05-19	17	14	Silver Spring Ghosts	Anacostia Kings	Kings Yard	1	2	games/2026-398.json
+2026-399	2026-05-19	2	12	Brooklyn Hammers	Georgetown Ravens	Ravens Nest	3	0	games/2026-399.json
+2026-400	2026-05-19	16	15	Bethesda Blaze	Alexandria Cannons	Cannon Field	2	5	games/2026-400.json
+2026-401	2026-05-19	6	8	Fishtown Ferals	Germantown Colonials	Colonial Field	2	1	games/2026-401.json
+2026-402	2026-05-19	4	10	Harlem Eagles	Fairmount Rams	Fairmount Field	4	3	games/2026-402.json
+2026-403	2026-05-19	5	9	Staten Island Foxes	Manayunk Runners	Canal Park	3	9	games/2026-403.json
+2026-404	2026-05-19	7	0	Kensington Iron	Newark Knights	Knights Field	4	3	games/2026-404.json
+2026-405	2026-05-19	3	11	Bronx Wolves	South Philly Stallions	Stallions Field	9	8	games/2026-405.json
+2026-406	2026-05-20	0	6	Newark Knights	Fishtown Ferals	Ferals Field	1	2	games/2026-406.json
+2026-407	2026-05-20	14	15	Anacostia Kings	Alexandria Cannons	Cannon Field	3	4	games/2026-407.json
+2026-408	2026-05-20	13	16	Capitol Hill Senators	Bethesda Blaze	Blaze Arena	1	5	games/2026-408.json
+2026-409	2026-05-20	7	5	Kensington Iron	Staten Island Foxes	Fox Field	1	2	games/2026-409.json
+2026-410	2026-05-20	8	4	Germantown Colonials	Harlem Eagles	Eagle Park	3	8	games/2026-410.json
+2026-411	2026-05-20	12	17	Georgetown Ravens	Silver Spring Ghosts	Silver Spring Stadium	1	0	games/2026-411.json
+2026-412	2026-05-20	10	2	Fairmount Rams	Brooklyn Hammers	Iron Yard	7	9	games/2026-412.json
+2026-413	2026-05-20	9	3	Manayunk Runners	Bronx Wolves	Wolf Den	4	5	games/2026-413.json
+2026-414	2026-05-20	11	1	South Philly Stallions	Queens Titans	Queens Coliseum	5	3	games/2026-414.json
+2026-415	2026-05-21	16	11	Bethesda Blaze	South Philly Stallions	Stallions Field	2	6	games/2026-415.json
+2026-416	2026-05-21	17	10	Silver Spring Ghosts	Fairmount Rams	Fairmount Field	8	1	games/2026-416.json
+2026-417	2026-05-21	4	6	Harlem Eagles	Fishtown Ferals	Ferals Field	3	5	games/2026-417.json
+2026-418	2026-05-21	5	0	Staten Island Foxes	Newark Knights	Knights Field	4	0	games/2026-418.json
+2026-419	2026-05-21	14	13	Anacostia Kings	Capitol Hill Senators	Capitol Park	1	6	games/2026-419.json
+2026-420	2026-05-21	15	12	Alexandria Cannons	Georgetown Ravens	Ravens Nest	3	7	games/2026-420.json
+2026-421	2026-05-21	2	8	Brooklyn Hammers	Germantown Colonials	Colonial Field	5	6	games/2026-421.json
+2026-422	2026-05-21	1	9	Queens Titans	Manayunk Runners	Canal Park	4	2	games/2026-422.json
+2026-423	2026-05-21	3	7	Bronx Wolves	Kensington Iron	Iron Works	3	4	games/2026-423.json
+2026-424	2026-05-22	7	1	Kensington Iron	Queens Titans	Queens Coliseum	5	1	games/2026-424.json
+2026-425	2026-05-22	8	17	Germantown Colonials	Silver Spring Ghosts	Silver Spring Stadium	10	3	games/2026-425.json
+2026-426	2026-05-22	0	4	Newark Knights	Harlem Eagles	Eagle Park	3	4	games/2026-426.json
+2026-427	2026-05-22	9	16	Manayunk Runners	Bethesda Blaze	Blaze Arena	5	4	games/2026-427.json
+2026-428	2026-05-22	12	13	Georgetown Ravens	Capitol Hill Senators	Capitol Park	0	4	games/2026-428.json
+2026-429	2026-05-22	6	2	Fishtown Ferals	Brooklyn Hammers	Iron Yard	0	3	games/2026-429.json
+2026-430	2026-05-22	10	15	Fairmount Rams	Alexandria Cannons	Cannon Field	3	1	games/2026-430.json
+2026-431	2026-05-22	11	14	South Philly Stallions	Anacostia Kings	Kings Yard	6	4	games/2026-431.json
+2026-432	2026-05-22	5	3	Staten Island Foxes	Bronx Wolves	Wolf Den	3	5	games/2026-432.json
+2026-433	2026-05-23	3	0	Bronx Wolves	Newark Knights	Knights Field	5	2	games/2026-433.json
+2026-434	2026-05-23	15	8	Alexandria Cannons	Germantown Colonials	Colonial Field	6	1	games/2026-434.json
+2026-435	2026-05-23	14	9	Anacostia Kings	Manayunk Runners	Canal Park	7	3	games/2026-435.json
+2026-436	2026-05-23	2	4	Brooklyn Hammers	Harlem Eagles	Eagle Park	5	3	games/2026-436.json
+2026-437	2026-05-23	1	5	Queens Titans	Staten Island Foxes	Fox Field	11	3	games/2026-437.json
+2026-438	2026-05-23	12	11	Georgetown Ravens	South Philly Stallions	Stallions Field	4	2	games/2026-438.json
+2026-439	2026-05-23	16	7	Bethesda Blaze	Kensington Iron	Iron Works	12	17	games/2026-439.json
+2026-440	2026-05-23	17	6	Silver Spring Ghosts	Fishtown Ferals	Ferals Field	3	2	games/2026-440.json
+2026-441	2026-05-23	13	10	Capitol Hill Senators	Fairmount Rams	Fairmount Field	9	3	games/2026-441.json
+2026-442	2026-05-24	8	13	Germantown Colonials	Capitol Hill Senators	Capitol Park	7	1	games/2026-442.json
+2026-443	2026-05-24	7	14	Kensington Iron	Anacostia Kings	Kings Yard	3	5	games/2026-443.json
+2026-444	2026-05-24	5	16	Staten Island Foxes	Bethesda Blaze	Blaze Arena	6	3	games/2026-444.json
+2026-445	2026-05-24	6	15	Fishtown Ferals	Alexandria Cannons	Cannon Field	3	4	games/2026-445.json
+2026-446	2026-05-24	3	1	Bronx Wolves	Queens Titans	Queens Coliseum	5	1	games/2026-446.json
+2026-447	2026-05-24	9	12	Manayunk Runners	Georgetown Ravens	Ravens Nest	3	7	games/2026-447.json
+2026-448	2026-05-24	0	2	Newark Knights	Brooklyn Hammers	Iron Yard	5	3	games/2026-448.json
+2026-449	2026-05-24	4	17	Harlem Eagles	Silver Spring Ghosts	Silver Spring Stadium	0	3	games/2026-449.json
+2026-450	2026-05-24	10	11	Fairmount Rams	South Philly Stallions	Stallions Field	2	4	games/2026-450.json
+2026-451	2026-05-25	11	8	South Philly Stallions	Germantown Colonials	Colonial Field	1	0	games/2026-451.json
+2026-452	2026-05-25	12	7	Georgetown Ravens	Kensington Iron	Iron Works	1	2	games/2026-452.json
+2026-453	2026-05-25	13	6	Capitol Hill Senators	Fishtown Ferals	Ferals Field	2	8	games/2026-453.json
+2026-454	2026-05-25	15	4	Alexandria Cannons	Harlem Eagles	Eagle Park	5	6	games/2026-454.json
+2026-455	2026-05-25	1	0	Queens Titans	Newark Knights	Knights Field	6	2	games/2026-455.json
+2026-456	2026-05-25	17	2	Silver Spring Ghosts	Brooklyn Hammers	Iron Yard	2	5	games/2026-456.json
+2026-457	2026-05-25	16	3	Bethesda Blaze	Bronx Wolves	Wolf Den	3	2	games/2026-457.json
+2026-458	2026-05-25	14	5	Anacostia Kings	Staten Island Foxes	Fox Field	4	0	games/2026-458.json
+2026-459	2026-05-25	10	9	Fairmount Rams	Manayunk Runners	Canal Park	3	4	games/2026-459.json
+2026-460	2026-05-27	3	14	Bronx Wolves	Anacostia Kings	Kings Yard	2	3	games/2026-460.json
+2026-461	2026-05-27	6	11	Fishtown Ferals	South Philly Stallions	Stallions Field	2	3	games/2026-461.json
+2026-462	2026-05-27	0	17	Newark Knights	Silver Spring Ghosts	Silver Spring Stadium	6	7	games/2026-462.json
+2026-463	2026-05-27	8	9	Germantown Colonials	Manayunk Runners	Canal Park	2	5	games/2026-463.json
+2026-464	2026-05-27	7	10	Kensington Iron	Fairmount Rams	Fairmount Field	6	2	games/2026-464.json
+2026-465	2026-05-27	4	13	Harlem Eagles	Capitol Hill Senators	Capitol Park	5	2	games/2026-465.json
+2026-466	2026-05-27	2	15	Brooklyn Hammers	Alexandria Cannons	Cannon Field	4	1	games/2026-466.json
+2026-467	2026-05-27	1	16	Queens Titans	Bethesda Blaze	Blaze Arena	3	4	games/2026-467.json
+2026-468	2026-05-27	5	12	Staten Island Foxes	Georgetown Ravens	Ravens Nest	15	5	games/2026-468.json
+2026-469	2026-05-28	9	6	Manayunk Runners	Fishtown Ferals	Ferals Field	3	1	games/2026-469.json
+2026-470	2026-05-28	14	1	Anacostia Kings	Queens Titans	Queens Coliseum	4	8	games/2026-470.json
+2026-471	2026-05-28	12	3	Georgetown Ravens	Bronx Wolves	Wolf Den	0	3	games/2026-471.json
+2026-472	2026-05-28	10	5	Fairmount Rams	Staten Island Foxes	Fox Field	0	2	games/2026-472.json
+2026-473	2026-05-28	16	0	Bethesda Blaze	Newark Knights	Knights Field	2	4	games/2026-473.json
+2026-474	2026-05-28	8	7	Germantown Colonials	Kensington Iron	Iron Works	1	0	games/2026-474.json
+2026-475	2026-05-28	11	4	South Philly Stallions	Harlem Eagles	Eagle Park	6	7	games/2026-475.json
+2026-476	2026-05-28	15	17	Alexandria Cannons	Silver Spring Ghosts	Silver Spring Stadium	2	3	games/2026-476.json
+2026-477	2026-05-28	13	2	Capitol Hill Senators	Brooklyn Hammers	Iron Yard	4	10	games/2026-477.json
+2026-478	2026-05-29	4	9	Harlem Eagles	Manayunk Runners	Canal Park	0	4	games/2026-478.json
+2026-479	2026-05-29	16	14	Bethesda Blaze	Anacostia Kings	Kings Yard	1	2	games/2026-479.json
+2026-480	2026-05-29	17	13	Silver Spring Ghosts	Capitol Hill Senators	Capitol Park	2	8	games/2026-480.json
+2026-481	2026-05-29	3	10	Bronx Wolves	Fairmount Rams	Fairmount Field	0	2	games/2026-481.json
+2026-482	2026-05-29	1	12	Queens Titans	Georgetown Ravens	Ravens Nest	8	4	games/2026-482.json
+2026-483	2026-05-29	6	7	Fishtown Ferals	Kensington Iron	Iron Works	3	2	games/2026-483.json
+2026-484	2026-05-29	0	15	Newark Knights	Alexandria Cannons	Cannon Field	4	1	games/2026-484.json
+2026-485	2026-05-29	5	8	Staten Island Foxes	Germantown Colonials	Colonial Field	0	5	games/2026-485.json
+2026-486	2026-05-29	2	11	Brooklyn Hammers	South Philly Stallions	Stallions Field	7	2	games/2026-486.json
+2026-487	2026-05-30	7	4	Kensington Iron	Harlem Eagles	Eagle Park	3	1	games/2026-487.json
+2026-488	2026-05-30	14	0	Anacostia Kings	Newark Knights	Knights Field	4	11	games/2026-488.json
+2026-489	2026-05-30	9	2	Manayunk Runners	Brooklyn Hammers	Iron Yard	4	11	games/2026-489.json
+2026-490	2026-05-30	13	15	Capitol Hill Senators	Alexandria Cannons	Cannon Field	15	0	games/2026-490.json
+2026-491	2026-05-30	11	17	South Philly Stallions	Silver Spring Ghosts	Silver Spring Stadium	7	3	games/2026-491.json
+2026-492	2026-05-30	8	3	Germantown Colonials	Bronx Wolves	Wolf Den	4	2	games/2026-492.json
+2026-493	2026-05-30	12	16	Georgetown Ravens	Bethesda Blaze	Blaze Arena	16	12	games/2026-493.json
+2026-494	2026-05-30	10	1	Fairmount Rams	Queens Titans	Queens Coliseum	1	0	games/2026-494.json
+2026-495	2026-05-30	6	5	Fishtown Ferals	Staten Island Foxes	Fox Field	3	2	games/2026-495.json
+2026-496	2026-05-31	16	10	Bethesda Blaze	Fairmount Rams	Fairmount Field	3	5	games/2026-496.json
+2026-497	2026-05-31	4	5	Harlem Eagles	Staten Island Foxes	Fox Field	3	2	games/2026-497.json
+2026-498	2026-05-31	15	11	Alexandria Cannons	South Philly Stallions	Stallions Field	4	6	games/2026-498.json
+2026-499	2026-05-31	1	8	Queens Titans	Germantown Colonials	Colonial Field	5	6	games/2026-499.json
+2026-500	2026-05-31	2	7	Brooklyn Hammers	Kensington Iron	Iron Works	2	1	games/2026-500.json
+2026-501	2026-05-31	14	12	Anacostia Kings	Georgetown Ravens	Ravens Nest	1	0	games/2026-501.json
+2026-502	2026-05-31	0	13	Newark Knights	Capitol Hill Senators	Capitol Park	9	3	games/2026-502.json
+2026-503	2026-05-31	3	6	Bronx Wolves	Fishtown Ferals	Ferals Field	1	3	games/2026-503.json
+2026-504	2026-05-31	17	9	Silver Spring Ghosts	Manayunk Runners	Canal Park	11	3	games/2026-504.json
+2026-505	2026-06-01	12	0	Georgetown Ravens	Newark Knights	Knights Field	3	2	games/2026-505.json
+2026-506	2026-06-01	7	17	Kensington Iron	Silver Spring Ghosts	Silver Spring Stadium	7	1	games/2026-506.json
+2026-507	2026-06-01	4	3	Harlem Eagles	Bronx Wolves	Wolf Den	8	2	games/2026-507.json
+2026-508	2026-06-01	11	13	South Philly Stallions	Capitol Hill Senators	Capitol Park	2	1	games/2026-508.json
+2026-509	2026-06-01	9	15	Manayunk Runners	Alexandria Cannons	Cannon Field	8	6	games/2026-509.json
+2026-510	2026-06-01	6	1	Fishtown Ferals	Queens Titans	Queens Coliseum	5	8	games/2026-510.json
+2026-511	2026-06-01	10	14	Fairmount Rams	Anacostia Kings	Kings Yard	5	4	games/2026-511.json
+2026-512	2026-06-01	5	2	Staten Island Foxes	Brooklyn Hammers	Iron Yard	4	7	games/2026-512.json
+2026-513	2026-06-01	8	16	Germantown Colonials	Bethesda Blaze	Blaze Arena	9	3	games/2026-513.json
+2026-514	2026-06-02	16	6	Bethesda Blaze	Fishtown Ferals	Ferals Field	1	0	games/2026-514.json
+2026-515	2026-06-02	15	7	Alexandria Cannons	Kensington Iron	Iron Works	4	6	games/2026-515.json
+2026-516	2026-06-02	2	3	Brooklyn Hammers	Bronx Wolves	Wolf Den	5	4	games/2026-516.json
+2026-517	2026-06-02	12	10	Georgetown Ravens	Fairmount Rams	Fairmount Field	6	3	games/2026-517.json
+2026-518	2026-06-02	13	9	Capitol Hill Senators	Manayunk Runners	Canal Park	2	0	games/2026-518.json
+2026-519	2026-06-02	0	11	Newark Knights	South Philly Stallions	Stallions Field	6	0	games/2026-519.json
+2026-520	2026-06-02	14	8	Anacostia Kings	Germantown Colonials	Colonial Field	1	0	games/2026-520.json
+2026-521	2026-06-02	1	4	Queens Titans	Harlem Eagles	Eagle Park	7	0	games/2026-521.json
+2026-522	2026-06-02	17	5	Silver Spring Ghosts	Staten Island Foxes	Fox Field	2	0	games/2026-522.json
+2026-523	2026-06-03	4	16	Harlem Eagles	Bethesda Blaze	Blaze Arena	0	3	games/2026-523.json
+2026-524	2026-06-03	3	17	Bronx Wolves	Silver Spring Ghosts	Silver Spring Stadium	4	0	games/2026-524.json
+2026-525	2026-06-03	9	11	Manayunk Runners	South Philly Stallions	Stallions Field	6	0	games/2026-525.json
+2026-526	2026-06-03	6	14	Fishtown Ferals	Anacostia Kings	Kings Yard	9	4	games/2026-526.json
+2026-527	2026-06-03	7	13	Kensington Iron	Capitol Hill Senators	Capitol Park	8	5	games/2026-527.json
+2026-528	2026-06-03	2	1	Brooklyn Hammers	Queens Titans	Queens Coliseum	8	13	games/2026-528.json
+2026-529	2026-06-03	10	0	Fairmount Rams	Newark Knights	Knights Field	4	3	games/2026-529.json
+2026-530	2026-06-03	5	15	Staten Island Foxes	Alexandria Cannons	Cannon Field	2	8	games/2026-530.json
+2026-531	2026-06-03	8	12	Germantown Colonials	Georgetown Ravens	Ravens Nest	4	7	games/2026-531.json
+2026-532	2026-06-04	16	2	Bethesda Blaze	Brooklyn Hammers	Iron Yard	3	4	games/2026-532.json
+2026-533	2026-06-04	13	5	Capitol Hill Senators	Staten Island Foxes	Fox Field	3	4	games/2026-533.json
+2026-534	2026-06-04	15	3	Alexandria Cannons	Bronx Wolves	Wolf Den	3	4	games/2026-534.json
+2026-535	2026-06-04	11	7	South Philly Stallions	Kensington Iron	Iron Works	3	1	games/2026-535.json
+2026-536	2026-06-04	0	9	Newark Knights	Manayunk Runners	Canal Park	3	1	games/2026-536.json
+2026-537	2026-06-04	10	8	Fairmount Rams	Germantown Colonials	Colonial Field	7	3	games/2026-537.json
+2026-538	2026-06-04	12	6	Georgetown Ravens	Fishtown Ferals	Ferals Field	3	0	games/2026-538.json
+2026-539	2026-06-04	14	4	Anacostia Kings	Harlem Eagles	Eagle Park	7	0	games/2026-539.json
+2026-540	2026-06-04	17	1	Silver Spring Ghosts	Queens Titans	Queens Coliseum	0	3	games/2026-540.json
+2026-541	2026-06-05	2	14	Brooklyn Hammers	Anacostia Kings	Kings Yard	2	3	games/2026-541.json
+2026-542	2026-06-05	1	15	Queens Titans	Alexandria Cannons	Cannon Field	16	11	games/2026-542.json
+2026-543	2026-06-05	6	10	Fishtown Ferals	Fairmount Rams	Fairmount Field	3	2	games/2026-543.json
+2026-544	2026-06-05	17	16	Silver Spring Ghosts	Bethesda Blaze	Blaze Arena	6	5	games/2026-544.json
+2026-545	2026-06-05	7	9	Kensington Iron	Manayunk Runners	Canal Park	9	1	games/2026-545.json
+2026-546	2026-06-05	5	11	Staten Island Foxes	South Philly Stallions	Stallions Field	1	4	games/2026-546.json
+2026-547	2026-06-05	8	0	Germantown Colonials	Newark Knights	Knights Field	9	2	games/2026-547.json
+2026-548	2026-06-05	3	13	Bronx Wolves	Capitol Hill Senators	Capitol Park	3	0	games/2026-548.json
+2026-549	2026-06-05	4	12	Harlem Eagles	Georgetown Ravens	Ravens Nest	1	3	games/2026-549.json
+2026-550	2026-06-07	15	16	Alexandria Cannons	Bethesda Blaze	Blaze Arena	8	6	games/2026-550.json
+2026-551	2026-06-07	11	3	South Philly Stallions	Bronx Wolves	Wolf Den	2	6	games/2026-551.json
+2026-552	2026-06-07	14	17	Anacostia Kings	Silver Spring Ghosts	Silver Spring Stadium	0	10	games/2026-552.json
+2026-553	2026-06-07	10	4	Fairmount Rams	Harlem Eagles	Eagle Park	8	1	games/2026-553.json
+2026-554	2026-06-07	13	1	Capitol Hill Senators	Queens Titans	Queens Coliseum	2	1	games/2026-554.json
+2026-555	2026-06-07	8	6	Germantown Colonials	Fishtown Ferals	Ferals Field	0	6	games/2026-555.json
+2026-556	2026-06-07	0	7	Newark Knights	Kensington Iron	Iron Works	0	1	games/2026-556.json
+2026-557	2026-06-07	9	5	Manayunk Runners	Staten Island Foxes	Fox Field	5	2	games/2026-557.json
+2026-558	2026-06-07	12	2	Georgetown Ravens	Brooklyn Hammers	Iron Yard	1	6	games/2026-558.json
+2026-559	2026-06-08	6	0	Fishtown Ferals	Newark Knights	Knights Field	9	1	games/2026-559.json
+2026-560	2026-06-08	3	9	Bronx Wolves	Manayunk Runners	Canal Park	3	4	games/2026-560.json
+2026-561	2026-06-08	17	12	Silver Spring Ghosts	Georgetown Ravens	Ravens Nest	4	3	games/2026-561.json
+2026-562	2026-06-08	5	7	Staten Island Foxes	Kensington Iron	Iron Works	7	1	games/2026-562.json
+2026-563	2026-06-08	16	13	Bethesda Blaze	Capitol Hill Senators	Capitol Park	10	9	games/2026-563.json
+2026-564	2026-06-08	1	11	Queens Titans	South Philly Stallions	Stallions Field	5	0	games/2026-564.json
+2026-565	2026-06-08	2	10	Brooklyn Hammers	Fairmount Rams	Fairmount Field	5	4	games/2026-565.json
+2026-566	2026-06-08	15	14	Alexandria Cannons	Anacostia Kings	Kings Yard	2	1	games/2026-566.json
+2026-567	2026-06-08	4	8	Harlem Eagles	Germantown Colonials	Colonial Field	6	3	games/2026-567.json
+2026-568	2026-06-09	13	14	Capitol Hill Senators	Anacostia Kings	Kings Yard	5	3	games/2026-568.json
+2026-569	2026-06-09	12	15	Georgetown Ravens	Alexandria Cannons	Cannon Field	4	2	games/2026-569.json
+2026-570	2026-06-09	6	4	Fishtown Ferals	Harlem Eagles	Eagle Park	7	8	games/2026-570.json
+2026-571	2026-06-09	9	1	Manayunk Runners	Queens Titans	Queens Coliseum	4	2	games/2026-571.json
+2026-572	2026-06-09	10	17	Fairmount Rams	Silver Spring Ghosts	Silver Spring Stadium	0	2	games/2026-572.json
+2026-573	2026-06-09	0	5	Newark Knights	Staten Island Foxes	Fox Field	7	3	games/2026-573.json
+2026-574	2026-06-09	7	3	Kensington Iron	Bronx Wolves	Wolf Den	8	3	games/2026-574.json
+2026-575	2026-06-09	8	2	Germantown Colonials	Brooklyn Hammers	Iron Yard	1	2	games/2026-575.json
+2026-576	2026-06-09	11	16	South Philly Stallions	Bethesda Blaze	Blaze Arena	2	1	games/2026-576.json
+2026-577	2026-06-10	13	12	Capitol Hill Senators	Georgetown Ravens	Ravens Nest	2	1	games/2026-577.json
+2026-578	2026-06-10	17	8	Silver Spring Ghosts	Germantown Colonials	Colonial Field	2	1	games/2026-578.json
+2026-579	2026-06-10	1	7	Queens Titans	Kensington Iron	Iron Works	3	15	games/2026-579.json
+2026-580	2026-06-10	16	9	Bethesda Blaze	Manayunk Runners	Canal Park	3	0	games/2026-580.json
+2026-581	2026-06-10	3	5	Bronx Wolves	Staten Island Foxes	Fox Field	7	6	games/2026-581.json
+2026-582	2026-06-10	2	6	Brooklyn Hammers	Fishtown Ferals	Ferals Field	5	4	games/2026-582.json
+2026-583	2026-06-10	4	0	Harlem Eagles	Newark Knights	Knights Field	7	4	games/2026-583.json
+2026-584	2026-06-10	14	11	Anacostia Kings	South Philly Stallions	Stallions Field	7	1	games/2026-584.json
+2026-585	2026-06-10	15	10	Alexandria Cannons	Fairmount Rams	Fairmount Field	9	8	games/2026-585.json
+2026-586	2026-06-11	7	16	Kensington Iron	Bethesda Blaze	Blaze Arena	5	7	games/2026-586.json
+2026-587	2026-06-11	0	3	Newark Knights	Bronx Wolves	Wolf Den	0	5	games/2026-587.json
+2026-588	2026-06-11	10	13	Fairmount Rams	Capitol Hill Senators	Capitol Park	3	4	games/2026-588.json
+2026-589	2026-06-11	4	2	Harlem Eagles	Brooklyn Hammers	Iron Yard	3	1	games/2026-589.json
+2026-590	2026-06-11	6	17	Fishtown Ferals	Silver Spring Ghosts	Silver Spring Stadium	7	8	games/2026-590.json
+2026-591	2026-06-11	5	1	Staten Island Foxes	Queens Titans	Queens Coliseum	7	4	games/2026-591.json
+2026-592	2026-06-11	11	12	South Philly Stallions	Georgetown Ravens	Ravens Nest	7	6	games/2026-592.json
+2026-593	2026-06-11	9	14	Manayunk Runners	Anacostia Kings	Kings Yard	2	1	games/2026-593.json
+2026-594	2026-06-11	8	15	Germantown Colonials	Alexandria Cannons	Cannon Field	4	1	games/2026-594.json
+2026-595	2026-06-12	13	8	Capitol Hill Senators	Germantown Colonials	Colonial Field	6	2	games/2026-595.json
+2026-596	2026-06-12	16	5	Bethesda Blaze	Staten Island Foxes	Fox Field	14	4	games/2026-596.json
+2026-597	2026-06-12	15	6	Alexandria Cannons	Fishtown Ferals	Ferals Field	3	5	games/2026-597.json
+2026-598	2026-06-12	14	7	Anacostia Kings	Kensington Iron	Iron Works	0	1	games/2026-598.json
+2026-599	2026-06-12	17	4	Silver Spring Ghosts	Harlem Eagles	Eagle Park	5	6	games/2026-599.json
+2026-600	2026-06-12	12	9	Georgetown Ravens	Manayunk Runners	Canal Park	3	4	games/2026-600.json
+2026-601	2026-06-12	11	10	South Philly Stallions	Fairmount Rams	Fairmount Field	1	7	games/2026-601.json
+2026-602	2026-06-12	2	0	Brooklyn Hammers	Newark Knights	Knights Field	15	3	games/2026-602.json
+2026-603	2026-06-12	1	3	Queens Titans	Bronx Wolves	Wolf Den	8	1	games/2026-603.json
+2026-604	2026-06-13	0	1	Newark Knights	Queens Titans	Queens Coliseum	2	4	games/2026-604.json
+2026-605	2026-06-13	2	17	Brooklyn Hammers	Silver Spring Ghosts	Silver Spring Stadium	9	10	games/2026-605.json
+2026-606	2026-06-13	4	15	Harlem Eagles	Alexandria Cannons	Cannon Field	3	2	games/2026-606.json
+2026-607	2026-06-13	9	10	Manayunk Runners	Fairmount Rams	Fairmount Field	1	4	games/2026-607.json
+2026-608	2026-06-13	7	12	Kensington Iron	Georgetown Ravens	Ravens Nest	4	3	games/2026-608.json
+2026-609	2026-06-13	6	13	Fishtown Ferals	Capitol Hill Senators	Capitol Park	3	2	games/2026-609.json
+2026-610	2026-06-13	5	14	Staten Island Foxes	Anacostia Kings	Kings Yard	2	10	games/2026-610.json
+2026-611	2026-06-13	8	11	Germantown Colonials	South Philly Stallions	Stallions Field	1	2	games/2026-611.json
+2026-612	2026-06-13	3	16	Bronx Wolves	Bethesda Blaze	Blaze Arena	5	2	games/2026-612.json
+2026-613	2026-06-14	9	8	Manayunk Runners	Germantown Colonials	Colonial Field	2	1	games/2026-613.json
+2026-614	2026-06-14	12	5	Georgetown Ravens	Staten Island Foxes	Fox Field	3	4	games/2026-614.json
+2026-615	2026-06-14	15	2	Alexandria Cannons	Brooklyn Hammers	Iron Yard	1	4	games/2026-615.json
+2026-616	2026-06-14	16	1	Bethesda Blaze	Queens Titans	Queens Coliseum	1	5	games/2026-616.json
+2026-617	2026-06-14	13	4	Capitol Hill Senators	Harlem Eagles	Eagle Park	3	1	games/2026-617.json
+2026-618	2026-06-14	10	7	Fairmount Rams	Kensington Iron	Iron Works	6	1	games/2026-618.json
+2026-619	2026-06-14	17	0	Silver Spring Ghosts	Newark Knights	Knights Field	1	4	games/2026-619.json
+2026-620	2026-06-14	14	3	Anacostia Kings	Bronx Wolves	Wolf Den	4	0	games/2026-620.json
+2026-621	2026-06-14	11	6	South Philly Stallions	Fishtown Ferals	Ferals Field	4	11	games/2026-621.json
+2026-622	2026-06-15	6	9	Fishtown Ferals	Manayunk Runners	Canal Park	7	6	games/2026-622.json
+2026-623	2026-06-15	0	16	Newark Knights	Bethesda Blaze	Blaze Arena	2	4	games/2026-623.json
+2026-624	2026-06-15	7	8	Kensington Iron	Germantown Colonials	Colonial Field	7	2	games/2026-624.json
+2026-625	2026-06-15	1	14	Queens Titans	Anacostia Kings	Kings Yard	6	9	games/2026-625.json
+2026-626	2026-06-15	4	11	Harlem Eagles	South Philly Stallions	Stallions Field	0	1	games/2026-626.json
+2026-627	2026-06-15	5	10	Staten Island Foxes	Fairmount Rams	Fairmount Field	5	1	games/2026-627.json
+2026-628	2026-06-15	3	12	Bronx Wolves	Georgetown Ravens	Ravens Nest	15	1	games/2026-628.json
+2026-629	2026-06-15	2	13	Brooklyn Hammers	Capitol Hill Senators	Capitol Park	6	8	games/2026-629.json
+2026-630	2026-06-15	17	15	Silver Spring Ghosts	Alexandria Cannons	Cannon Field	0	1	games/2026-630.json
+2026-631	2026-06-16	10	3	Fairmount Rams	Bronx Wolves	Wolf Den	0	6	games/2026-631.json
+2026-632	2026-06-16	9	4	Manayunk Runners	Harlem Eagles	Eagle Park	1	2	games/2026-632.json
+2026-633	2026-06-16	11	2	South Philly Stallions	Brooklyn Hammers	Iron Yard	5	4	games/2026-633.json
+2026-634	2026-06-16	14	16	Anacostia Kings	Bethesda Blaze	Blaze Arena	1	0	games/2026-634.json
+2026-635	2026-06-16	12	1	Georgetown Ravens	Queens Titans	Queens Coliseum	2	1	games/2026-635.json
+2026-636	2026-06-16	15	0	Alexandria Cannons	Newark Knights	Knights Field	1	0	games/2026-636.json
+2026-637	2026-06-16	13	17	Capitol Hill Senators	Silver Spring Ghosts	Silver Spring Stadium	6	3	games/2026-637.json
+2026-638	2026-06-16	8	5	Germantown Colonials	Staten Island Foxes	Fox Field	2	1	games/2026-638.json
+2026-639	2026-06-16	7	6	Kensington Iron	Fishtown Ferals	Ferals Field	7	2	games/2026-639.json
+2026-640	2026-06-18	1	10	Queens Titans	Fairmount Rams	Fairmount Field	12	4	games/2026-640.json
+2026-641	2026-06-18	3	8	Bronx Wolves	Germantown Colonials	Colonial Field	1	0	games/2026-641.json
+2026-642	2026-06-18	2	9	Brooklyn Hammers	Manayunk Runners	Canal Park	6	4	games/2026-642.json
+2026-643	2026-06-18	17	11	Silver Spring Ghosts	South Philly Stallions	Stallions Field	1	3	games/2026-643.json
+2026-644	2026-06-18	16	12	Bethesda Blaze	Georgetown Ravens	Ravens Nest	2	3	games/2026-644.json
+2026-645	2026-06-18	5	6	Staten Island Foxes	Fishtown Ferals	Ferals Field	4	2	games/2026-645.json
+2026-646	2026-06-18	4	7	Harlem Eagles	Kensington Iron	Iron Works	1	9	games/2026-646.json
+2026-647	2026-06-18	0	14	Newark Knights	Anacostia Kings	Kings Yard	3	4	games/2026-647.json
+2026-648	2026-06-18	15	13	Alexandria Cannons	Capitol Hill Senators	Capitol Park	11	6	games/2026-648.json
+2026-649	2026-06-19	10	16	Fairmount Rams	Bethesda Blaze	Blaze Arena	2	0	games/2026-649.json
+2026-650	2026-06-19	8	1	Germantown Colonials	Queens Titans	Queens Coliseum	2	3	games/2026-650.json
+2026-651	2026-06-19	7	2	Kensington Iron	Brooklyn Hammers	Iron Yard	4	2	games/2026-651.json
+2026-652	2026-06-19	11	15	South Philly Stallions	Alexandria Cannons	Cannon Field	2	0	games/2026-652.json
+2026-653	2026-06-19	12	14	Georgetown Ravens	Anacostia Kings	Kings Yard	1	2	games/2026-653.json
+2026-654	2026-06-19	6	3	Fishtown Ferals	Bronx Wolves	Wolf Den	5	4	games/2026-654.json
+2026-655	2026-06-19	5	4	Staten Island Foxes	Harlem Eagles	Eagle Park	5	2	games/2026-655.json
+2026-656	2026-06-19	13	0	Capitol Hill Senators	Newark Knights	Knights Field	3	5	games/2026-656.json
+2026-657	2026-06-19	9	17	Manayunk Runners	Silver Spring Ghosts	Silver Spring Stadium	5	0	games/2026-657.json
+2026-658	2026-06-20	3	4	Bronx Wolves	Harlem Eagles	Eagle Park	3	6	games/2026-658.json
+2026-659	2026-06-20	16	8	Bethesda Blaze	Germantown Colonials	Colonial Field	3	0	games/2026-659.json
+2026-660	2026-06-20	2	5	Brooklyn Hammers	Staten Island Foxes	Fox Field	3	5	games/2026-660.json
+2026-661	2026-06-20	1	6	Queens Titans	Fishtown Ferals	Ferals Field	1	2	games/2026-661.json
+2026-662	2026-06-20	15	9	Alexandria Cannons	Manayunk Runners	Canal Park	5	3	games/2026-662.json
+2026-663	2026-06-20	17	7	Silver Spring Ghosts	Kensington Iron	Iron Works	0	1	games/2026-663.json
+2026-664	2026-06-20	14	10	Anacostia Kings	Fairmount Rams	Fairmount Field	5	0	games/2026-664.json
+2026-665	2026-06-20	13	11	Capitol Hill Senators	South Philly Stallions	Stallions Field	4	3	games/2026-665.json
+2026-666	2026-06-20	0	12	Newark Knights	Georgetown Ravens	Ravens Nest	5	1	games/2026-666.json
+2026-667	2026-06-21	8	14	Germantown Colonials	Anacostia Kings	Kings Yard	12	0	games/2026-667.json
+2026-668	2026-06-21	9	13	Manayunk Runners	Capitol Hill Senators	Capitol Park	7	3	games/2026-668.json
+2026-669	2026-06-21	4	1	Harlem Eagles	Queens Titans	Queens Coliseum	1	2	games/2026-669.json
+2026-670	2026-06-21	10	12	Fairmount Rams	Georgetown Ravens	Ravens Nest	4	7	games/2026-670.json
+2026-671	2026-06-21	7	15	Kensington Iron	Alexandria Cannons	Cannon Field	3	9	games/2026-671.json
+2026-672	2026-06-21	5	17	Staten Island Foxes	Silver Spring Ghosts	Silver Spring Stadium	1	6	games/2026-672.json
+2026-673	2026-06-21	11	0	South Philly Stallions	Newark Knights	Knights Field	2	9	games/2026-673.json
+2026-674	2026-06-21	6	16	Fishtown Ferals	Bethesda Blaze	Blaze Arena	2	0	games/2026-674.json
+2026-675	2026-06-21	3	2	Bronx Wolves	Brooklyn Hammers	Iron Yard	4	10	games/2026-675.json
+2026-676	2026-06-22	13	7	Capitol Hill Senators	Kensington Iron	Iron Works	4	1	games/2026-676.json
+2026-677	2026-06-22	12	8	Georgetown Ravens	Germantown Colonials	Colonial Field	4	0	games/2026-677.json
+2026-678	2026-06-22	17	3	Silver Spring Ghosts	Bronx Wolves	Wolf Den	3	2	games/2026-678.json
+2026-679	2026-06-22	15	5	Alexandria Cannons	Staten Island Foxes	Fox Field	5	2	games/2026-679.json
+2026-680	2026-06-22	0	10	Newark Knights	Fairmount Rams	Fairmount Field	0	4	games/2026-680.json
+2026-681	2026-06-22	1	2	Queens Titans	Brooklyn Hammers	Iron Yard	2	4	games/2026-681.json
+2026-682	2026-06-22	11	9	South Philly Stallions	Manayunk Runners	Canal Park	7	6	games/2026-682.json
+2026-683	2026-06-22	16	4	Bethesda Blaze	Harlem Eagles	Eagle Park	2	4	games/2026-683.json
+2026-684	2026-06-22	14	6	Anacostia Kings	Fishtown Ferals	Ferals Field	0	7	games/2026-684.json
+2026-685	2026-06-23	3	15	Bronx Wolves	Alexandria Cannons	Cannon Field	11	0	games/2026-685.json
+2026-686	2026-06-23	7	11	Kensington Iron	South Philly Stallions	Stallions Field	3	4	games/2026-686.json
+2026-687	2026-06-23	5	13	Staten Island Foxes	Capitol Hill Senators	Capitol Park	3	4	games/2026-687.json
+2026-688	2026-06-23	6	12	Fishtown Ferals	Georgetown Ravens	Ravens Nest	9	4	games/2026-688.json
+2026-689	2026-06-23	4	14	Harlem Eagles	Anacostia Kings	Kings Yard	11	0	games/2026-689.json
+2026-690	2026-06-23	9	0	Manayunk Runners	Newark Knights	Knights Field	2	3	games/2026-690.json
+2026-691	2026-06-23	1	17	Queens Titans	Silver Spring Ghosts	Silver Spring Stadium	8	4	games/2026-691.json
+2026-692	2026-06-23	8	10	Germantown Colonials	Fairmount Rams	Fairmount Field	1	0	games/2026-692.json
+2026-693	2026-06-23	2	16	Brooklyn Hammers	Bethesda Blaze	Blaze Arena	2	7	games/2026-693.json
+2026-694	2026-06-24	14	2	Anacostia Kings	Brooklyn Hammers	Iron Yard	3	8	games/2026-694.json
+2026-695	2026-06-24	11	5	South Philly Stallions	Staten Island Foxes	Fox Field	6	2	games/2026-695.json
+2026-696	2026-06-24	15	1	Alexandria Cannons	Queens Titans	Queens Coliseum	1	4	games/2026-696.json
+2026-697	2026-06-24	9	7	Manayunk Runners	Kensington Iron	Iron Works	0	1	games/2026-697.json
+2026-698	2026-06-24	0	8	Newark Knights	Germantown Colonials	Colonial Field	1	5	games/2026-698.json
+2026-699	2026-06-24	12	4	Georgetown Ravens	Harlem Eagles	Eagle Park	5	0	games/2026-699.json
+2026-700	2026-06-24	16	17	Bethesda Blaze	Silver Spring Ghosts	Silver Spring Stadium	3	4	games/2026-700.json
+2026-701	2026-06-24	13	3	Capitol Hill Senators	Bronx Wolves	Wolf Den	0	7	games/2026-701.json
+2026-702	2026-06-24	10	6	Fairmount Rams	Fishtown Ferals	Ferals Field	8	3	games/2026-702.json
+2026-703	2026-06-25	5	9	Staten Island Foxes	Manayunk Runners	Canal Park	4	5	games/2026-703.json
+2026-704	2026-06-25	2	12	Brooklyn Hammers	Georgetown Ravens	Ravens Nest	5	10	games/2026-704.json
+2026-705	2026-06-25	4	10	Harlem Eagles	Fairmount Rams	Fairmount Field	4	7	games/2026-705.json
+2026-706	2026-06-25	16	15	Bethesda Blaze	Alexandria Cannons	Cannon Field	0	1	games/2026-706.json
+2026-707	2026-06-25	17	14	Silver Spring Ghosts	Anacostia Kings	Kings Yard	3	0	games/2026-707.json
+2026-708	2026-06-25	7	0	Kensington Iron	Newark Knights	Knights Field	2	6	games/2026-708.json
+2026-709	2026-06-25	3	11	Bronx Wolves	South Philly Stallions	Stallions Field	1	0	games/2026-709.json
+2026-710	2026-06-25	6	8	Fishtown Ferals	Germantown Colonials	Colonial Field	4	2	games/2026-710.json
+2026-711	2026-06-25	1	13	Queens Titans	Capitol Hill Senators	Capitol Park	4	1	games/2026-711.json
+2026-712	2026-06-26	14	15	Anacostia Kings	Alexandria Cannons	Cannon Field	3	2	games/2026-712.json
+2026-713	2026-06-26	8	4	Germantown Colonials	Harlem Eagles	Eagle Park	4	0	games/2026-713.json
+2026-714	2026-06-26	9	3	Manayunk Runners	Bronx Wolves	Wolf Den	4	6	games/2026-714.json
+2026-715	2026-06-26	11	1	South Philly Stallions	Queens Titans	Queens Coliseum	2	0	games/2026-715.json
+2026-716	2026-06-26	10	2	Fairmount Rams	Brooklyn Hammers	Iron Yard	1	4	games/2026-716.json
+2026-717	2026-06-26	7	5	Kensington Iron	Staten Island Foxes	Fox Field	2	1	games/2026-717.json
+2026-718	2026-06-26	13	16	Capitol Hill Senators	Bethesda Blaze	Blaze Arena	3	13	games/2026-718.json
+2026-719	2026-06-26	12	17	Georgetown Ravens	Silver Spring Ghosts	Silver Spring Stadium	4	2	games/2026-719.json
+2026-720	2026-06-26	0	6	Newark Knights	Fishtown Ferals	Ferals Field	14	2	games/2026-720.json
+2026-721	2026-06-27	17	10	Silver Spring Ghosts	Fairmount Rams	Fairmount Field	5	4	games/2026-721.json
+2026-722	2026-06-27	14	13	Anacostia Kings	Capitol Hill Senators	Capitol Park	4	11	games/2026-722.json
+2026-723	2026-06-27	1	9	Queens Titans	Manayunk Runners	Canal Park	2	3	games/2026-723.json
+2026-724	2026-06-27	2	8	Brooklyn Hammers	Germantown Colonials	Colonial Field	2	1	games/2026-724.json
+2026-725	2026-06-27	4	6	Harlem Eagles	Fishtown Ferals	Ferals Field	5	2	games/2026-725.json
+2026-726	2026-06-27	16	11	Bethesda Blaze	South Philly Stallions	Stallions Field	5	4	games/2026-726.json
+2026-727	2026-06-27	5	0	Staten Island Foxes	Newark Knights	Knights Field	4	0	games/2026-727.json
+2026-728	2026-06-27	15	12	Alexandria Cannons	Georgetown Ravens	Ravens Nest	0	1	games/2026-728.json
+2026-729	2026-06-27	3	7	Bronx Wolves	Kensington Iron	Iron Works	3	4	games/2026-729.json
+2026-730	2026-06-29	7	1	Kensington Iron	Queens Titans	Queens Coliseum	6	3	games/2026-730.json
+2026-731	2026-06-29	8	17	Germantown Colonials	Silver Spring Ghosts	Silver Spring Stadium	1	2	games/2026-731.json
+2026-732	2026-06-29	6	2	Fishtown Ferals	Brooklyn Hammers	Iron Yard	4	6	games/2026-732.json
+2026-733	2026-06-29	12	13	Georgetown Ravens	Capitol Hill Senators	Capitol Park	4	2	games/2026-733.json
+2026-734	2026-06-29	10	15	Fairmount Rams	Alexandria Cannons	Cannon Field	3	2	games/2026-734.json
+2026-735	2026-06-29	9	16	Manayunk Runners	Bethesda Blaze	Blaze Arena	6	4	games/2026-735.json
+2026-736	2026-06-29	5	3	Staten Island Foxes	Bronx Wolves	Wolf Den	5	6	games/2026-736.json
+2026-737	2026-06-29	0	4	Newark Knights	Harlem Eagles	Eagle Park	7	6	games/2026-737.json
+2026-738	2026-06-29	11	14	South Philly Stallions	Anacostia Kings	Kings Yard	4	6	games/2026-738.json
+2026-739	2026-06-30	15	8	Alexandria Cannons	Germantown Colonials	Colonial Field	0	4	games/2026-739.json
+2026-740	2026-06-30	14	9	Anacostia Kings	Manayunk Runners	Canal Park	2	1	games/2026-740.json
+2026-741	2026-06-30	17	6	Silver Spring Ghosts	Fishtown Ferals	Ferals Field	2	6	games/2026-741.json
+2026-742	2026-06-30	3	0	Bronx Wolves	Newark Knights	Knights Field	13	4	games/2026-742.json
+2026-743	2026-06-30	13	10	Capitol Hill Senators	Fairmount Rams	Fairmount Field	1	0	games/2026-743.json
+2026-744	2026-06-30	1	5	Queens Titans	Staten Island Foxes	Fox Field	9	5	games/2026-744.json
+2026-745	2026-06-30	12	11	Georgetown Ravens	South Philly Stallions	Stallions Field	0	4	games/2026-745.json
+2026-746	2026-06-30	2	4	Brooklyn Hammers	Harlem Eagles	Eagle Park	10	2	games/2026-746.json
+2026-747	2026-06-30	16	7	Bethesda Blaze	Kensington Iron	Iron Works	0	2	games/2026-747.json
+2026-748	2026-07-01	0	2	Newark Knights	Brooklyn Hammers	Iron Yard	7	8	games/2026-748.json
+2026-749	2026-07-01	7	14	Kensington Iron	Anacostia Kings	Kings Yard	8	2	games/2026-749.json
+2026-750	2026-07-01	4	17	Harlem Eagles	Silver Spring Ghosts	Silver Spring Stadium	6	4	games/2026-750.json
+2026-751	2026-07-01	9	12	Manayunk Runners	Georgetown Ravens	Ravens Nest	6	0	games/2026-751.json
+2026-752	2026-07-01	8	13	Germantown Colonials	Capitol Hill Senators	Capitol Park	3	4	games/2026-752.json
+2026-753	2026-07-01	6	15	Fishtown Ferals	Alexandria Cannons	Cannon Field	4	7	games/2026-753.json
+2026-754	2026-07-01	3	1	Bronx Wolves	Queens Titans	Queens Coliseum	5	0	games/2026-754.json
+2026-755	2026-07-01	5	16	Staten Island Foxes	Bethesda Blaze	Blaze Arena	2	4	games/2026-755.json
+2026-756	2026-07-01	10	11	Fairmount Rams	South Philly Stallions	Stallions Field	3	0	games/2026-756.json
+2026-757	2026-07-02	10	9	Fairmount Rams	Manayunk Runners	Canal Park	3	2	games/2026-757.json
+2026-758	2026-07-02	14	5	Anacostia Kings	Staten Island Foxes	Fox Field	0	5	games/2026-758.json
+2026-759	2026-07-02	12	7	Georgetown Ravens	Kensington Iron	Iron Works	7	4	games/2026-759.json
+2026-760	2026-07-02	16	3	Bethesda Blaze	Bronx Wolves	Wolf Den	0	5	games/2026-760.json
+2026-761	2026-07-02	1	0	Queens Titans	Newark Knights	Knights Field	4	6	games/2026-761.json
+2026-762	2026-07-02	11	8	South Philly Stallions	Germantown Colonials	Colonial Field	2	4	games/2026-762.json
+2026-763	2026-07-02	15	4	Alexandria Cannons	Harlem Eagles	Eagle Park	3	4	games/2026-763.json
+2026-764	2026-07-02	17	2	Silver Spring Ghosts	Brooklyn Hammers	Iron Yard	3	8	games/2026-764.json
+2026-765	2026-07-02	13	6	Capitol Hill Senators	Fishtown Ferals	Ferals Field	0	8	games/2026-765.json

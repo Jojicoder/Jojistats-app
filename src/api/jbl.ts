@@ -34,7 +34,7 @@ export type JblData = {
   standings: JblStandingLeague[]
 }
 
-type JblScheduleGame = JblSeasonJson["schedule"][number]
+export type JblScheduleGame = JblSeasonJson["schedule"][number]
 
 async function fetchJson<T>(url: string, resource: string): Promise<T> {
   const response = await fetch(url)
@@ -61,6 +61,8 @@ async function mapLimit<T, R>(items: T[], limit: number, worker: (item: T) => Pr
 function slug(name: string) {
   return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")
 }
+
+export const jblTeamSlug = slug
 
 function teamAbbr(name: string) {
   return name.split(" ").slice(-1)[0].slice(0, 3).toUpperCase()
@@ -163,6 +165,22 @@ export async function getJblVisibleGames(asOfDate = todayKey()): Promise<JblGame
     season.schedule.filter((game) => game.date <= asOfDate && Boolean(game.finalScore)),
     gameFiles,
   )
+}
+
+export async function getJblScheduleForDate(date: string): Promise<JblScheduleGame[]> {
+  const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
+  return season.schedule.filter((game) => game.date === date)
+}
+
+export async function getJblGameById(
+  gameId: string,
+): Promise<{ game: JblGameJson; schedule: JblScheduleGame } | null> {
+  const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
+  const schedule = season.schedule.find((candidate) => candidate.gameId === gameId)
+  if (!schedule) return null
+
+  const game = await fetchJson<JblGameJson>(`${JBL_SEASON_ROOT}/${schedule.gameFile}`, `JBL game ${gameId}`)
+  return { game, schedule }
 }
 
 export async function getJblData(asOfDate = todayKey()): Promise<JblData> {
