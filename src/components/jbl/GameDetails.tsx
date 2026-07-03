@@ -414,18 +414,27 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
     return () => clearTimeout(timer)
   }, [announcement])
 
-  const { lastPitch, lastPlay, lastHalf } = useMemo(() => {
+  const { lastPitch, lastPlay, lastHalf, halfIsMostRecent } = useMemo(() => {
     let lastPitch: PitchEvent | undefined
     let lastPlay: PlayEvent | undefined
     let lastHalf: HalfInningEvent | undefined
+    // Whichever of pitch/play/half_inning we hit *first* scanning backward
+    // is the most recent of the three — tracked separately from the
+    // individual lookups above so we can tell "the last thing that
+    // happened was the half-inning starting" apart from "there's an older
+    // half_inning marker further back than the last pitch/play".
+    let mostRecentType: "pitch" | "play" | "half_inning" | null = null
     for (let i = idx - 1; i >= 0; i--) {
       const e = events[i]
       if (!lastPitch && e.type === "pitch") lastPitch = e as PitchEvent
       if (!lastPlay  && e.type === "play")  lastPlay  = e as PlayEvent
       if (!lastHalf  && e.type === "half_inning") lastHalf = e as HalfInningEvent
+      if (!mostRecentType && (e.type === "pitch" || e.type === "play" || e.type === "half_inning")) {
+        mostRecentType = e.type
+      }
       if (lastPitch && lastPlay && lastHalf) break
     }
-    return { lastPitch, lastPlay, lastHalf }
+    return { lastPitch, lastPlay, lastHalf, halfIsMostRecent: mostRecentType === "half_inning" }
   }, [events, idx])
 
   const isDone        = idx >= events.length
@@ -443,8 +452,21 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
     ? currentEvent
     : null
   const currentScore  = eventState?.score ?? lastPlay?.score ?? lastPitch?.score ?? lastHalf?.score ?? { away: 0, home: 0 }
-  const currentBases  = eventState?.bases ?? lastPitch?.bases ?? lastPlay?.bases ?? { first: null, second: null, third: null }
-  const currentOuts   = eventState?.outs ?? lastPitch?.outs  ?? lastPlay?.outs  ?? 0
+  // A half-inning always starts bases-empty with 0 outs — if the half_inning
+  // marker is the most recent event (i.e. we just landed at the top of an
+  // inning, whether by normal advance or by jumping to it in the
+  // scoreboard), bases/outs must reset here rather than falling through to
+  // whatever a pitch/play from the *previous* half last recorded.
+  const currentBases  = eventState
+    ? eventState.bases
+    : halfIsMostRecent
+      ? { first: null, second: null, third: null }
+      : lastPitch?.bases ?? lastPlay?.bases ?? { first: null, second: null, third: null }
+  const currentOuts   = eventState
+    ? eventState.outs
+    : halfIsMostRecent
+      ? 0
+      : lastPitch?.outs ?? lastPlay?.outs ?? 0
   const currentInning = lastHalf?.inning ?? 1
   const currentTop    = lastHalf?.isTop  ?? true
 
