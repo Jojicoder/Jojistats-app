@@ -942,7 +942,6 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
                 defenders={defenders}
                 bases={previousEvent?.type === "pitch" ? previousEvent.bases : undefined}
                 runnerAdvances={currentEvent?.type === "play" ? currentEvent.runnerAdvances : undefined}
-                throwTo={currentEvent?.type === "play" ? currentEvent.throwTo : undefined}
                 fielderColor={defenseColors.primary}
                 fielderSecondaryColor={defenseColors.secondary}
                 fielderAccentColor={defenseColors.accent}
