@@ -5,6 +5,50 @@
   to   { opacity: 1; transform: scale(1); }
 }
 
+@keyframes jblCardIn {
+  from { opacity: 0; transform: translateY(14px) scale(0.985); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes jblScorePop {
+  0% { transform: translateY(0) scale(1); text-shadow: none; }
+  35% { transform: translateY(-2px) scale(1.18); text-shadow: 0 0 22px currentColor; }
+  100% { transform: translateY(0) scale(1); text-shadow: none; }
+}
+
+@keyframes jblScoreFlash {
+  0% { opacity: 0; transform: scaleX(0.35); }
+  30% { opacity: 0.34; transform: scaleX(1); }
+  100% { opacity: 0; transform: scaleX(1); }
+}
+
+.jbl-card-in {
+  animation: jblCardIn 0.42s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.jbl-score-pop {
+  display: inline-block;
+  animation: jblScorePop 0.46s cubic-bezier(0.2, 0.9, 0.25, 1.35) both;
+}
+
+.jbl-score-flash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: center;
+  animation: jblScoreFlash 0.72s ease-out both;
+  background: var(--jbl-score-flash, rgba(34, 197, 94, 0.28));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jbl-card-in,
+  .jbl-score-pop,
+  .jbl-score-flash::after {
+    animation: none;
+  }
+}
+
 /* Register MLB theme vars so browsers can interpolate them in transitions */
 @property --mlb-primary {
   syntax: '<color>';

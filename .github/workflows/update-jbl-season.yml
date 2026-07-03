@@ -20,10 +20,18 @@ on:
         description: "BaseballEngine branch/tag/SHA"
         required: false
         default: "main"
-      game_limit:
-        description: "Optional number of game files to export. Use 0 for full season."
+      mode:
+        description: "incremental = continue from last exported day, rebuild = regenerate the full season from scratch"
         required: false
-        default: "0"
+        default: "incremental"
+        type: choice
+        options:
+          - incremental
+          - rebuild
+      through:
+        description: "incremental only: export games through this date (YYYY-MM-DD). Blank = today."
+        required: false
+        default: ""
   schedule:
     - cron: "0 15 * * *"
 
@@ -36,7 +44,8 @@ jobs:
 
     env:
       SEASON: ${{ inputs.season || '2026' }}
-      GAME_LIMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.game_limit || github.event_name == 'push' && '3' || '0' }}
+      MODE: ${{ inputs.mode || 'incremental' }}
+      THROUGH: ${{ inputs.through }}
 
     steps:
       - name: Checkout frontend
@@ -59,25 +68,43 @@ jobs:
         run: |
           make game-export CXX=g++ CXXFLAGS="-std=c++17 -O2 -Wall -Wextra -Wpedantic -I../include"
 
+      # Push events only validate that the exporter still builds and runs —
+      # they write to a scratch directory so a workflow-file tweak can never
+      # clobber the real, already-published season data.
+      - name: Smoke-test exporter
+        if: github.event_name == 'push'
+        run: |
+          set -euo pipefail
+          TMP_DIR="$(mktemp -d)/season-smoke-test"
+          engine/build/JojiGameExport --season "${SEASON}" --all-games --limit 3 --out-dir "${TMP_DIR}"
+          JBL_JSON_ROOT="${TMP_DIR}" node scripts/validate-jbl-json.mjs "${SEASON}"
+
       - name: Export season and detailed games
+        if: github.event_name != 'push'
         run: |
           set -euo pipefail
           OUT_DIR="public/jbl/seasons/${SEASON}"
           mkdir -p "${OUT_DIR}"
 
-          if [ "${GAME_LIMIT}" = "0" ]; then
+          if [ "${MODE}" = "rebuild" ]; then
             engine/build/JojiGameExport --season "${SEASON}" --all-games --out-dir "${OUT_DIR}"
           else
-            engine/build/JojiGameExport --season "${SEASON}" --all-games --limit "${GAME_LIMIT}" --out-dir "${OUT_DIR}"
+            THROUGH_ARGS=()
+            if [ -n "${THROUGH}" ]; then
+              THROUGH_ARGS+=(--through "${THROUGH}")
+            fi
+            engine/build/JojiGameExport --season "${SEASON}" --incremental --out-dir "${OUT_DIR}" "${THROUGH_ARGS[@]}"
           fi
 
       - name: Validate JBL JSON
+        if: github.event_name != 'push'
         run: node scripts/validate-jbl-json.mjs "${SEASON}"
 
       - name: Build frontend
         run: npm ci && npm run build
 
       - name: Commit and push JSON update
+        if: github.event_name != 'push'
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -87,5 +114,5 @@ jobs:
             echo "No JBL JSON changes to commit."
             exit 0
           fi
-          git commit -m "auto: update JBL season ${SEASON}"
+          git commit -m "auto: JBL ${SEASON} update ($(date -u +%F))"
           git push

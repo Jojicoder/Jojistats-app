@@ -1,8 +1,15 @@
 import { useEffect, useRef } from "react"
-import * as THREE from "three"
 import type { SwingInfo } from "./StrikeZoneView"
 
 export type BallTraj = [number, number, number][]  // [x, y, z] engine feet
+
+export type BaseName = "home" | "first" | "second" | "third"
+export type RunnerAdvance = {
+  runner: string
+  from: BaseName
+  to: BaseName
+  result: "safe" | "out" | "scored" | "held"
+}
 
 type Props = {
   traj: BallTraj
@@ -13,9 +20,25 @@ type Props = {
   swing?: SwingInfo | null
   defenders?: Partial<Record<string, string>>
   bases?: { first: string | null; second: string | null; third: string | null }
+  runnerAdvances?: RunnerAdvance[]
+  throwTo?: BaseName
+  fielderColor?: string
+  fielderSecondaryColor?: string
+  fielderAccentColor?: string
+  runnerColor?: string
+  runnerAccentColor?: string
 }
 
 type LabelMeta = { text: string; color: string; shadow: string }
+type Point = { x: number; y: number; z?: number }
+type Fielder = {
+  code: string
+  role: string
+  name: string
+  start: Point
+  target: Point
+  active: boolean
+}
 
 function resultLabel(result: string): { main: LabelMeta; isHit: boolean } | null {
   const r = result.toLowerCase()
@@ -33,11 +56,6 @@ function resultLabel(result: string): { main: LabelMeta; isHit: boolean } | null
   return null
 }
 
-// engine → Three.js:  X→X,  Y(depth)→-Z,  Z(height)→Y
-function e2t(x: number, y: number, z: number): THREE.Vector3 {
-  return new THREE.Vector3(x, z, -y)
-}
-
 function easeOutCubic(x: number) {
   return 1 - Math.pow(1 - Math.max(0, Math.min(1, x)), 3)
 }
@@ -47,56 +65,26 @@ function easeInOutCubic(x: number) {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t
+}
+
+function pointLerp(a: Point, b: Point, t: number): Point {
+  return {
+    x: lerp(a.x, b.x, t),
+    y: lerp(a.y, b.y, t),
+    z: lerp(a.z ?? 0, b.z ?? 0, t),
+  }
+}
+
+function distance(a: Point, b: Point) {
+  const dz = (a.z ?? 0) - (b.z ?? 0)
+  return Math.hypot(a.x - b.x, a.y - b.y, dz)
+}
+
 function isGroundBall(result: string | undefined, launchAngle: number) {
   const r = result?.toLowerCase() ?? ""
   return r.includes("ground") || launchAngle <= 8
-}
-
-function clampToFence(p: THREE.Vector3) {
-  const center = new THREE.Vector3(0, 0, -25)
-  const maxRadius = 360
-  const flat = new THREE.Vector3(p.x, 0, p.z)
-  const fromCenter = flat.clone().sub(center)
-  if (fromCenter.length() > maxRadius) {
-    fromCenter.setLength(maxRadius)
-    flat.copy(center).add(fromCenter)
-  }
-
-  const maxFairX = Math.max(28, Math.abs(flat.z) + 18)
-  flat.x = THREE.MathUtils.clamp(flat.x, -maxFairX, maxFairX)
-  return flat
-}
-
-function makeRunner(color = 0xdc2626): THREE.Group {
-  const root = new THREE.Group()
-
-  const dot = new THREE.Mesh(
-    new THREE.CircleGeometry(5.5, 12),
-    new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide })
-  )
-  dot.rotation.x = -Math.PI / 2
-  dot.position.y = 0.45
-  root.add(dot)
-
-  const core = new THREE.Mesh(
-    new THREE.CircleGeometry(2.6, 10),
-    new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.9 })
-  )
-  core.rotation.x = -Math.PI / 2
-  core.position.y = 0.5
-  root.add(core)
-
-  return root
-}
-
-type Fielder = {
-  code: string
-  role: string
-  root: THREE.Group
-  baseRing: THREE.Mesh
-  start: THREE.Vector3
-  target: THREE.Vector3
-  active: boolean
 }
 
 function shortName(name: string) {
@@ -104,514 +92,542 @@ function shortName(name: string) {
   return parts.length > 1 ? parts.at(-1)! : name
 }
 
-function makeFielder(role: string, name: string, color = 0x2563eb): THREE.Group {
-  const root = new THREE.Group()
-
-  const dot = new THREE.Mesh(
-    new THREE.CircleGeometry(5.5, 12),
-    new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide })
-  )
-  dot.rotation.x = -Math.PI / 2
-  dot.position.y = 0.45
-  root.add(dot)
-
-  const center = new THREE.Mesh(
-    new THREE.CircleGeometry(2.3, 10),
-    new THREE.MeshBasicMaterial({ color: 0xe0f2fe, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
-  )
-  center.rotation.x = -Math.PI / 2
-  center.position.y = 0.5
-  root.add(center)
-
-  const labelCanvas = document.createElement("canvas")
-  labelCanvas.width = 128
-  labelCanvas.height = 44
-  const ctx = labelCanvas.getContext("2d")!
-  ctx.fillStyle = "rgba(15,23,42,0.82)"
-  ctx.roundRect?.(7, 4, 114, 36, 8)
-  ctx.fill()
-  ctx.font = "bold 24px sans-serif"
-  ctx.textAlign = "center"
-  ctx.textBaseline = "middle"
-  ctx.fillStyle = "#ffffff"
-  ctx.fillText(shortName(name || role).slice(0, 10), 64, 22)
-  const label = new THREE.Sprite(new THREE.SpriteMaterial({
-    map: new THREE.CanvasTexture(labelCanvas),
-    transparent: true,
-    depthTest: false,
-  }))
-  label.position.y = 11
-  label.scale.set(16, 5.5, 1)
-  root.add(label)
-
-  return root
-}
-
-function fielderPositions(): Array<{ code: string; role: string; pos: THREE.Vector3 }> {
+function fielderPositions(): Array<{ code: string; role: string; pos: Point }> {
   return [
-    { code: "P", role: "P", pos: new THREE.Vector3(0, 0, -60.5) },
-    { code: "C", role: "C", pos: new THREE.Vector3(0, 0, 8) },
-    { code: "1B", role: "1B", pos: new THREE.Vector3(72, 0, -86) },
-    { code: "2B", role: "2B", pos: new THREE.Vector3(54, 0, -142) },
-    { code: "SS", role: "SS", pos: new THREE.Vector3(-54, 0, -142) },
-    { code: "3B", role: "3B", pos: new THREE.Vector3(-72, 0, -86) },
-    { code: "LF", role: "LF", pos: new THREE.Vector3(-150, 0, -255) },
-    { code: "CF", role: "CF", pos: new THREE.Vector3(0, 0, -315) },
-    { code: "RF", role: "RF", pos: new THREE.Vector3(150, 0, -255) },
+    { code: "P", role: "P", pos: { x: 0, y: 60.5 } },
+    { code: "C", role: "C", pos: { x: 0, y: -8 } },
+    { code: "1B", role: "1B", pos: { x: 72, y: 86 } },
+    { code: "2B", role: "2B", pos: { x: 54, y: 142 } },
+    { code: "SS", role: "SS", pos: { x: -54, y: 142 } },
+    { code: "3B", role: "3B", pos: { x: -72, y: 86 } },
+    { code: "LF", role: "LF", pos: { x: -150, y: 255 } },
+    { code: "CF", role: "CF", pos: { x: 0, y: 315 } },
+    { code: "RF", role: "RF", pos: { x: 150, y: 255 } },
   ]
 }
 
-export default function FieldView({ traj, exitVelo, launchAngle, sprayAngle, result, swing, defenders = {}, bases }: Props) {
-  const mountRef  = useRef<HTMLDivElement>(null)
+function clampToFence(p: Point): Point {
+  const center = { x: 0, y: 25 }
+  const maxRadius = 360
+  const fromCenter = { x: p.x - center.x, y: p.y - center.y }
+  const len = Math.hypot(fromCenter.x, fromCenter.y)
+  const next = { ...p }
+  if (len > maxRadius) {
+    next.x = center.x + (fromCenter.x / len) * maxRadius
+    next.y = center.y + (fromCenter.y / len) * maxRadius
+  }
+
+  const maxFairX = Math.max(28, Math.abs(next.y) + 18)
+  next.x = Math.max(-maxFairX, Math.min(maxFairX, next.x))
+  return next
+}
+
+// Ordered path of base points a runner travels between two bases, following
+// the diamond (never cutting across the infield). Reaching "home" from any
+// occupied base always means completing the circuit forward, not returning
+// to the batter's box.
+function basePathPoints(
+  from: BaseName,
+  to: BaseName,
+  basePoints: Record<BaseName, Point>,
+): Point[] {
+  const order: BaseName[] = ["home", "first", "second", "third"]
+  const fromIdx = order.indexOf(from)
+  const toIdx = to === "home" && from !== "home" ? 4 : order.indexOf(to)
+  const path: Point[] = []
+  for (let i = fromIdx; i <= toIdx; i++) {
+    path.push(basePoints[order[i % 4]])
+  }
+  return path
+}
+
+function drawDiamond(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, fill: string, stroke = "#ffffff") {
+  ctx.beginPath()
+  ctx.moveTo(x, y - size)
+  ctx.lineTo(x + size, y)
+  ctx.lineTo(x, y + size)
+  ctx.lineTo(x - size, y)
+  ctx.closePath()
+  ctx.fillStyle = fill
+  ctx.fill()
+  ctx.strokeStyle = stroke
+  ctx.lineWidth = 1.5
+  ctx.stroke()
+}
+
+// Position along a base-running path at time fraction t (0-1), following
+// the path's actual segments rather than a straight line to the target.
+function pointAlongPath(path: Point[], lens: number[], totalLen: number, t: number): Point {
+  if (path.length === 0) return { x: 0, y: 0 }
+  if (path.length === 1 || totalLen <= 0) return path[0]
+  const dist = Math.max(0, Math.min(1, t)) * totalLen
+  let seg = path.length - 2
+  for (let i = 1; i < lens.length; i++) {
+    if (lens[i] >= dist) { seg = i - 1; break }
+  }
+  const segLen = lens[seg + 1] - lens[seg]
+  const frac = segLen > 0 ? (dist - lens[seg]) / segLen : 0
+  return pointLerp(path[seg], path[Math.min(seg + 1, path.length - 1)], frac)
+}
+
+const RUNNER_SPEED_FT_PER_S = 26 // pace for runners already on base (not the batter's primary path)
+
+// Same red/green language GameDetails already uses for CAUGHT STEALING vs
+// STOLEN BASE — reused here so a runner reads as out or safe at a glance
+// instead of every runner rendering in the same offense color regardless
+// of outcome.
+const OUT_COLOR = "#ef4444"
+const SAFE_COLOR = "#22c55e"
+
+export default function FieldView({
+  traj,
+  exitVelo,
+  launchAngle,
+  sprayAngle,
+  result,
+  swing,
+  defenders = {},
+  bases,
+  runnerAdvances = [],
+  throwTo,
+  fielderColor = "#1d4ed8",
+  fielderSecondaryColor = "#1e293b",
+  fielderAccentColor = "#e0f2fe",
+  runnerColor = "#dc2626",
+  runnerAccentColor = "#ffffff",
+}: Props) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
   const animIdRef = useRef<number>(0)
 
   useEffect(() => {
-    const el = mountRef.current
-    if (!el) return
-    const W = el.clientWidth || 854, H = el.clientHeight || 480
+    const canvas = canvasRef.current
+    const ctx = canvas?.getContext("2d")
+    if (!canvas || !ctx) return
 
-    const renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false })
-    renderer.setSize(W, H)
-    renderer.setPixelRatio(1)
-    renderer.setClearColor(0x0f172a, 1)
-    el.appendChild(renderer.domElement)
+    const points: Point[] = traj.map(([x, y, z]) => ({ x, y, z }))
+    if (points.length < 2) return
 
-    const scene = new THREE.Scene()
+    const fielders: Fielder[] = fielderPositions().map(({ code, role, pos }) => ({
+      code,
+      role,
+      name: defenders[code] ?? role,
+      start: pos,
+      target: pos,
+      active: false,
+    }))
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.65))
-    const sun = new THREE.DirectionalLight(0xfff1d6, 0.9)
-    sun.position.set(-120, 220, 80)
-    scene.add(sun)
-
-    // Camera: above and behind home plate, angled toward CF
-    const camera = new THREE.PerspectiveCamera(58, W / H, 0.1, 2000)
-    camera.position.set(0, 155, 215)
-    camera.lookAt(0, 0, -125)
-
-    const resize = () => {
-      const w = el.clientWidth || 854
-      const h = el.clientHeight || 480
-      renderer.setSize(w, h)
-      camera.aspect = w / h
-      camera.updateProjectionMatrix()
-    }
-    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null
-    resizeObserver?.observe(el)
-
-    // ── Field ──────────────────────────────────────────────────────────────
-    // Outfield grass
-    const grass = new THREE.Mesh(
-      new THREE.CircleGeometry(420, 36),
-      new THREE.MeshPhongMaterial({ color: 0x14532d })
-    )
-    grass.rotation.x = -Math.PI / 2
-    grass.position.set(0, -0.5, -140)
-    scene.add(grass)
-
-    // Infield dirt (rotated square)
-    const dirt = new THREE.Mesh(
-      new THREE.CircleGeometry(100, 4),
-      new THREE.MeshPhongMaterial({ color: 0x78350f })
-    )
-    dirt.rotation.x = -Math.PI / 2
-    dirt.rotation.z = Math.PI / 4
-    dirt.position.set(0, -0.4, -64)
-    scene.add(dirt)
-
-    // Foul lines
-    const lm = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35 })
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, 0, 0), new THREE.Vector3(-340, 0, -340)
-    ]), lm))
-    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(0, 0, 0), new THREE.Vector3(340, 0, -340)
-    ]), lm))
-
-    const wallPts: THREE.Vector3[] = []
-    for (let i = -24; i <= 24; i++) {
-      const a = (i / 24) * Math.PI * 0.38 - Math.PI / 2
-      wallPts.push(new THREE.Vector3(Math.cos(a) * 385, 9, Math.sin(a) * 385 - 25))
-    }
-    const wall = new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(wallPts),
-      new THREE.LineBasicMaterial({ color: 0x60a5fa, transparent: true, opacity: 0.45 })
-    )
-    scene.add(wall)
-
-    // Bases
-    const bm = new THREE.MeshBasicMaterial({ color: 0xffffff })
-    ;([[63.6, 63.6], [0, 127.3], [-63.6, 63.6]] as [number, number][]).forEach(([bx, by]) => {
-      const b = new THREE.Mesh(new THREE.PlaneGeometry(5, 5), bm)
-      b.rotation.x = -Math.PI / 2
-      b.position.set(bx, 0.1, -by)
-      scene.add(b)
-    })
-    // Home plate
-    const hp = new THREE.Mesh(new THREE.PlaneGeometry(3.5, 3.5), bm)
-    hp.rotation.x = -Math.PI / 2
-    hp.position.set(0, 0.1, 0)
-    scene.add(hp)
-
-    const launchFlash = new THREE.Mesh(
-      new THREE.RingGeometry(8, 14, 20),
-      new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })
-    )
-    launchFlash.rotation.x = -Math.PI / 2
-    launchFlash.position.set(0, 0.18, -2)
-    scene.add(launchFlash)
-
-    // Pitcher's mound
-    const mound = new THREE.Mesh(
-      new THREE.CircleGeometry(9, 10),
-      new THREE.MeshBasicMaterial({ color: 0x78350f })
-    )
-    mound.rotation.x = -Math.PI / 2
-    mound.position.set(0, 0.1, -60.5)
-    scene.add(mound)
-
-    const fielders: Fielder[] = fielderPositions().map(({ code, role, pos }) => {
-      const root = makeFielder(role, defenders[code] ?? role)
-      root.position.copy(pos)
-      scene.add(root)
-      const baseRing = new THREE.Mesh(
-        new THREE.RingGeometry(6.5, 9.5, 16),
-        new THREE.MeshBasicMaterial({ color: 0x38bdf8, side: THREE.DoubleSide, transparent: true, opacity: 0.55 })
-      )
-      baseRing.rotation.x = -Math.PI / 2
-      baseRing.position.set(pos.x, 0.22, pos.z)
-      scene.add(baseRing)
-      return {
-        code,
-        role,
-        root,
-        baseRing,
-        start: pos.clone(),
-        target: pos.clone(),
-        active: false,
-      }
-    })
-
-    const baseRunnerSpots: Array<{ occupied: boolean; pos: THREE.Vector3 }> = [
-      { occupied: !!bases?.first,  pos: new THREE.Vector3(63.6, 0, -63.6) },
-      { occupied: !!bases?.second, pos: new THREE.Vector3(0, 0, -127.3) },
-      { occupied: !!bases?.third,  pos: new THREE.Vector3(-63.6, 0, -63.6) },
-    ]
-    for (const { occupied, pos } of baseRunnerSpots) {
-      if (!occupied) continue
-      const baseRunner = makeRunner(0xf97316)
-      baseRunner.position.copy(pos)
-      baseRunner.scale.setScalar(0.9)
-      scene.add(baseRunner)
-    }
-
-    const runner = makeRunner()
-    runner.visible = false
-    runner.position.set(0, 0, 0)
-    scene.add(runner)
-
-    // ── Ball ───────────────────────────────────────────────────────────────
-    const ball = new THREE.Mesh(
-      new THREE.SphereGeometry(3.5, 8, 8),
-      new THREE.MeshPhongMaterial({ color: 0xfef08a, emissive: 0x3f2f00 })
-    )
-    ball.visible = false
-    scene.add(ball)
-
-    // Trail line (grows as ball moves)
-    const MAX_TRAIL = traj.length
-    const trailPositions = new Float32Array(MAX_TRAIL * 3)
-    const trailGeo = new THREE.BufferGeometry()
-    trailGeo.setAttribute("position", new THREE.BufferAttribute(trailPositions, 3))
-    trailGeo.setDrawRange(0, 0)
-    const trailLine = new THREE.Line(trailGeo, new THREE.LineBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.6 }))
-    scene.add(trailLine)
-
-    // Shadow on ground (circle that follows x/z of ball)
-    const shadow = new THREE.Mesh(
-      new THREE.CircleGeometry(3, 8),
-      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 })
-    )
-    shadow.rotation.x = -Math.PI / 2
-    shadow.position.y = 0.05
-    shadow.visible = false
-    scene.add(shadow)
-
-    // Landing point marker (shown after ball lands)
-    const marker = new THREE.Mesh(
-      new THREE.RingGeometry(5, 9, 18),
-      new THREE.MeshBasicMaterial({ color: 0xfef08a, side: THREE.DoubleSide, transparent: true, opacity: 0 })
-    )
-    marker.rotation.x = -Math.PI / 2
-    marker.position.y = 0.2
-    scene.add(marker)
-
-    // ── Animation ──────────────────────────────────────────────────────────
-    // Convert traj to Three.js points
-    const pts: THREE.Vector3[] = traj.map(([x, y, z]) => e2t(x, y, z))
-    if (pts.length < 2) {
-      renderer.render(scene, camera)
-      return () => {
-        resizeObserver?.disconnect()
-        renderer.dispose()
-        el.removeChild(renderer.domElement)
-      }
-    }
-
-    // Total flight distance for timing (use cumulative arc length)
-    const segLens: number[] = [0]
-    for (let i = 1; i < pts.length; i++) {
-      segLens.push(segLens[i - 1] + pts[i].distanceTo(pts[i - 1]))
-    }
+    const segLens = [0]
+    for (let i = 1; i < points.length; i++) segLens.push(segLens[i - 1] + distance(points[i], points[i - 1]))
     const totalLen = segLens[segLens.length - 1]
-    const landPt = pts[pts.length - 1]
-    const playableLand = clampToFence(landPt)
+    const landPt = clampToFence(points[points.length - 1])
     const grounder = isGroundBall(result, launchAngle)
-    const firstBase = new THREE.Vector3(63.6, 0, -63.6)
-    const primaryFielder = fielders.reduce((best, f) => {
-      const d = f.start.distanceTo(playableLand)
+    const firstBase = { x: 63.6, y: 63.6 }
+    const primary = fielders.reduce((best, f) => {
+      const d = distance(f.start, landPt)
       return d < best.distance ? { fielder: f, distance: d } : best
     }, { fielder: fielders[0], distance: Infinity }).fielder
-    primaryFielder.active = true
-    primaryFielder.target.copy(playableLand).lerp(primaryFielder.start, grounder ? 0.02 : 0.08)
-    primaryFielder.root.scale.setScalar(1.9)
-    ;(primaryFielder.baseRing.material as THREE.MeshBasicMaterial).color.setHex(0xfacc15)
-    ;(primaryFielder.baseRing.material as THREE.MeshBasicMaterial).opacity = 0.9
+    primary.active = true
+    primary.target = pointLerp(landPt, primary.start, grounder ? 0.02 : 0.08)
 
     for (const f of fielders) {
-      if (f === primaryFielder) continue
+      if (f === primary) continue
       const supportT = f.code === "P" || f.code === "C" ? 0.22 : 0.13
-      f.target.copy(f.start).lerp(playableLand, supportT)
+      f.target = pointLerp(f.start, landPt, supportT)
     }
 
-    const routePositions = new Float32Array(6)
-    const routeGeo = new THREE.BufferGeometry()
-    routeGeo.setAttribute("position", new THREE.BufferAttribute(routePositions, 3))
-    const routeLine = new THREE.Line(
-      routeGeo,
-      new THREE.LineBasicMaterial({ color: 0xfacc15, transparent: true, opacity: 0.78 })
-    )
-    scene.add(routeLine)
-
-    const catchMarker = new THREE.Mesh(
-      new THREE.RingGeometry(7, 11, 18),
-      new THREE.MeshBasicMaterial({ color: 0xfacc15, side: THREE.DoubleSide, transparent: true, opacity: 0.62 })
-    )
-    catchMarker.rotation.x = -Math.PI / 2
-    catchMarker.position.set(primaryFielder.target.x, 0.28, primaryFielder.target.z)
-    scene.add(catchMarker)
-
-    const throwPositions = new Float32Array(6)
-    const throwGeo = new THREE.BufferGeometry()
-    throwGeo.setAttribute("position", new THREE.BufferAttribute(throwPositions, 3))
-    const throwLine = new THREE.Line(
-      throwGeo,
-      new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0 })
-    )
-    scene.add(throwLine)
-
-    const FLIGHT_MS = Math.min(grounder ? 900 : 1800, Math.max(520, totalLen * (grounder ? 4.2 : 3.5)))
-    const THROW_MS = grounder ? 760 : 0
-    const RUNNER_MS = grounder ? FLIGHT_MS + THROW_MS + 260 : 0
-    const LAND_FLASH_MS = 500
-
-    // Hit runner base path (computed once per play)
     const hitR = (result ?? "").toLowerCase()
-    const HR_HOME = new THREE.Vector3(0, 0, 0)
-    const HR_1B   = new THREE.Vector3(63.6, 0, -63.6)
-    const HR_2B   = new THREE.Vector3(0, 0, -127.3)
-    const HR_3B   = new THREE.Vector3(-63.6, 0, -63.6)
-    let hitRunPath: THREE.Vector3[] = []
-    if      (hitR.includes("home run"))  hitRunPath = [HR_HOME, HR_1B, HR_2B, HR_3B, new THREE.Vector3(0, 0, 0)]
-    else if (hitR.includes("triple"))    hitRunPath = [HR_HOME, HR_1B, HR_2B, HR_3B]
-    else if (hitR.includes("double"))    hitRunPath = [HR_HOME, HR_1B, HR_2B]
-    else if (hitR.includes("single") || hitR.includes("beats out") || hitR.includes("error") || hitR.includes("fielder's choice")) hitRunPath = [HR_HOME, HR_1B]
-    const hitRunLens: number[] = [0]
-    for (let i = 1; i < hitRunPath.length; i++)
-      hitRunLens.push(hitRunLens[i - 1] + hitRunPath[i].distanceTo(hitRunPath[i - 1]))
+    const home = { x: 0, y: 0 }
+    const secondBase = { x: 0, y: 127.3 }
+    const thirdBase = { x: -63.6, y: 63.6 }
+    let hitRunPath: Point[] = []
+    if      (hitR.includes("home run")) hitRunPath = [home, firstBase, secondBase, thirdBase, home]
+    else if (hitR.includes("triple"))   hitRunPath = [home, firstBase, secondBase, thirdBase]
+    else if (hitR.includes("double"))   hitRunPath = [home, firstBase, secondBase]
+    else if (hitR.includes("single") || hitR.includes("beats out") || hitR.includes("error") || hitR.includes("fielder's choice")) hitRunPath = [home, firstBase]
+
+    const hitRunLens = [0]
+    for (let i = 1; i < hitRunPath.length; i++) hitRunLens.push(hitRunLens[i - 1] + distance(hitRunPath[i], hitRunPath[i - 1]))
     const totalHitRunLen = hitRunLens[hitRunLens.length - 1] || 0
-    const HIT_TROT = hitR.includes("home run")
-    const HIT_RUN_MS = totalHitRunLen > 0 ? (totalHitRunLen / (HIT_TROT ? 18 : 24)) * 1000 : 0
-    const startTime = performance.now()
-    let landed = false
-    let trailCount = 0
-    const target = new THREE.Vector3(0, 0, -150)
-    const TOTAL_ANIM_MS = FLIGHT_MS + Math.max(RUNNER_MS, HIT_RUN_MS + 280) + 1500
+    const hitRunMs = totalHitRunLen > 0 ? (totalHitRunLen / (hitR.includes("home run") ? 18 : 24)) * 1000 : 0
+    const flightMs = Math.min(grounder ? 900 : 1800, Math.max(520, totalLen * (grounder ? 4.2 : 3.5)))
+    const throwMs = grounder ? 760 : 0
+    const runnerMs = grounder ? flightMs + throwMs + 260 : 0
+
+    // Runners already on base run their own path (from → to, following the
+    // diamond) instead of sitting still — the batter's path above is
+    // handled separately since it's tied to the primary fielder's throw.
+    const basePoints: Record<BaseName, Point> = { home, first: firstBase, second: secondBase, third: thirdBase }
+    // Every base an out is recorded at this play — the primary force/tag
+    // (throwTo) plus any other runner explicitly marked out, e.g. the second
+    // leg of a double play. Capped at two legs; triple plays just show the
+    // first two throws rather than a third relay.
+    const outTargets: BaseName[] = []
+    if (throwTo) outTargets.push(throwTo)
+    for (const advance of runnerAdvances) {
+      if (advance.result === "out" && !outTargets.includes(advance.to)) outTargets.push(advance.to)
+    }
+    // Fall back to the routine 1st-base putout when the play carries no
+    // explicit throw target — most plain groundouts don't bother recording
+    // one, but they're still an out that needs a throw drawn.
+    if (outTargets.length === 0 && hitRunPath.length === 0) outTargets.push("first")
+    // Whether the batter specifically is the one retired at first — used to
+    // color their run to first red/green instead of always the neutral
+    // offense color.
+    const batterOutAtFirst = outTargets.includes("first")
+    const THROW_SPEED_FT_PER_S = 150
+    const THROW_REACTION_MS = 140
+    const LONG_THROW_FT = 180
+    // A throw longer than an infielder's routine range is relayed through a
+    // cutoff man roughly two-thirds of the way in, rather than one throw
+    // flying the entire distance — same as a real outfield assist.
+    const splitLongThrow = (from: Point, to: Point): Point[] =>
+      distance(from, to) > LONG_THROW_FT ? [from, pointLerp(from, to, 0.6), to] : [from, to]
+    const throwSegments: { from: Point; to: Point; startMs: number; durMs: number }[] = []
+    {
+      let cursor = THROW_REACTION_MS
+      let legOrigin = primary.target
+      for (const base of outTargets.slice(0, 2)) {
+        const legTarget = basePoints[base]
+        const hops = splitLongThrow(legOrigin, legTarget)
+        for (let i = 0; i < hops.length - 1; i++) {
+          const from = hops[i]
+          const to = hops[i + 1]
+          const durMs = Math.max(260, (distance(from, to) / THROW_SPEED_FT_PER_S) * 1000)
+          throwSegments.push({ from, to, startMs: cursor, durMs })
+          cursor += durMs + THROW_REACTION_MS
+        }
+        legOrigin = legTarget
+      }
+    }
+    const throwSegmentsFinishMs = throwSegments.length
+      ? throwSegments[throwSegments.length - 1].startMs + throwSegments[throwSegments.length - 1].durMs
+      : 0
+    // A fly ball or liner caught for an out (not a grounder, not a hit)
+    // means any tagging runner has to legally wait for the catch before
+    // leaving their base, instead of breaking as soon as contact is made.
+    const isCaughtFly = !grounder && hitRunPath.length === 0
+    const extraRunners = runnerAdvances
+      .filter((advance) => advance.from !== "home")
+      .map((advance) => {
+        const path = basePathPoints(advance.from, advance.to, basePoints)
+        const lens = [0]
+        for (let i = 1; i < path.length; i++) lens.push(lens[i - 1] + distance(path[i], path[i - 1]))
+        const totalDist = lens[lens.length - 1] || 0
+        const durationMs = Math.max(260, (totalDist / RUNNER_SPEED_FT_PER_S) * 1000)
+        const startAtMs = grounder ? Math.max(0, flightMs - 150) : isCaughtFly ? flightMs + 150 : 280
+        return { advance, path, lens, totalDist, durationMs, startAtMs, finishAtMs: startAtMs + durationMs }
+      })
+    const extraRunnersFinishMs = extraRunners.reduce((max, r) => Math.max(max, r.finishAtMs), 0)
+
+    const totalAnimMs = flightMs + Math.max(runnerMs, hitRunMs + 280, extraRunnersFinishMs, throwSegmentsFinishMs) + 1500
+    const start = performance.now()
     let lastRender = 0
 
-    const animate = (now: number) => {
-      animIdRef.current = requestAnimationFrame(animate)
-      if (el.offsetParent === null) return
-      const elapsed = now - startTime
-      const minInterval = elapsed > TOTAL_ANIM_MS ? 2000 : 50  // 20fps active, ~0fps idle
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect()
+      const dpr = Math.min(window.devicePixelRatio || 1, 2)
+      canvas.width = Math.max(1, Math.floor(rect.width * dpr))
+      canvas.height = Math.max(1, Math.floor(rect.height * dpr))
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    }
+
+    const resizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver(resize) : null
+    resizeObserver?.observe(canvas)
+    resize()
+
+    const render = (now: number) => {
+      animIdRef.current = requestAnimationFrame(render)
+      const elapsed = now - start
+      const minInterval = elapsed > totalAnimMs ? 1000 : 34
       if (now - lastRender < minInterval) return
       lastRender = now
 
-      if (!landed) {
-        const t = Math.min(1, elapsed / FLIGHT_MS)
-        const flashT = Math.min(1, elapsed / 320)
-        launchFlash.scale.setScalar(0.5 + flashT * 1.9)
-        ;(launchFlash.material as THREE.MeshBasicMaterial).opacity = 0.75 * (1 - flashT)
+      const w = canvas.clientWidth || 854
+      const h = canvas.clientHeight || 480
+      const scale = Math.min(w / 520, h / 430)
+      const cx = w / 2
+      const homeY = h - 54
+      const project = (p: Point) => ({ x: cx + p.x * scale, y: homeY - p.y * scale })
 
-        // find segment by arc length
-        const targetLen = t * totalLen
-        let seg = 0
-        for (let i = 1; i < segLens.length; i++) {
-          if (segLens[i] >= targetLen) { seg = i - 1; break }
-          seg = i - 1
+      ctx.clearRect(0, 0, w, h)
+      const bg = ctx.createLinearGradient(0, 0, 0, h)
+      bg.addColorStop(0, "#0f172a")
+      bg.addColorStop(0.48, "#14532d")
+      bg.addColorStop(1, "#0f3f2c")
+      ctx.fillStyle = bg
+      ctx.fillRect(0, 0, w, h)
+
+      const fieldCenter = project({ x: 0, y: 145 })
+      ctx.beginPath()
+      ctx.ellipse(fieldCenter.x, fieldCenter.y, 385 * scale, 320 * scale, 0, Math.PI * 1.08, Math.PI * 1.92)
+      ctx.lineTo(cx, homeY)
+      ctx.closePath()
+      ctx.fillStyle = "#166534"
+      ctx.fill()
+
+      ctx.save()
+      ctx.strokeStyle = "rgba(255,255,255,0.34)"
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(cx, homeY)
+      ctx.lineTo(cx - 340 * scale, homeY - 340 * scale)
+      ctx.moveTo(cx, homeY)
+      ctx.lineTo(cx + 340 * scale, homeY - 340 * scale)
+      ctx.stroke()
+      ctx.restore()
+
+      const wallCenter = project({ x: 0, y: 25 })
+      ctx.beginPath()
+      ctx.arc(wallCenter.x, wallCenter.y, 385 * scale, Math.PI * 1.16, Math.PI * 1.84)
+      ctx.strokeStyle = "rgba(96,165,250,0.58)"
+      ctx.lineWidth = 3
+      ctx.stroke()
+
+      const mound = project({ x: 0, y: 60.5 })
+      const base1 = project(firstBase)
+      const base2 = project(secondBase)
+      const base3 = project(thirdBase)
+      ctx.beginPath()
+      ctx.moveTo(cx, homeY)
+      ctx.lineTo(base1.x, base1.y)
+      ctx.lineTo(base2.x, base2.y)
+      ctx.lineTo(base3.x, base3.y)
+      ctx.closePath()
+      ctx.fillStyle = "#78350f"
+      ctx.globalAlpha = 0.86
+      ctx.fill()
+      ctx.globalAlpha = 1
+      ctx.strokeStyle = "rgba(255,255,255,0.28)"
+      ctx.stroke()
+
+      ctx.beginPath()
+      ctx.arc(mound.x, mound.y, 9 * scale, 0, Math.PI * 2)
+      ctx.fillStyle = "#92400e"
+      ctx.fill()
+      drawDiamond(ctx, base1.x, base1.y, 5 * scale, "#ffffff")
+      drawDiamond(ctx, base2.x, base2.y, 5 * scale, "#ffffff")
+      drawDiamond(ctx, base3.x, base3.y, 5 * scale, "#ffffff")
+      drawDiamond(ctx, cx, homeY, 4.5 * scale, "#ffffff")
+
+      const flightT = Math.min(1, elapsed / flightMs)
+      const targetLen = flightT * totalLen
+      let seg = 0
+      for (let i = 1; i < segLens.length; i++) {
+        if (segLens[i] >= targetLen) { seg = i - 1; break }
+        seg = i - 1
+      }
+      const segT = segLens[seg + 1] > segLens[seg] ? (targetLen - segLens[seg]) / (segLens[seg + 1] - segLens[seg]) : 0
+      const ballPos = pointLerp(points[seg], points[Math.min(seg + 1, points.length - 1)], segT)
+      const activeFielderT = easeOutCubic(Math.min(1, Math.max(0, (flightT - 0.08) / 0.82)))
+      const fielderNow = new Map<string, Point>()
+      for (const f of fielders) {
+        fielderNow.set(f.code, pointLerp(f.start, f.target, f.active ? activeFielderT : activeFielderT * 0.68))
+      }
+
+      const primaryNow = fielderNow.get(primary.code) ?? primary.start
+      const primaryScreen = project(primaryNow)
+      const targetScreen = project(primary.target)
+      ctx.setLineDash([5, 5])
+      ctx.strokeStyle = "rgba(250,204,21,0.78)"
+      ctx.lineWidth = 2
+      ctx.beginPath()
+      ctx.moveTo(primaryScreen.x, primaryScreen.y)
+      ctx.lineTo(targetScreen.x, targetScreen.y)
+      ctx.stroke()
+      ctx.setLineDash([])
+      ctx.beginPath()
+      ctx.arc(targetScreen.x, targetScreen.y, 11 * scale * (1 + Math.sin(elapsed * 0.012) * 0.08), 0, Math.PI * 2)
+      ctx.strokeStyle = "rgba(250,204,21,0.72)"
+      ctx.lineWidth = 2
+      ctx.stroke()
+
+      for (const { base, occupied, pos } of [
+        { base: "first" as const, occupied: !!bases?.first, pos: firstBase },
+        { base: "second" as const, occupied: !!bases?.second, pos: secondBase },
+        { base: "third" as const, occupied: !!bases?.third, pos: thirdBase },
+      ]) {
+        if (!occupied) continue
+        // A runner who's advancing this play runs their own path once their
+        // start time comes up; otherwise (or before that) they sit at base.
+        const runner = extraRunners.find((r) => r.advance.from === base)
+        const runnerT = runner ? (elapsed - runner.startAtMs) / runner.durationMs : 0
+        const runnerPos = runner && runnerT > 0
+          ? pointAlongPath(runner.path, runner.lens, runner.totalDist, easeInOutCubic(runnerT))
+          : pos
+        const p = project(runnerPos)
+        // Stay the neutral team color while still in motion — only flip to
+        // red/out or green/safe once the runner has actually reached the
+        // base and the call is made, not for the whole run there.
+        const dotColor = runner && runnerT >= 1
+          ? (runner.advance.result === "out" ? OUT_COLOR : SAFE_COLOR)
+          : runnerColor
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 6.5 * scale, 0, Math.PI * 2)
+        ctx.fillStyle = dotColor
+        ctx.fill()
+        ctx.strokeStyle = runnerAccentColor
+        ctx.lineWidth = Math.max(1, 1.5 * scale)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, 2.8 * scale, 0, Math.PI * 2)
+        ctx.fillStyle = runnerAccentColor
+        ctx.fill()
+      }
+
+      for (const f of fielders) {
+        const p = project(fielderNow.get(f.code) ?? f.start)
+        const radius = (f.active ? 8.5 : 6.5) * scale
+        if (f.active) {
+          ctx.beginPath()
+          ctx.arc(p.x, p.y, 14 * scale * (1 + Math.sin(elapsed * 0.014) * 0.08), 0, Math.PI * 2)
+          ctx.strokeStyle = "rgba(250,204,21,0.9)"
+          ctx.lineWidth = 2
+          ctx.stroke()
         }
-        const segT = segLens[seg + 1] > segLens[seg]
-          ? (targetLen - segLens[seg]) / (segLens[seg + 1] - segLens[seg])
-          : 0
-        const pos = pts[seg].clone().lerp(pts[Math.min(seg + 1, pts.length - 1)], segT)
-        const fielderT = easeOutCubic(Math.min(1, Math.max(0, (t - 0.08) / 0.82)))
-        for (const f of fielders) {
-          const moveT = f.active ? fielderT : fielderT * 0.68
-          f.root.position.copy(f.start).lerp(f.target, moveT)
-          f.baseRing.position.x = f.root.position.x
-          f.baseRing.position.z = f.root.position.z
-          const pulse = f.active ? 1 + Math.sin(elapsed * 0.014) * 0.1 : 1
-          f.root.scale.setScalar(f.active ? 1.25 + Math.sin(elapsed * 0.014) * 0.08 : 1)
-          f.baseRing.scale.setScalar(pulse)
-        }
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, radius, 0, Math.PI * 2)
+        ctx.fillStyle = fielderColor
+        ctx.fill()
+        ctx.strokeStyle = fielderSecondaryColor
+        ctx.lineWidth = Math.max(1, 2 * scale)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, radius * 0.42, 0, Math.PI * 2)
+        ctx.fillStyle = fielderAccentColor
+        ctx.fill()
 
-        routePositions[0] = primaryFielder.root.position.x
-        routePositions[1] = 0.35
-        routePositions[2] = primaryFielder.root.position.z
-        routePositions[3] = primaryFielder.target.x
-        routePositions[4] = 0.35
-        routePositions[5] = primaryFielder.target.z
-        routeGeo.attributes.position.needsUpdate = true
-        catchMarker.scale.setScalar(1 + Math.sin(elapsed * 0.012) * 0.08)
+        ctx.font = `700 ${Math.max(9, 10 * scale)}px sans-serif`
+        ctx.textAlign = "center"
+        ctx.textBaseline = "middle"
+        const label = shortName(f.name || f.role).slice(0, 10)
+        const labelW = Math.min(70, Math.max(22, ctx.measureText(label).width + 10))
+        const labelY = p.y - radius - 12
+        ctx.fillStyle = "rgba(15,23,42,0.82)"
+        ctx.beginPath()
+        ctx.roundRect(p.x - labelW / 2, labelY - 8, labelW, 16, 7)
+        ctx.fill()
+        ctx.fillStyle = "#ffffff"
+        ctx.fillText(label, p.x, labelY + 0.5)
+      }
 
-        ball.position.copy(pos)
-        ball.rotation.x += 0.22
-        ball.rotation.z += 0.15
-        ball.visible = true
-        shadow.position.set(pos.x, 0.05, pos.z)
-        const shadowScale = Math.max(0.45, 1 - pos.y / 170)
-        shadow.scale.setScalar(shadowScale)
-        shadow.visible = true
+      const trailEnd = Math.max(1, Math.min(points.length - 1, seg + 1))
+      ctx.beginPath()
+      for (let i = 0; i <= trailEnd; i++) {
+        const p = project(points[i])
+        if (i === 0) ctx.moveTo(p.x, p.y)
+        else ctx.lineTo(p.x, p.y)
+      }
+      ctx.strokeStyle = "rgba(254,240,138,0.72)"
+      ctx.lineWidth = 3
+      ctx.stroke()
 
-        // grow trail
-        const trailIdx = Math.min(seg + 1, pts.length - 1)
-        if (trailIdx > trailCount) {
-          for (let i = trailCount; i <= trailIdx; i++) {
-            trailPositions[i * 3]     = pts[i].x
-            trailPositions[i * 3 + 1] = pts[i].y
-            trailPositions[i * 3 + 2] = pts[i].z
-          }
-          trailCount = trailIdx + 1
-          trailGeo.attributes.position.needsUpdate = true
-          trailGeo.setDrawRange(0, trailCount)
-        }
+      const ballScreen = project(ballPos)
+      const ballHeight = ballPos.z ?? 0
+      const shadowScale = Math.max(0.45, 1 - ballHeight / 170)
+      ctx.beginPath()
+      ctx.ellipse(ballScreen.x, ballScreen.y + 5 * scale, 6 * scale * shadowScale, 3 * scale * shadowScale, 0, 0, Math.PI * 2)
+      ctx.fillStyle = "rgba(0,0,0,0.32)"
+      ctx.fill()
+      ctx.beginPath()
+      ctx.arc(ballScreen.x, ballScreen.y - Math.min(42, ballHeight * scale * 0.26), 5 * scale, 0, Math.PI * 2)
+      ctx.fillStyle = "#fef08a"
+      ctx.shadowColor = "rgba(250,204,21,0.85)"
+      ctx.shadowBlur = 14
+      ctx.fill()
+      ctx.shadowBlur = 0
 
-        if (t >= 1) {
-          landed = true
-          ball.visible = grounder
-          shadow.visible = grounder
-          // flash marker at landing
-          marker.position.set(playableLand.x, 0.2, playableLand.z)
-        }
+      if (elapsed >= flightMs) {
+        const land = project(landPt)
+        const ft = Math.min(1, (elapsed - flightMs) / 500)
+        ctx.beginPath()
+        ctx.arc(land.x, land.y, 10 * scale * (1 + ft * 0.9), 0, Math.PI * 2)
+        ctx.strokeStyle = `rgba(254,240,138,${0.8 * (1 - ft * 0.35)})`
+        ctx.lineWidth = 2
+        ctx.stroke()
+      }
 
-        const actionFocus = pos.clone().lerp(primaryFielder.root.position, 0.4)
-        actionFocus.y = Math.max(0, pos.y * 0.25)
-        target.lerp(actionFocus, 0.08)
-        const cameraT = easeOutCubic(t)
-        const desiredCamera = new THREE.Vector3(
-          actionFocus.x * 0.1,
-          150 + Math.min(44, Math.max(0, pos.y * 0.18)) - cameraT * 8,
-          THREE.MathUtils.clamp(215 + actionFocus.z * 0.06 - cameraT * 26, -95, 220)
-        )
-        camera.position.lerp(desiredCamera, 0.07)
-        camera.lookAt(target.x * 0.45, Math.max(0, target.y * 0.55), target.z - 12)
-      } else {
-        // fade-in marker ring
-        const ft = Math.min(1, (elapsed - FLIGHT_MS) / LAND_FLASH_MS)
-        marker.scale.setScalar(1 + ft * 0.9)
-        ;(marker.material as THREE.MeshBasicMaterial).opacity = 0.8 * (1 - ft * 0.35)
-        catchMarker.scale.setScalar(1 + Math.sin(elapsed * 0.012) * 0.08)
+      if (elapsed > flightMs) {
+        const playElapsed = elapsed - flightMs
 
         if (grounder) {
-          const playElapsed = elapsed - FLIGHT_MS
-          const runnerT = easeInOutCubic(Math.min(1, elapsed / RUNNER_MS))
-          runner.visible = true
-          runner.position.copy(new THREE.Vector3(0, 0, 0).lerp(firstBase, runnerT))
-          runner.scale.setScalar(1 + Math.sin(elapsed * 0.018) * 0.08)
+          const runnerT = easeInOutCubic(Math.min(1, elapsed / runnerMs))
+          const runner = project(pointLerp(home, firstBase, runnerT))
+          ctx.beginPath()
+          ctx.arc(runner.x, runner.y, 7 * scale * (1 + Math.sin(elapsed * 0.018) * 0.08), 0, Math.PI * 2)
+          ctx.fillStyle = runnerT >= 1 ? (batterOutAtFirst ? OUT_COLOR : SAFE_COLOR) : runnerColor
+          ctx.fill()
+          ctx.strokeStyle = runnerAccentColor
+          ctx.lineWidth = Math.max(1, 1.5 * scale)
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.arc(runner.x, runner.y, 3 * scale, 0, Math.PI * 2)
+          ctx.fillStyle = runnerAccentColor
+          ctx.fill()
+        }
 
-          const throwT = easeInOutCubic(Math.min(1, Math.max(0, playElapsed - 130) / THROW_MS))
-          const release = primaryFielder.root.position.clone()
-          release.y = 6
-          const glove = firstBase.clone()
-          glove.y = 7
-          const throwPos = release.clone().lerp(glove, throwT)
-          throwPos.y += Math.sin(throwT * Math.PI) * 16
-          ball.position.copy(throwPos)
-          ball.visible = true
-          shadow.position.set(throwPos.x, 0.05, throwPos.z)
-          shadow.scale.setScalar(Math.max(0.45, 1 - throwPos.y / 90))
-          shadow.visible = true
-
-          ;(throwLine.material as THREE.LineBasicMaterial).opacity = throwT > 0 && throwT < 1 ? 0.65 : 0.25
-          throwPositions[0] = release.x
-          throwPositions[1] = 2
-          throwPositions[2] = release.z
-          throwPositions[3] = firstBase.x
-          throwPositions[4] = 2
-          throwPositions[5] = firstBase.z
-          throwGeo.attributes.position.needsUpdate = true
-
-          target.lerp(new THREE.Vector3(35, 10, -45), 0.04)
-          camera.position.lerp(new THREE.Vector3(22, 118, 132), 0.045)
-          camera.lookAt(target.x, target.y, target.z)
+        // Throws that record an out — a routine single throw, a long
+        // outfield assist relayed through a cutoff man, or the two legs of
+        // a double play. Works the same whether the batted ball was a
+        // grounder or a fly/liner caught for an out.
+        for (const seg of throwSegments) {
+          if (playElapsed < seg.startMs) continue
+          const t = easeInOutCubic(Math.min(1, Math.max(0, playElapsed - seg.startMs) / seg.durMs))
+          const release = project(seg.from)
+          const glove = project(seg.to)
+          ctx.beginPath()
+          ctx.moveTo(release.x, release.y)
+          ctx.lineTo(glove.x, glove.y)
+          ctx.strokeStyle = `rgba(255,255,255,${t > 0 && t < 1 ? 0.65 : 0.25})`
+          ctx.lineWidth = 2
+          ctx.stroke()
+          const throwScreen = project(pointLerp(seg.from, seg.to, t))
+          ctx.beginPath()
+          ctx.arc(throwScreen.x, throwScreen.y - Math.sin(t * Math.PI) * 16 * scale, 4.5 * scale, 0, Math.PI * 2)
+          ctx.fillStyle = "#fef08a"
+          ctx.fill()
         }
       }
 
-      // Hit runner animation (runs from contact through all bases)
-      if (!grounder && hitRunPath.length > 1) {
-        const runElapsed = Math.max(0, elapsed - 280)  // 280ms after hit = batter leaving box
+      if (!grounder && hitRunPath.length > 1 && elapsed > flightMs) {
+        const runElapsed = Math.max(0, elapsed - 280)
         if (runElapsed > 0) {
-          const runT = Math.min(1, runElapsed / HIT_RUN_MS)
+          const runT = Math.min(1, runElapsed / hitRunMs)
           const runDist = runT * totalHitRunLen
           let rseg = hitRunPath.length - 2
           for (let i = 1; i < hitRunLens.length; i++) {
             if (hitRunLens[i] >= runDist) { rseg = i - 1; break }
           }
-          const rfrac = hitRunLens[rseg + 1] > hitRunLens[rseg]
-            ? (runDist - hitRunLens[rseg]) / (hitRunLens[rseg + 1] - hitRunLens[rseg])
-            : 0
-          const rpos = hitRunPath[rseg].clone().lerp(hitRunPath[Math.min(rseg + 1, hitRunPath.length - 1)], rfrac)
-          runner.visible = true
-          runner.position.set(rpos.x, Math.abs(Math.sin(runElapsed * 0.06)) * 1.5, rpos.z)
-          runner.scale.setScalar(1 + Math.sin(runElapsed * 0.045) * 0.08)
-
-          // After ball lands, camera transitions to follow runner
-          if (landed) {
-            const blend = Math.min(0.055, 0.015 + (elapsed - FLIGHT_MS) / 25000)
-            target.lerp(new THREE.Vector3(rpos.x * 0.45, 0, rpos.z - 22), blend)
-            camera.position.lerp(new THREE.Vector3(rpos.x * 0.28 - 16, 72, rpos.z + 92), blend * 0.75)
-            camera.lookAt(target)
-          }
+          const rfrac = hitRunLens[rseg + 1] > hitRunLens[rseg] ? (runDist - hitRunLens[rseg]) / (hitRunLens[rseg + 1] - hitRunLens[rseg]) : 0
+          const runner = project(pointLerp(hitRunPath[rseg], hitRunPath[Math.min(rseg + 1, hitRunPath.length - 1)], rfrac))
+          ctx.beginPath()
+          ctx.arc(runner.x, runner.y - Math.abs(Math.sin(runElapsed * 0.06)) * 1.5, 7 * scale, 0, Math.PI * 2)
+          // A categorized hit (single/double/triple/HR) is always safe.
+          ctx.fillStyle = SAFE_COLOR
+          ctx.fill()
+          ctx.strokeStyle = runnerAccentColor
+          ctx.lineWidth = Math.max(1, 1.5 * scale)
+          ctx.stroke()
+          ctx.beginPath()
+          ctx.arc(runner.x, runner.y, 3 * scale, 0, Math.PI * 2)
+          ctx.fillStyle = runnerAccentColor
+          ctx.fill()
         }
       }
-
-      renderer.render(scene, camera)
     }
 
-    animIdRef.current = requestAnimationFrame(animate)
+    animIdRef.current = requestAnimationFrame(render)
 
     return () => {
       cancelAnimationFrame(animIdRef.current)
       resizeObserver?.disconnect()
-      renderer.dispose()
-      el.removeChild(renderer.domElement)
     }
-  }, [traj])
+  }, [bases, defenders, launchAngle, result, traj, runnerAdvances, throwTo, fielderColor, fielderSecondaryColor, fielderAccentColor, runnerColor, runnerAccentColor])
 
   const rl = result ? resultLabel(result) : null
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mountRef} style={{ width: "100%", height: "100%" }} className="overflow-hidden" />
+      <canvas ref={canvasRef} className="block h-full w-full bg-slate-900" />
       {rl && (
         <div
           className="absolute top-[8%] left-1/2 -translate-x-1/2 flex flex-col items-center gap-3 pointer-events-none"
