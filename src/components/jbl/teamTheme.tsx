@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react"
+import { jblTeamSlug } from "../../api/jbl"
 
 export type TeamColors = { primary: string; secondary: string; accent: string }
 
@@ -88,19 +89,63 @@ export function jblThemeStyle(teamName: string): CSSProperties {
   } as CSSProperties
 }
 
-export function teamBadge(name: string) {
-  const c = teamColors(name)
-  const abbr = name.split(" ").slice(-1)[0].slice(0, 3).toUpperCase()
+export function teamLogoUrl(name: string): string {
+  return `/jbl/logos/${jblTeamSlug(name)}.png`
+}
+
+// Derived from each logo's actual opaque ("ink") pixel area, not its
+// rectangular bounding box: scale is proportional to 1 / sqrt(inkArea),
+// normalized so the median logo lands near 1.3. Bounding-box area alone
+// under/over-corrects for shape — a solid circle and a spread-wing eagle can
+// share the same bbox but cover very different fractions of it, so bbox-only
+// normalization still reads as mismatched sizes side by side.
+const TEAM_LOGO_SCALE: Record<string, number> = {
+  "Bronx Wolves": 1.4,
+  "Brooklyn Hammers": 1.29,
+  "Newark Knights": 1.31,
+  // Measured lower than the formula's raw output: this logo's PNG has a large
+  // "QUEENS TITANS" wordmark baked in below the crest, which inflates its
+  // opaque-pixel area relative to logos that are crest-only, so the formula
+  // alone overcorrects it too big. Verified via rendered-pixel measurement.
+  "Queens Titans": 1.58,
+  "Harlem Eagles": 1.15,
+  "Staten Island Foxes": 1.26,
+  "Fishtown Ferals": 1.39,
+  "Manayunk Runners": 1.35,
+  "Germantown Colonials": 1.42,
+  "Fairmount Rams": 1.55,
+  "Capitol Hill Senators": 0.86,
+  "Alexandria Cannons": 1.02,
+  "Bethesda Blaze": 1.5,
+  "Georgetown Ravens": 1.04,
+  "Silver Spring Ghosts": 1.53,
+  "Anacostia Kings": 0.81,
+  "Kensington Iron": 0.8,
+  "South Philly Stallions": 0.76,
+}
+
+type TeamBadgeSize = "md" | "lg" | "xl" | "2xl" | "3xl"
+
+const TEAM_BADGE_SIZE_CLASS: Record<TeamBadgeSize, { frame: string; image: string }> = {
+  md: { frame: "h-11 w-11", image: "h-[38px] w-[38px]" },
+  lg: { frame: "h-14 w-14", image: "h-[48px] w-[48px]" },
+  xl: { frame: "h-20 w-20", image: "h-[70px] w-[70px]" },
+  "2xl": { frame: "h-28 w-28", image: "h-[96px] w-[96px]" },
+  "3xl": { frame: "h-36 w-36", image: "h-[124px] w-[124px]" },
+}
+
+export function teamBadge(name: string, size: TeamBadgeSize = "md") {
+  const scale = TEAM_LOGO_SCALE[name] ?? 1
+  const sizeClass = TEAM_BADGE_SIZE_CLASS[size]
   return (
-    <span
-      className="inline-block rounded px-1.5 py-0.5 text-[10px] font-black tracking-wide"
-      style={{
-        background: `linear-gradient(135deg, ${c.primary}, ${c.secondary})`,
-        color: c.accent,
-        border: `1px solid ${c.primary}88`,
-      }}
-    >
-      {abbr}
+    <span className={`inline-flex ${sizeClass.frame} shrink-0 items-center justify-center`}>
+      <img
+        src={teamLogoUrl(name)}
+        alt={name}
+        className={`block ${sizeClass.image} object-contain`}
+        style={{ transform: `scale(${scale})` }}
+        loading="lazy"
+      />
     </span>
   )
 }

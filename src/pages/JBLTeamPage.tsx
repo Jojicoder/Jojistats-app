@@ -1,19 +1,36 @@
-import { useEffect, useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useEffect, useMemo, useState } from "react"
+import { Link, useNavigate, useParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
-import { getJblData, getJblVisibleGames, type JblTeam } from "../api/jbl"
+import { getJblData, getJblVisibleGames, JBL_SEASON, type JblTeam } from "../api/jbl"
 import { battingFromGames, pitchingFromGames } from "../components/jbl/stats"
-import { jblThemeStyle, teamColors } from "../components/jbl/teamTheme"
-import type { SimBatter, SimPitcher } from "../components/jbl/types"
+import { jblThemeStyle, teamBadge, teamColors } from "../components/jbl/teamTheme"
+import type { GameData, SimBatter, SimPitcher } from "../components/jbl/types"
 
 function StatTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (
-    <div className="rounded-xl bg-[#f7f8f3] p-3 text-center">
+    <div className="rounded-xl bg-[#f7f8f3] p-3 text-center sm:p-4">
       <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
-      <p className="mt-1.5 text-xl font-extrabold text-gray-900">{value}</p>
+      <p className="mt-1.5 text-xl font-extrabold text-gray-900 sm:text-2xl">{value}</p>
       {detail && <p className="mt-0.5 text-xs text-gray-400">{detail}</p>}
     </div>
   )
+}
+
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+      <h2 className="text-base font-bold text-gray-900">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+// Weighted by playing time (PA / IP) since the sim only exports rate stats
+// per player, not the underlying raw counts a true team total needs.
+function weightedAvg(rows: { value: number; weight: number }[]) {
+  const totalWeight = rows.reduce((sum, r) => sum + r.weight, 0)
+  if (totalWeight <= 0) return 0
+  return rows.reduce((sum, r) => sum + r.value * r.weight, 0) / totalWeight
 }
 
 export default function JBLTeamPage() {
@@ -23,6 +40,7 @@ export default function JBLTeamPage() {
   const [teams, setTeams] = useState<JblTeam[]>([])
   const [batters, setBatters] = useState<SimBatter[]>([])
   const [pitchers, setPitchers] = useState<SimPitcher[]>([])
+  const [games, setGames] = useState<GameData[]>([])
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
 
@@ -32,11 +50,12 @@ export default function JBLTeamPage() {
     async function load() {
       try {
         const { teams, visibleThrough } = await getJblData()
-        const games = await getJblVisibleGames(visibleThrough)
+        const rawGames = await getJblVisibleGames(visibleThrough)
         if (cancelled) return
         setTeams([...teams].sort((a, b) => a.name.localeCompare(b.name)))
-        setBatters(battingFromGames(games))
-        setPitchers(pitchingFromGames(games))
+        setBatters(battingFromGames(rawGames))
+        setPitchers(pitchingFromGames(rawGames))
+        setGames(rawGames as unknown as GameData[])
       } catch {
         if (!cancelled) setError("Failed to load this JBL team.")
       } finally {
@@ -55,6 +74,22 @@ export default function JBLTeamPage() {
     const selected = teams.find((candidate) => candidate.name === name)
     if (selected) navigate(`/jbl/teams/${selected.id}`)
   }
+
+  const teamBatters = useMemo(
+    () => (team ? batters.filter((p) => p.team === team.name).sort((a, b) => a.name.localeCompare(b.name)) : []),
+    [batters, team]
+  )
+  const teamPitchers = useMemo(
+    () => (team ? pitchers.filter((p) => p.team === team.name).sort((a, b) => a.name.localeCompare(b.name)) : []),
+    [pitchers, team]
+  )
+  const recentGames = useMemo(() => {
+    if (!team) return []
+    return games
+      .filter((g) => g.away === team.name || g.home === team.name)
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 8)
+  }, [games, team])
 
   return (
     <PageShell
@@ -92,84 +127,163 @@ export default function JBLTeamPage() {
         <div className="space-y-5">
           {(() => {
             const c = teamColors(team.name)
-            const teamBatters = batters.filter((p) => p.team === team.name).slice(0, 5)
-            const teamPitchers = pitchers.filter((p) => p.team === team.name).slice(0, 5)
-            const abbr = team.name.split(" ").slice(-1)[0].slice(0, 3).toUpperCase()
+            const gamesPlayed = team.wins + team.losses
+            const rosterCount = teamBatters.length + teamPitchers.length
+
+            const teamAvg = weightedAvg(teamBatters.map((p) => ({ value: p.avg, weight: p.pa })))
+            const teamObp = weightedAvg(teamBatters.map((p) => ({ value: p.obp, weight: p.pa })))
+            const teamOps = weightedAvg(teamBatters.map((p) => ({ value: p.ops, weight: p.pa })))
+            const teamHr = teamBatters.reduce((sum, p) => sum + p.hr, 0)
+            const teamRbi = teamBatters.reduce((sum, p) => sum + p.rbi, 0)
+
+            const teamEra = weightedAvg(teamPitchers.map((p) => ({ value: p.era, weight: p.ip })))
+            const teamWhip = weightedAvg(teamPitchers.map((p) => ({ value: p.whip, weight: p.ip })))
+            const teamIp = teamPitchers.reduce((sum, p) => sum + p.ip, 0)
+            const teamWins = teamPitchers.reduce((sum, p) => sum + p.w, 0)
+            const teamSaves = teamPitchers.reduce((sum, p) => sum + p.sv, 0)
 
             return (
               <>
-                <section className="rounded-2xl overflow-hidden shadow-sm">
-                  <div
-                    className="px-5 pt-5 pb-4"
-                    style={{ background: `linear-gradient(135deg, ${c.secondary} 0%, ${c.primary}cc 60%, ${c.primary}55 100%)` }}
-                  >
-                    <div className="flex items-end justify-between">
-                      <div>
-                        <p className="text-xs font-black uppercase tracking-[0.28em]" style={{ color: `${c.accent}99` }}>
-                          Team Overview
+                <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="flex min-w-0 items-center gap-3 sm:gap-4">
+                      {teamBadge(team.name, "2xl")}
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-wider sm:text-xs sm:tracking-widest" style={{ color: c.primary }}>
+                          {team.league}
                         </p>
-                        <h1 className="mt-1 text-3xl font-black tracking-tight" style={{ color: c.accent }}>
+                        <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
                           {team.name}
                         </h1>
                       </div>
-                      <span
-                        className="text-5xl font-black tracking-tight select-none leading-none"
-                        style={{ color: `${c.accent}25` }}
-                      >
-                        {abbr}
-                      </span>
                     </div>
+                    <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-bold text-green-900">
+                      {JBL_SEASON} Season
+                    </span>
                   </div>
-                  <div className="h-1" style={{ background: `linear-gradient(90deg, ${c.accent}66, ${c.primary}, ${c.accent}33)` }} />
-                  <div className="bg-white p-5">
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
-                      <StatTile label="W-L" value={`${team.wins}-${team.losses}`} />
-                      <StatTile label="PCT" value={team.pct.toFixed(3)} />
-                      <StatTile label="RS/G" value={team.rsPerGame.toFixed(2)} />
-                      <StatTile label="RA/G" value={team.raPerGame.toFixed(2)} />
-                      <StatTile label="DIFF" value={(team.rsPerGame - team.raPerGame).toFixed(2)} detail="runs/game" />
-                    </div>
+
+                  <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+                    <StatTile label="Record" value={`${team.wins}-${team.losses}`} detail={`${gamesPlayed} games`} />
+                    <StatTile label="Win PCT" value={team.pct.toFixed(3)} />
+                    <StatTile label="Games" value={String(gamesPlayed)} />
+                    <StatTile label="Players" value={String(rosterCount)} />
                   </div>
                 </section>
 
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <section className="rounded-2xl bg-white p-5 shadow-sm">
-                    <h2 className="text-base font-bold" style={{ color: c.primary }}>Top Batters</h2>
-                    <div className="mt-4 space-y-2">
-                      {teamBatters.map((p) => (
-                        <div
-                          key={p.name}
-                          className="flex items-center justify-between rounded-xl px-3 py-2.5"
-                          style={{ background: `${c.primary}0d`, borderLeft: `3px solid ${c.primary}66` }}
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-gray-900">{p.name}</p>
-                            <p className="text-xs text-gray-400">OPS {p.ops.toFixed(3)} · HR {p.hr}</p>
-                          </div>
-                          <span className="font-mono text-sm font-black" style={{ color: c.primary }}>{p.avg.toFixed(3)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
+                <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+                  <div className="min-w-0 flex-1 space-y-5">
+                    <Card title="Roster">
+                      <div className="mt-4 grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                        {teamBatters.map((p) => (
+                          <Link
+                            key={`bat-${p.name}`}
+                            to={`/jbl?team=${encodeURIComponent(team.name)}&view=players&player=${encodeURIComponent(p.name)}`}
+                            className="flex items-center gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5 transition hover:bg-[#eef0e9] hover:shadow-sm"
+                          >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-200 bg-green-50 text-xs font-bold text-green-900">
+                              B
+                            </div>
+                            <div className="min-w-0">
+                              <p className="truncate text-sm font-semibold text-gray-800">{p.name}</p>
+                              <p className="text-xs text-gray-400">Batter</p>
+                            </div>
+                          </Link>
+                        ))}
+                        {teamPitchers.map((p) => {
+                          const role = p.sv > 0 ? "CL" : p.gs > p.gr ? "SP" : "RP"
+                          return (
+                            <Link
+                              key={`pit-${p.name}`}
+                              to={`/jbl?team=${encodeURIComponent(team.name)}&view=players&player=${encodeURIComponent(p.name)}`}
+                              className="flex items-center gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5 transition hover:bg-[#eef0e9] hover:shadow-sm"
+                            >
+                              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-blue-200 bg-blue-50 text-xs font-bold text-blue-900">
+                                P
+                              </div>
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-gray-800">{p.name}</p>
+                                <p className="text-xs text-gray-400">{role}</p>
+                              </div>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </Card>
 
-                  <section className="rounded-2xl bg-white p-5 shadow-sm">
-                    <h2 className="text-base font-bold" style={{ color: c.primary }}>Top Pitchers</h2>
-                    <div className="mt-4 space-y-2">
-                      {teamPitchers.map((p) => (
-                        <div
-                          key={p.name}
-                          className="flex items-center justify-between rounded-xl px-3 py-2.5"
-                          style={{ background: `${c.primary}0d`, borderLeft: `3px solid ${c.primary}66` }}
-                        >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-gray-900">{p.name}</p>
-                            <p className="text-xs text-gray-400">WHIP {p.whip.toFixed(2)} · K/9 {p.k9.toFixed(1)}</p>
-                          </div>
-                          <span className="font-mono text-sm font-black" style={{ color: c.primary }}>{p.era.toFixed(2)}</span>
-                        </div>
-                      ))}
+                    <Card title="Team Batting">
+                      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
+                        <StatTile label="AVG" value={teamAvg.toFixed(3)} />
+                        <StatTile label="OBP" value={teamObp.toFixed(3)} />
+                        <StatTile label="OPS" value={teamOps.toFixed(3)} />
+                        <StatTile label="HR" value={String(teamHr)} />
+                        <StatTile label="RBI" value={String(teamRbi)} />
+                      </div>
+                    </Card>
+
+                    <Card title="Team Pitching">
+                      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
+                        <StatTile label="ERA" value={teamEra.toFixed(2)} />
+                        <StatTile label="WHIP" value={teamWhip.toFixed(2)} />
+                        <StatTile label="IP" value={teamIp.toFixed(1)} />
+                        <StatTile label="W" value={String(teamWins)} />
+                        <StatTile label="SV" value={String(teamSaves)} />
+                      </div>
+                    </Card>
+                  </div>
+
+                  <aside className="shrink-0 lg:w-72">
+                    <div className="rounded-2xl bg-white p-5 shadow-sm lg:sticky lg:top-4">
+                      <h2 className="text-base font-bold text-gray-900">Recent Results</h2>
+                      <p className="mt-0.5 text-xs text-gray-400">
+                        Last {recentGames.length} completed games
+                      </p>
+                      <div className="mt-4 space-y-2">
+                        {recentGames.map((game) => {
+                          const isHome = game.home === team.name
+                          const own = isHome ? game.finalScore.home : game.finalScore.away
+                          const opp = isHome ? game.finalScore.away : game.finalScore.home
+                          const opponent = isHome ? game.away : game.home
+                          const result = own === opp ? "T" : own > opp ? "W" : "L"
+                          return (
+                            <Link
+                              key={game.gameId}
+                              to={`/jbl/games/${game.gameId}?team=${encodeURIComponent(team.name)}&date=${game.date}`}
+                              className="block rounded-xl bg-[#f7f8f3] px-3 py-3 transition hover:bg-[#eef0e9]"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-extrabold ${
+                                  result === "W"
+                                    ? "bg-emerald-100 text-emerald-800"
+                                    : result === "L"
+                                    ? "bg-red-100 text-red-700"
+                                    : "bg-gray-100 text-gray-500"
+                                }`}>
+                                  {result}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-semibold text-gray-900">
+                                    vs {opponent}
+                                  </p>
+                                  <p className="text-xs text-gray-400">
+                                    {new Date(`${game.date}T00:00:00`).toLocaleDateString("en-US", {
+                                      month: "short",
+                                      day: "numeric",
+                                    })}
+                                  </p>
+                                </div>
+                                <span className="text-sm font-extrabold tabular-nums text-gray-700">
+                                  {own}-{opp}
+                                </span>
+                              </div>
+                            </Link>
+                          )
+                        })}
+                        {recentGames.length === 0 && (
+                          <p className="text-sm text-gray-400">No completed games yet.</p>
+                        )}
+                      </div>
                     </div>
-                  </section>
+                  </aside>
                 </div>
               </>
             )

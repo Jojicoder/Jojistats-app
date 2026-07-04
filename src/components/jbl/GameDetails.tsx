@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import StrikeZoneView, { type PitchDot, type SwingInfo } from "../StrikeZoneView"
 import FieldView, { type BallTraj } from "../FieldView"
-import { teamColors } from "./teamTheme"
+import { teamBadge, teamColors } from "./teamTheme"
 import JBLScoreboard from "./JBLScoreboard"
 import { gameStorageKey, isGameRevealed, markGameWatched } from "./gameReveal"
 import type {
@@ -426,8 +426,6 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
   const [speed, setSpeed] = useState(GAME_SPEED)
   const [paused, setPaused] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [selectedInning, setSelectedInning] = useState<number | null>(null)
-  const [selectedIsTop, setSelectedIsTop] = useState<boolean | null>(null)
   const [announcement, setAnnouncement] = useState<{ label: string; sub: string; color: string } | null>(null)
   const logRef = useRef<HTMLDivElement>(null)
   const liveViewRef = useRef<HTMLDivElement>(null)
@@ -780,8 +778,6 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
     // unprocessed, so currentTop/currentInning (derived by scanning
     // events[0..idx-1]) would still show the *previous* half-inning.
     const landingIdx = target + 1
-    setSelectedInning(inning)
-    setSelectedIsTop(isTop)
     setPaused(true)
     setIdx(landingIdx)
     setLog(buildLog(events, landingIdx))
@@ -877,31 +873,35 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
           </div>
         </div>
 
-        <div className="relative z-10 flex items-center justify-center gap-6 px-6 py-5">
-          <div className="flex flex-col items-center gap-1 min-w-[80px]">
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: awayColor }}>{awayShort}</span>
-            <span className="text-4xl font-black text-gray-800 font-mono">
-              <AnimatedScore value={currentScore.away} color={awayColor} active={scoringSide === "away"} label="away-main" />
-            </span>
-            <span className="text-[10px] text-gray-400 text-center">{game.away}</span>
+        <div className="relative z-10 flex items-center justify-between gap-4 px-6 py-5">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            {teamBadge(game.away, "3xl")}
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold text-gray-800">{game.away}</p>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: awayColor }}>{awayShort}</p>
+            </div>
           </div>
 
-          <div className="flex flex-col items-center gap-1 text-center">
+          <div className="flex shrink-0 flex-col items-center gap-1 text-center">
+            <div className="flex items-center gap-2.5 font-mono text-4xl font-black text-gray-800">
+              <AnimatedScore value={currentScore.away} color={awayColor} active={scoringSide === "away"} label="away-main" />
+              <span className="text-lg font-light text-gray-300">–</span>
+              <AnimatedScore value={currentScore.home} color={homeColor} active={scoringSide === "home"} label="home-main" />
+            </div>
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
               {isDone ? "—" : halfLabel(currentInning, currentTop)}
             </span>
-            <span className="text-2xl text-gray-200 font-black">VS</span>
             {!isDone && (
               <span className="text-xs text-gray-400">{currentOuts} OUT{currentOuts !== 1 ? "S" : ""}</span>
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-1 min-w-[80px]">
-            <span className="text-xs font-bold uppercase tracking-wider" style={{ color: homeColor }}>{homeShort}</span>
-            <span className="text-4xl font-black text-gray-800 font-mono">
-              <AnimatedScore value={currentScore.home} color={homeColor} active={scoringSide === "home"} label="home-main" />
-            </span>
-            <span className="text-[10px] text-gray-400 text-center">{game.home}</span>
+          <div className="flex min-w-0 flex-1 flex-row-reverse items-center gap-3">
+            {teamBadge(game.home, "3xl")}
+            <div className="min-w-0 text-right">
+              <p className="truncate text-base font-bold text-gray-800">{game.home}</p>
+              <p className="text-xs font-bold uppercase tracking-wider" style={{ color: homeColor }}>{homeShort}</p>
+            </div>
           </div>
         </div>
 
@@ -915,8 +915,8 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
             finalScore={scoreboardFinalScore}
             events={scoreboardEvents}
             isGameOver={isDone}
-            selectedInning={selectedInning}
-            selectedIsTop={selectedIsTop}
+            selectedInning={currentInning}
+            selectedIsTop={currentTop}
             onSelectHalfInning={selectHalfInning}
           />
         </div>

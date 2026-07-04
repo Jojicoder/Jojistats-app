@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "react-router-dom"
 import { getJblData, getJblVisibleGames } from "../../api/jbl"
 import { battingFromGames, pitchingFromGames } from "./stats"
 import { teamBadge } from "./teamTheme"
@@ -6,7 +7,7 @@ import type { SimBatter, SimPitcher, SimPlayerMode } from "./types"
 
 // ── Batting ────────────────────────────────────────────────────────────────
 
-function BattingView({ batters }: { batters: SimBatter[] }) {
+export function BattingView({ batters }: { batters: SimBatter[] }) {
   return (
     <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100">
@@ -35,7 +36,7 @@ function BattingView({ batters }: { batters: SimBatter[] }) {
           <tbody>
             {batters.map((p, i) => {
               return (
-                <tr key={p.name} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                <tr key={`${p.team}-${p.name}`} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="py-2.5 pl-4 pr-2 text-gray-400 font-mono text-xs">{i + 1}</td>
                   <td className="py-2.5 px-2 font-semibold text-gray-800 whitespace-nowrap">{p.name}</td>
                   <td className="py-2.5 px-2">{teamBadge(p.team)}</td>
@@ -62,7 +63,7 @@ function BattingView({ batters }: { batters: SimBatter[] }) {
 
 // ── Pitching ───────────────────────────────────────────────────────────────
 
-function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
+export function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
   return (
     <div className="rounded-2xl bg-white shadow-sm overflow-hidden">
       <div className="px-4 py-3 border-b border-gray-100">
@@ -93,7 +94,7 @@ function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
               const role = p.sv > 0 ? "CL" : p.gs > p.gr ? "SP" : "RP"
               const roleColor = role === "CL" ? "text-red-600" : role === "SP" ? "text-blue-700" : "text-gray-500"
               return (
-                <tr key={p.name} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
+                <tr key={`${p.team}-${p.name}`} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="py-2.5 pl-4 pr-2 text-gray-400 font-mono text-xs">{i + 1}</td>
                   <td className="py-2.5 px-2 font-semibold text-gray-800 whitespace-nowrap">{p.name}</td>
                   <td className="py-2.5 px-2">{teamBadge(p.team)}</td>
@@ -117,6 +118,175 @@ function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
     </div>
   )
 }
+
+// ── Roster sidebar + player detail (shown once a team is selected) ─────────
+
+type RosterEntry =
+  | { kind: "batter"; name: string; role: "Batter"; data: SimBatter }
+  | { kind: "pitcher"; name: string; role: "SP" | "RP" | "CL"; data: SimPitcher }
+
+function pitcherRole(p: SimPitcher): "SP" | "RP" | "CL" {
+  return p.sv > 0 ? "CL" : p.gs > p.gr ? "SP" : "RP"
+}
+
+function StatTile({ label, value, desc }: { label: string; value: string; desc?: string }) {
+  return (
+    <div className="min-w-0 rounded-xl bg-[#f7f8f3] p-3 sm:p-4">
+      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
+      {desc && <p className="mt-0.5 text-xs text-gray-400">{desc}</p>}
+      <p className="mt-2 break-words text-xl font-extrabold text-gray-900 sm:text-2xl">{value}</p>
+    </div>
+  )
+}
+
+function RosterSidebar({
+  entries,
+  selectedName,
+  onSelect,
+}: {
+  entries: RosterEntry[]
+  selectedName: string | null
+  onSelect: (name: string) => void
+}) {
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-sm">
+      <h2 className="text-sm font-bold text-gray-900">Team Roster</h2>
+      <p className="mt-0.5 text-xs text-gray-400">{entries.length} players</p>
+      <div className="mt-3 max-h-[70vh] space-y-1 overflow-y-auto">
+        {entries.map((entry) => (
+          <button
+            key={`${entry.kind}-${entry.name}`}
+            type="button"
+            onClick={() => onSelect(entry.name)}
+            className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left transition ${
+              selectedName === entry.name ? "bg-green-900 text-white shadow-sm" : "hover:bg-[#f7f8f3]"
+            }`}
+          >
+            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+              selectedName === entry.name
+                ? "bg-white/20 text-white"
+                : entry.kind === "batter" ? "border border-green-200 bg-green-50 text-green-900" : "border border-blue-200 bg-blue-50 text-blue-900"
+            }`}>
+              {entry.role === "Batter" ? "B" : entry.role}
+            </span>
+            <span className="min-w-0 flex-1 truncate text-sm font-semibold">{entry.name}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function PlayerDetail({ teamName, entry }: { teamName: string; entry: RosterEntry }) {
+  if (entry.kind === "batter") {
+    const p = entry.data
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex items-center gap-3">
+            {teamBadge(teamName, "lg")}
+            <div>
+              <p className="text-xs font-bold uppercase tracking-widest text-green-700">{teamName}</p>
+              <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">{p.name}</h1>
+              <p className="mt-0.5 text-sm text-gray-400">Batter</p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <StatTile label="Plate Appearances" value={String(p.pa)} />
+            <StatTile label="Home Runs" value={String(p.hr)} />
+          </div>
+        </div>
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <p className="mb-3 text-xs font-bold uppercase tracking-widest text-green-700">Batting Stats</p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatTile label="AVG" value={p.avg.toFixed(3)} />
+            <StatTile label="OBP" value={p.obp.toFixed(3)} />
+            <StatTile label="SLG" value={p.slg.toFixed(3)} />
+            <StatTile label="OPS" value={p.ops.toFixed(3)} />
+            <StatTile label="wOBA" value={p.woba.toFixed(3)} />
+            <StatTile label="BABIP" value={p.babip.toFixed(3)} />
+            <StatTile label="K%" value={`${p.kPct.toFixed(1)}%`} />
+            <StatTile label="BB%" value={`${p.bbPct.toFixed(1)}%`} />
+            <StatTile label="RBI" value={String(p.rbi)} />
+            <StatTile label="SB" value={String(p.sb)} />
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  const p = entry.data
+  const role = pitcherRole(p)
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+        <div className="flex items-center gap-3">
+          {teamBadge(teamName, "lg")}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-widest text-green-700">{teamName}</p>
+            <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">{p.name}</h1>
+            <p className="mt-0.5 text-sm text-gray-400">{role}</p>
+          </div>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <StatTile label="Innings Pitched" value={p.ip.toFixed(1)} />
+          <StatTile label="Wins" value={String(p.w)} />
+        </div>
+      </div>
+      <section className="rounded-2xl bg-white p-4 shadow-sm">
+        <p className="mb-3 text-xs font-bold uppercase tracking-widest text-green-700">Pitching Stats</p>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatTile label="ERA" value={p.era.toFixed(2)} />
+          <StatTile label="FIP" value={p.fip.toFixed(2)} />
+          <StatTile label="WHIP" value={p.whip.toFixed(2)} />
+          <StatTile label="K/9" value={p.k9.toFixed(1)} />
+          <StatTile label="BB/9" value={p.bb9.toFixed(1)} />
+          <StatTile label="K%" value={`${p.kPct.toFixed(1)}%`} />
+          <StatTile label="BB%" value={`${p.bbPct.toFixed(1)}%`} />
+          <StatTile label="SV" value={String(p.sv)} />
+        </div>
+      </section>
+    </div>
+  )
+}
+
+function TeamRosterExplorer({ teamName, batters, pitchers }: { teamName: string; batters: SimBatter[]; pitchers: SimPitcher[] }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const entries = useMemo<RosterEntry[]>(() => {
+    const batterEntries: RosterEntry[] = batters.map((data) => ({ kind: "batter", name: data.name, role: "Batter", data }))
+    const pitcherEntries: RosterEntry[] = pitchers.map((data) => ({ kind: "pitcher", name: data.name, role: pitcherRole(data), data }))
+    return [...batterEntries, ...pitcherEntries].sort((a, b) => a.name.localeCompare(b.name))
+  }, [batters, pitchers])
+
+  const requestedPlayer = searchParams.get("player")
+  const selected = entries.find((entry) => entry.name === requestedPlayer) ?? entries[0] ?? null
+
+  const handleSelect = (name: string) => {
+    setSearchParams((current) => {
+      const next = new URLSearchParams(current)
+      next.set("player", name)
+      return next
+    })
+  }
+
+  return (
+    <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+      <div className="w-full lg:w-72 lg:shrink-0">
+        <RosterSidebar entries={entries} selectedName={selected?.name ?? null} onSelect={handleSelect} />
+      </div>
+      <div className="min-w-0 flex-1">
+        {selected ? (
+          <PlayerDetail teamName={teamName} entry={selected} />
+        ) : (
+          <div className="rounded-2xl bg-white p-6 shadow-sm text-sm text-gray-400">No players found for this team.</div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Page entry point ─────────────────────────────────────────────────────
 
 export default function PlayersTab({
   selectedTeamName,
@@ -157,6 +327,10 @@ export default function PlayersTab({
 
   if (loading) return <div className="p-4 text-sm text-gray-500">Loading...</div>
   if (error) return <div className="rounded-2xl bg-white p-6 shadow-sm text-sm text-red-500">{error}</div>
+
+  if (selectedTeamName) {
+    return <TeamRosterExplorer teamName={selectedTeamName} batters={filteredBatters} pitchers={filteredPitchers} />
+  }
 
   return (
     <div className="space-y-4">
