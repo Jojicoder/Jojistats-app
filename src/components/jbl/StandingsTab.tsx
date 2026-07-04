@@ -58,9 +58,9 @@ function StandingsCard({
                   isSelected ? "border-l-4 border-l-green-900 bg-green-50" : ""
                 }`}
               >
-                <td className="px-4 py-2.5">
-                  <div className="flex min-w-0 items-center gap-2">
-                    {teamBadge(team.name)}
+                <td className="px-4 py-3.5">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {teamBadge(team.name, "xl")}
                     <Link
                       to={`/jbl/teams/${team.id}`}
                       className="truncate font-bold hover:underline"
@@ -70,12 +70,12 @@ function StandingsCard({
                     </Link>
                   </div>
                 </td>
-                <td className="px-2 py-2.5 text-right font-mono font-semibold text-gray-700">{team.wins}</td>
-                <td className="px-2 py-2.5 text-right font-mono text-gray-500">{team.losses}</td>
-                <td className="px-2 py-2.5 text-right font-mono text-gray-500">
+                <td className="px-2 py-3.5 text-right font-mono font-semibold text-gray-700">{team.wins}</td>
+                <td className="px-2 py-3.5 text-right font-mono text-gray-500">{team.losses}</td>
+                <td className="px-2 py-3.5 text-right font-mono text-gray-500">
                   {team.hasStats ? team.pct.toFixed(3) : "—"}
                 </td>
-                <td className="px-4 py-2.5 text-right font-mono text-gray-400">{gb}</td>
+                <td className="px-4 py-3.5 text-right font-mono text-gray-400">{gb}</td>
               </tr>
             )
           })}

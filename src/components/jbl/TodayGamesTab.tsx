@@ -250,9 +250,7 @@ export default function TodayGamesTab({
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                          {teamBadge(side.name)}
-                        </span>
+                        {teamBadge(side.name, "lg")}
                         <Link
                           to={`/jbl/teams/${jblTeamSlug(side.name)}`}
                           className={`text-sm font-semibold hover:underline ${
