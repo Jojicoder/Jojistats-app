@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react"
 import { useSearchParams } from "react-router-dom"
 import { getJblData, getJblVisibleGames } from "../../api/jbl"
-import { battingFromGames, pitchingFromGames } from "./stats"
-import { teamBadge } from "./teamTheme"
+import { battingFromGames, battingGameLog, pitchingFromGames, pitchingGameLog } from "./stats"
+import { teamBadge, teamColors } from "./teamTheme"
+import JBLTrendChart from "./JBLTrendChart"
+import type { JblGameJson } from "../../sim/jblJsonTypes"
 import type { SimBatter, SimPitcher, SimPlayerMode } from "./types"
 
 // ── Batting ────────────────────────────────────────────────────────────────
@@ -122,7 +124,7 @@ export function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
 // ── Roster sidebar + player detail (shown once a team is selected) ─────────
 
 type RosterEntry =
-  | { kind: "batter"; name: string; role: "Batter"; data: SimBatter }
+  | { kind: "batter"; name: string; role: string; data: SimBatter }
   | { kind: "pitcher"; name: string; role: "SP" | "RP" | "CL"; data: SimPitcher }
 
 function pitcherRole(p: SimPitcher): "SP" | "RP" | "CL" {
@@ -167,9 +169,14 @@ function RosterSidebar({
                 ? "bg-white/20 text-white"
                 : entry.kind === "batter" ? "border border-green-200 bg-green-50 text-green-900" : "border border-blue-200 bg-blue-50 text-blue-900"
             }`}>
-              {entry.role === "Batter" ? "B" : entry.role}
+              {entry.role}
             </span>
             <span className="min-w-0 flex-1 truncate text-sm font-semibold">{entry.name}</span>
+            {entry.data.jerseyNumber && (
+              <span className={`shrink-0 text-xs font-bold ${selectedName === entry.name ? "text-white/70" : "text-gray-400"}`}>
+                #{entry.data.jerseyNumber}
+              </span>
+            )}
           </button>
         ))}
       </div>
@@ -177,9 +184,24 @@ function RosterSidebar({
   )
 }
 
-function PlayerDetail({ teamName, entry }: { teamName: string; entry: RosterEntry }) {
+function PlayerDetail({
+  teamName,
+  entry,
+  games,
+  teamAvgOps,
+  teamAvgEra,
+}: {
+  teamName: string
+  entry: RosterEntry
+  games: JblGameJson[]
+  teamAvgOps: number
+  teamAvgEra: number
+}) {
+  const color = teamColors(teamName).primary
+
   if (entry.kind === "batter") {
     const p = entry.data
+    const log = battingGameLog(games, teamName, p.name)
     return (
       <div className="space-y-4">
         <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
@@ -187,8 +209,11 @@ function PlayerDetail({ teamName, entry }: { teamName: string; entry: RosterEntr
             {teamBadge(teamName, "lg")}
             <div>
               <p className="text-xs font-bold uppercase tracking-widest text-green-700">{teamName}</p>
-              <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">{p.name}</h1>
-              <p className="mt-0.5 text-sm text-gray-400">Batter</p>
+              <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
+                {p.jerseyNumber && <span className="mr-1 text-gray-400">#{p.jerseyNumber}</span>}
+                {p.name}
+              </h1>
+              <p className="mt-0.5 text-sm text-gray-400">{p.position || "Batter"}</p>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-3">
@@ -211,12 +236,20 @@ function PlayerDetail({ teamName, entry }: { teamName: string; entry: RosterEntr
             <StatTile label="SB" value={String(p.sb)} />
           </div>
         </section>
+        <JBLTrendChart
+          title="OPS Trend"
+          points={log.map((pt) => ({ date: pt.date, value: pt.ops }))}
+          color={color}
+          format={(v) => v.toFixed(3)}
+          average={teamAvgOps}
+        />
       </div>
     )
   }
 
   const p = entry.data
   const role = pitcherRole(p)
+  const log = pitchingGameLog(games, teamName, p.name)
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
@@ -224,7 +257,10 @@ function PlayerDetail({ teamName, entry }: { teamName: string; entry: RosterEntr
           {teamBadge(teamName, "lg")}
           <div>
             <p className="text-xs font-bold uppercase tracking-widest text-green-700">{teamName}</p>
-            <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">{p.name}</h1>
+            <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-2xl">
+              {p.jerseyNumber && <span className="mr-1 text-gray-400">#{p.jerseyNumber}</span>}
+              {p.name}
+            </h1>
             <p className="mt-0.5 text-sm text-gray-400">{role}</p>
           </div>
         </div>
@@ -246,21 +282,50 @@ function PlayerDetail({ teamName, entry }: { teamName: string; entry: RosterEntr
           <StatTile label="SV" value={String(p.sv)} />
         </div>
       </section>
+      <JBLTrendChart
+        title="ERA Trend"
+        points={log.map((pt) => ({ date: pt.date, value: pt.era }))}
+        color={color}
+        format={(v) => v.toFixed(2)}
+        average={teamAvgEra}
+      />
     </div>
   )
 }
 
-function TeamRosterExplorer({ teamName, batters, pitchers }: { teamName: string; batters: SimBatter[]; pitchers: SimPitcher[] }) {
+function TeamRosterExplorer({
+  teamName,
+  batters,
+  pitchers,
+  games,
+}: {
+  teamName: string
+  batters: SimBatter[]
+  pitchers: SimPitcher[]
+  games: JblGameJson[]
+}) {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const entries = useMemo<RosterEntry[]>(() => {
-    const batterEntries: RosterEntry[] = batters.map((data) => ({ kind: "batter", name: data.name, role: "Batter", data }))
+    const batterEntries: RosterEntry[] = batters.map((data) => ({ kind: "batter", name: data.name, role: data.position || "B", data }))
     const pitcherEntries: RosterEntry[] = pitchers.map((data) => ({ kind: "pitcher", name: data.name, role: pitcherRole(data), data }))
     return [...batterEntries, ...pitcherEntries].sort((a, b) => a.name.localeCompare(b.name))
   }, [batters, pitchers])
 
   const requestedPlayer = searchParams.get("player")
   const selected = entries.find((entry) => entry.name === requestedPlayer) ?? entries[0] ?? null
+
+  const teamAvgOps = useMemo(() => {
+    const totalPa = batters.reduce((sum, b) => sum + b.pa, 0)
+    if (totalPa <= 0) return 0
+    return batters.reduce((sum, b) => sum + b.ops * b.pa, 0) / totalPa
+  }, [batters])
+
+  const teamAvgEra = useMemo(() => {
+    const totalIp = pitchers.reduce((sum, p) => sum + p.ip, 0)
+    if (totalIp <= 0) return 0
+    return pitchers.reduce((sum, p) => sum + p.era * p.ip, 0) / totalIp
+  }, [pitchers])
 
   const handleSelect = (name: string) => {
     setSearchParams((current) => {
@@ -277,7 +342,13 @@ function TeamRosterExplorer({ teamName, batters, pitchers }: { teamName: string;
       </div>
       <div className="min-w-0 flex-1">
         {selected ? (
-          <PlayerDetail teamName={teamName} entry={selected} />
+          <PlayerDetail
+            teamName={teamName}
+            entry={selected}
+            games={games}
+            teamAvgOps={teamAvgOps}
+            teamAvgEra={teamAvgEra}
+          />
         ) : (
           <div className="rounded-2xl bg-white p-6 shadow-sm text-sm text-gray-400">No players found for this team.</div>
         )}
@@ -296,6 +367,7 @@ export default function PlayersTab({
   const [mode, setMode] = useState<SimPlayerMode>("batting")
   const [batters, setBatters] = useState<SimBatter[]>([])
   const [pitchers, setPitchers] = useState<SimPitcher[]>([])
+  const [games, setGames] = useState<JblGameJson[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -309,6 +381,7 @@ export default function PlayersTab({
         if (cancelled) return
         setBatters(battingFromGames(games))
         setPitchers(pitchingFromGames(games))
+        setGames(games)
       } catch {
         if (!cancelled) setError("Failed to load JBL player stats.")
       } finally {
@@ -329,7 +402,14 @@ export default function PlayersTab({
   if (error) return <div className="rounded-2xl bg-white p-6 shadow-sm text-sm text-red-500">{error}</div>
 
   if (selectedTeamName) {
-    return <TeamRosterExplorer teamName={selectedTeamName} batters={filteredBatters} pitchers={filteredPitchers} />
+    return (
+      <TeamRosterExplorer
+        teamName={selectedTeamName}
+        batters={filteredBatters}
+        pitchers={filteredPitchers}
+        games={games}
+      />
+    )
   }
 
   return (

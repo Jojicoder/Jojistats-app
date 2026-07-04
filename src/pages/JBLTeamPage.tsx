@@ -181,11 +181,14 @@ export default function JBLTeamPage() {
                             className="flex items-center gap-3 rounded-xl bg-[#f7f8f3] px-3 py-2.5 transition hover:bg-[#eef0e9] hover:shadow-sm"
                           >
                             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-green-200 bg-green-50 text-xs font-bold text-green-900">
-                              B
+                              {p.position || "B"}
                             </div>
                             <div className="min-w-0">
                               <p className="truncate text-sm font-semibold text-gray-800">{p.name}</p>
-                              <p className="text-xs text-gray-400">Batter</p>
+                              <p className="text-xs text-gray-400">
+                                {p.jerseyNumber ? `#${p.jerseyNumber} · ` : ""}
+                                {p.position || "Batter"}
+                              </p>
                             </div>
                           </Link>
                         ))}
@@ -202,7 +205,10 @@ export default function JBLTeamPage() {
                               </div>
                               <div className="min-w-0">
                                 <p className="truncate text-sm font-semibold text-gray-800">{p.name}</p>
-                                <p className="text-xs text-gray-400">{role}</p>
+                                <p className="text-xs text-gray-400">
+                                  {p.jerseyNumber ? `#${p.jerseyNumber} · ` : ""}
+                                  {role}
+                                </p>
                               </div>
                             </Link>
                           )

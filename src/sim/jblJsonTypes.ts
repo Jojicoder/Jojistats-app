@@ -118,6 +118,8 @@ export type JblPlayerBoxScore = {
   name: string
   team: string
   age: number
+  jerseyNumber?: number
+  position?: string
   ab: number
   r: number
   h: number
@@ -132,6 +134,7 @@ export type JblPitcherBoxScore = {
   name: string
   team: string
   age?: number
+  jerseyNumber?: number
   ip: number
   h: number
   r: number

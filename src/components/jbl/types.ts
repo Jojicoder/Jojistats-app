@@ -6,6 +6,8 @@ export type SimTeam = JblTeam
 export type SimBatter = {
   name: string
   team: string
+  position: string
+  jerseyNumber: number | null
   pa: number
   avg: number
   obp: number
@@ -23,6 +25,7 @@ export type SimBatter = {
 export type SimPitcher = {
   name: string
   team: string
+  jerseyNumber: number | null
   gs: number
   gr: number
   ip: number

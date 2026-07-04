@@ -124,6 +124,7 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
   const byName = new Map<string, {
     name: string
     team: string
+    jerseyNumber: number | null
     ab: number
     r: number
     h: number
@@ -131,6 +132,7 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
     bb: number
     so: number
     hr: number
+    positionCounts: Map<string, number>
   }>()
 
   for (const game of games) {
@@ -139,6 +141,7 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
       const row = byName.get(key) ?? {
         name: player.name,
         team: player.team,
+        jerseyNumber: null,
         ab: 0,
         r: 0,
         h: 0,
@@ -146,6 +149,7 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
         bb: 0,
         so: 0,
         hr: 0,
+        positionCounts: new Map<string, number>(),
       }
       row.ab += player.ab
       row.r += player.runs ?? player.r ?? 0
@@ -154,6 +158,10 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
       row.bb += player.bb
       row.so += player.so
       row.hr += player.hr
+      if (player.jerseyNumber) row.jerseyNumber = player.jerseyNumber
+      if (player.position) {
+        row.positionCounts.set(player.position, (row.positionCounts.get(player.position) ?? 0) + 1)
+      }
       byName.set(key, row)
     }
   }
@@ -167,9 +175,12 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
       const obp = pa > 0 ? (row.h + row.bb) / pa : 0
       const slg = row.ab > 0 ? totalBases / row.ab : 0
       const bip = row.ab - row.so - row.hr
+      const position = [...row.positionCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? ""
       return {
         name: row.name,
         team: row.team,
+        position,
+        jerseyNumber: row.jerseyNumber,
         pa,
         avg,
         obp,
@@ -187,10 +198,63 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
     .sort((a, b) => b.ops - a.ops)
 }
 
+// ── Per-game trend logs ─────────────────────────────────────────────────────
+// Unlike the season aggregates above, these keep one cumulative data point per
+// game so a player's page can show progression over the season instead of a
+// single final number.
+
+export type BattingTrendPoint = { date: string; gameId: string; avg: number; ops: number }
+export type PitchingTrendPoint = { date: string; gameId: string; era: number; whip: number }
+
+export function battingGameLog(games: JblGameJson[], team: string, name: string): BattingTrendPoint[] {
+  const sorted = [...games].sort((a, b) => a.date.localeCompare(b.date))
+  let ab = 0, h = 0, bb = 0, hr = 0
+  const points: BattingTrendPoint[] = []
+
+  for (const game of sorted) {
+    const row = game.boxScore.batters.find((p) => p.team === team && p.name === name)
+    if (!row) continue
+    ab += row.ab
+    h += row.h
+    bb += row.bb
+    hr += row.hr
+    const pa = ab + bb
+    const singles = Math.max(0, h - hr)
+    const totalBases = singles + hr * 4
+    const avg = ab > 0 ? h / ab : 0
+    const obp = pa > 0 ? (h + bb) / pa : 0
+    const slg = ab > 0 ? totalBases / ab : 0
+    points.push({ date: game.date, gameId: game.gameId, avg, ops: obp + slg })
+  }
+
+  return points
+}
+
+export function pitchingGameLog(games: JblGameJson[], team: string, name: string): PitchingTrendPoint[] {
+  const sorted = [...games].sort((a, b) => a.date.localeCompare(b.date))
+  let ip = 0, er = 0, bb = 0, h = 0
+  const points: PitchingTrendPoint[] = []
+
+  for (const game of sorted) {
+    const row = game.boxScore.pitchers.find((p) => p.team === team && p.name === name)
+    if (!row) continue
+    ip += row.ip
+    er += row.er
+    bb += row.bb
+    h += row.h
+    const era = ip > 0 ? (er * 9) / ip : 0
+    const whip = ip > 0 ? (bb + h) / ip : 0
+    points.push({ date: game.date, gameId: game.gameId, era, whip })
+  }
+
+  return points
+}
+
 export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
   const byName = new Map<string, {
     name: string
     team: string
+    jerseyNumber: number | null
     ip: number
     h: number
     r: number
@@ -209,6 +273,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
       const row = byName.get(key) ?? {
         name: player.name,
         team: player.team,
+        jerseyNumber: null,
         ip: 0,
         h: 0,
         r: 0,
@@ -230,6 +295,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
       row.wins += player.wins
       row.saves += player.saves
       row.games += 1
+      if (player.jerseyNumber) row.jerseyNumber = player.jerseyNumber
       byName.set(key, row)
     }
   }
@@ -238,6 +304,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
     .map((row) => ({
       name: row.name,
       team: row.team,
+      jerseyNumber: row.jerseyNumber,
       gs: 0,
       gr: row.games,
       ip: row.ip,
