@@ -122,6 +122,43 @@ export const LEAGUE_CONFIGS = {
       lineupStyleBoosts: DEFAULT_LINEUP_STYLE_BOOSTS,
     },
   },
+  // JBL is a simulated pro league on the same statistical scale as MLB, so it
+  // reuses the MLB thresholds rather than inventing a new band.
+  jbl: {
+    label: "JBL",
+    stats: {
+      base: MLB_BASE_STATS,
+      pitchingRoles: {
+        starter: {
+          ...MLB_BASE_STATS,
+          ERA:  { hi: 3.00, lo: 4.50, lowerBetter: true },
+          WHIP: { hi: 1.10, lo: 1.35, lowerBetter: true },
+          IP:   { hi: 180,  lo: 120 },
+          W:    { hi: 15,   lo: 8 },
+        },
+        reliever: {
+          ...MLB_BASE_STATS,
+          ERA:  { hi: 2.50, lo: 4.00, lowerBetter: true },
+          WHIP: { hi: 1.00, lo: 1.30, lowerBetter: true },
+          HLD:  { hi: 20,   lo: 8 },
+          "K/9": { hi: 11.0, lo: 7.5 },
+        },
+        closer: {
+          ...MLB_BASE_STATS,
+          ERA:  { hi: 2.00, lo: 3.50, lowerBetter: true },
+          WHIP: { hi: 0.95, lo: 1.25, lowerBetter: true },
+          SV:   { hi: 30,   lo: 15 },
+          BS:   { hi: -1,   lo: 5,   lowerBetter: true },
+          "K/9": { hi: 11.0, lo: 8.0 },
+        },
+      },
+    },
+    manager: {
+      minimumRatePa: 8,
+      lineupSlots: DEFAULT_LINEUP_SLOTS,
+      lineupStyleBoosts: DEFAULT_LINEUP_STYLE_BOOSTS,
+    },
+  },
   jaa: {
     label: "JAA",
     stats: {

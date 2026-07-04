@@ -2,15 +2,46 @@ import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import { getJblData, getJblVisibleGames, JBL_SEASON, type JblTeam } from "../api/jbl"
-import { battingFromGames, pitchingFromGames } from "../components/jbl/stats"
+import { battingFromGames, fmtAvg, pitchingFromGames } from "../components/jbl/stats"
 import { jblThemeStyle, teamBadge, teamColors } from "../components/jbl/teamTheme"
+import { getStatColor } from "../components/mlb/playerStats"
 import type { GameData, SimBatter, SimPitcher } from "../components/jbl/types"
 
-function StatTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
+type StatColor = ReturnType<typeof getStatColor>
+
+const NEUTRAL_STAT_COLOR: StatColor = {
+  bg: "bg-[#f7f8f3]",
+  lbl: "text-gray-400",
+  val: "text-gray-900",
+}
+
+function getRecordColor(winPercentage: number): StatColor {
+  if (!Number.isFinite(winPercentage)) return NEUTRAL_STAT_COLOR
+  if (winPercentage >= 0.55) {
+    return { bg: "bg-emerald-50", lbl: "text-emerald-700", val: "text-emerald-900" }
+  }
+  if (winPercentage <= 0.45) {
+    return { bg: "bg-rose-50", lbl: "text-rose-600", val: "text-rose-900" }
+  }
+  return NEUTRAL_STAT_COLOR
+}
+
+function StatTile({
+  label,
+  value,
+  detail,
+  color,
+}: {
+  label: string
+  value: string
+  detail?: string
+  color?: StatColor
+}) {
+  const resolved = color ?? getStatColor(label, value, "jbl")
   return (
-    <div className="rounded-xl bg-[#f7f8f3] p-3 text-center sm:p-4">
-      <p className="text-xs font-bold uppercase tracking-widest text-gray-400">{label}</p>
-      <p className="mt-1.5 text-xl font-extrabold text-gray-900 sm:text-2xl">{value}</p>
+    <div className={`rounded-xl p-3 text-center sm:p-4 ${resolved.bg}`}>
+      <p className={`text-xs font-bold uppercase tracking-widest ${resolved.lbl}`}>{label}</p>
+      <p className={`mt-1.5 text-xl font-extrabold sm:text-2xl ${resolved.val}`}>{value}</p>
       {detail && <p className="mt-0.5 text-xs text-gray-400">{detail}</p>}
     </div>
   )
@@ -129,6 +160,7 @@ export default function JBLTeamPage() {
             const c = teamColors(team.name)
             const gamesPlayed = team.wins + team.losses
             const rosterCount = teamBatters.length + teamPitchers.length
+            const recordColor = getRecordColor(team.pct)
 
             const teamAvg = weightedAvg(teamBatters.map((p) => ({ value: p.avg, weight: p.pa })))
             const teamObp = weightedAvg(teamBatters.map((p) => ({ value: p.obp, weight: p.pa })))
@@ -147,7 +179,7 @@ export default function JBLTeamPage() {
                 <section className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
                   <div className="flex flex-wrap items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                      {teamBadge(team.name, "2xl")}
+                      {teamBadge(team.name, "3xl")}
                       <div className="min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-wider sm:text-xs sm:tracking-widest" style={{ color: c.primary }}>
                           {team.league}
@@ -163,8 +195,8 @@ export default function JBLTeamPage() {
                   </div>
 
                   <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-                    <StatTile label="Record" value={`${team.wins}-${team.losses}`} detail={`${gamesPlayed} games`} />
-                    <StatTile label="Win PCT" value={team.pct.toFixed(3)} />
+                    <StatTile label="Record" value={`${team.wins}-${team.losses}`} detail={`${gamesPlayed} games`} color={recordColor} />
+                    <StatTile label="Win PCT" value={fmtAvg(team.pct)} color={recordColor} />
                     <StatTile label="Games" value={String(gamesPlayed)} />
                     <StatTile label="Players" value={String(rosterCount)} />
                   </div>
@@ -193,7 +225,7 @@ export default function JBLTeamPage() {
                           </Link>
                         ))}
                         {teamPitchers.map((p) => {
-                          const role = p.sv > 0 ? "CL" : p.gs > p.gr ? "SP" : "RP"
+                          const role = p.gs / p.gr >= 0.5 ? "SP" : p.sv > 0 ? "CL" : "RP"
                           return (
                             <Link
                               key={`pit-${p.name}`}
@@ -218,9 +250,9 @@ export default function JBLTeamPage() {
 
                     <Card title="Team Batting">
                       <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-5 sm:gap-3">
-                        <StatTile label="AVG" value={teamAvg.toFixed(3)} />
-                        <StatTile label="OBP" value={teamObp.toFixed(3)} />
-                        <StatTile label="OPS" value={teamOps.toFixed(3)} />
+                        <StatTile label="AVG" value={fmtAvg(teamAvg)} />
+                        <StatTile label="OBP" value={fmtAvg(teamObp)} />
+                        <StatTile label="OPS" value={fmtAvg(teamOps)} />
                         <StatTile label="HR" value={String(teamHr)} />
                         <StatTile label="RBI" value={String(teamRbi)} />
                       </div>

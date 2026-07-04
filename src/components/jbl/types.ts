@@ -8,6 +8,8 @@ export type SimBatter = {
   team: string
   position: string
   jerseyNumber: number | null
+  games: number
+  ab: number
   pa: number
   avg: number
   obp: number

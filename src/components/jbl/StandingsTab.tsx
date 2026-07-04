@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { getJblData, type JblStandingLeague } from "../../api/jbl"
 import { ALL_TEAMS } from "../../sim/jblSeason"
+import { fmtAvg } from "./stats"
 import { teamBadge, teamColors } from "./teamTheme"
 import type { SimTeam } from "./types"
 
@@ -73,7 +74,7 @@ function StandingsCard({
                 <td className="px-2 py-3.5 text-right font-mono font-semibold text-gray-700">{team.wins}</td>
                 <td className="px-2 py-3.5 text-right font-mono text-gray-500">{team.losses}</td>
                 <td className="px-2 py-3.5 text-right font-mono text-gray-500">
-                  {team.hasStats ? team.pct.toFixed(3) : "—"}
+                  {team.hasStats ? fmtAvg(team.pct) : "—"}
                 </td>
                 <td className="px-4 py-3.5 text-right font-mono text-gray-400">{gb}</td>
               </tr>
