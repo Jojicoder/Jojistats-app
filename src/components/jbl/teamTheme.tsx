@@ -93,35 +93,30 @@ export function teamLogoUrl(name: string): string {
   return `/jbl/logos/${jblTeamSlug(name)}.png`
 }
 
-// Derived from each logo's actual opaque ("ink") pixel area, not its
-// rectangular bounding box: scale is proportional to 1 / sqrt(inkArea),
-// normalized so the median logo lands near 1.3. Bounding-box area alone
-// under/over-corrects for shape — a solid circle and a spread-wing eagle can
-// share the same bbox but cover very different fractions of it, so bbox-only
-// normalization still reads as mismatched sizes side by side.
+// All 18 source PNGs are now auto-cropped to their opaque-pixel bounding box
+// (see scripts used to strip the baked-in canvas padding), so this only needs
+// to correct for remaining ink-density differences (a solid crest vs. a wide,
+// sparse one like Harlem Eagles' spread wings) — derived from actual rendered
+// pixel measurement, not the raw bounding box.
 const TEAM_LOGO_SCALE: Record<string, number> = {
-  "Bronx Wolves": 1.4,
-  "Brooklyn Hammers": 1.29,
-  "Newark Knights": 1.31,
-  // Measured lower than the formula's raw output: this logo's PNG has a large
-  // "QUEENS TITANS" wordmark baked in below the crest, which inflates its
-  // opaque-pixel area relative to logos that are crest-only, so the formula
-  // alone overcorrects it too big. Verified via rendered-pixel measurement.
-  "Queens Titans": 1.58,
-  "Harlem Eagles": 1.15,
-  "Staten Island Foxes": 1.26,
-  "Fishtown Ferals": 1.39,
-  "Manayunk Runners": 1.35,
-  "Germantown Colonials": 1.42,
-  "Fairmount Rams": 1.55,
-  "Capitol Hill Senators": 0.86,
-  "Alexandria Cannons": 1.02,
-  "Bethesda Blaze": 1.5,
-  "Georgetown Ravens": 1.04,
-  "Silver Spring Ghosts": 1.53,
-  "Anacostia Kings": 0.81,
-  "Kensington Iron": 0.8,
-  "South Philly Stallions": 0.76,
+  "Bronx Wolves": 0.94,
+  "Brooklyn Hammers": 1.01,
+  "Newark Knights": 0.94,
+  "Queens Titans": 1.13,
+  "Harlem Eagles": 1.47,
+  "Staten Island Foxes": 0.94,
+  "Fishtown Ferals": 0.91,
+  "Manayunk Runners": 0.93,
+  "Germantown Colonials": 1.05,
+  "Fairmount Rams": 1.04,
+  "Capitol Hill Senators": 1.01,
+  "Alexandria Cannons": 1.06,
+  "Bethesda Blaze": 0.97,
+  "Georgetown Ravens": 1.0,
+  "Silver Spring Ghosts": 1.0,
+  "Anacostia Kings": 0.96,
+  "Kensington Iron": 1.03,
+  "South Philly Stallions": 0.92,
 }
 
 type TeamBadgeSize = "md" | "lg" | "xl" | "2xl" | "3xl"

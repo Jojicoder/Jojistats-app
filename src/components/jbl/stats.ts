@@ -1,6 +1,13 @@
 import type { JblGameJson } from "../../sim/jblJsonTypes"
 import type { GameData, SimBatter, SimPitcher } from "./types"
 
+// Baseball convention: rate stats that live in [0, 1) drop the leading zero
+// (".313", not "0.313"). Values that reach 1.000+ (e.g. a big OPS) keep it.
+export function fmtAvg(value: number, decimals = 3): string {
+  const s = value.toFixed(decimals)
+  return value < 1 ? s.replace(/^0\./, ".") : s
+}
+
 export function normalizeGame(game: JblGameJson): GameData {
   return {
     gameId: game.gameId,
@@ -125,6 +132,7 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
     name: string
     team: string
     jerseyNumber: number | null
+    games: number
     ab: number
     r: number
     h: number
@@ -142,6 +150,7 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
         name: player.name,
         team: player.team,
         jerseyNumber: null,
+        games: 0,
         ab: 0,
         r: 0,
         h: 0,
@@ -151,6 +160,7 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
         hr: 0,
         positionCounts: new Map<string, number>(),
       }
+      row.games += 1
       row.ab += player.ab
       row.r += player.runs ?? player.r ?? 0
       row.h += player.h
@@ -181,6 +191,8 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
         team: row.team,
         position,
         jerseyNumber: row.jerseyNumber,
+        games: row.games,
+        ab: row.ab,
         pa,
         avg,
         obp,
@@ -198,56 +210,65 @@ export function battingFromGames(games: JblGameJson[]): SimBatter[] {
     .sort((a, b) => b.ops - a.ops)
 }
 
-// ── Per-game trend logs ─────────────────────────────────────────────────────
-// Unlike the season aggregates above, these keep one cumulative data point per
-// game so a player's page can show progression over the season instead of a
-// single final number.
+// ── Per-game raw logs ────────────────────────────────────────────────────────
+// One raw stat line per game a player actually appeared in (not accumulated),
+// so a player's page can build a cumulative trend over any trailing window
+// (e.g. "last 15 games") the same way it builds one over the full season.
 
-export type BattingTrendPoint = { date: string; gameId: string; avg: number; ops: number }
-export type PitchingTrendPoint = { date: string; gameId: string; era: number; whip: number }
+export type BattingRawGame = {
+  date: string; gameId: string; opp: string; isHome: boolean
+  ab: number; h: number; bb: number; hr: number; r: number; rbi: number; so: number
+}
+export type PitchingRawGame = {
+  date: string; gameId: string; opp: string; isHome: boolean
+  ip: number; er: number; bb: number; h: number; so: number; saves: number; hr: number; r: number
+}
 
-export function battingGameLog(games: JblGameJson[], team: string, name: string): BattingTrendPoint[] {
+export function battingRawGameLog(games: JblGameJson[], team: string, name: string): BattingRawGame[] {
   const sorted = [...games].sort((a, b) => a.date.localeCompare(b.date))
-  let ab = 0, h = 0, bb = 0, hr = 0
-  const points: BattingTrendPoint[] = []
-
+  const out: BattingRawGame[] = []
   for (const game of sorted) {
     const row = game.boxScore.batters.find((p) => p.team === team && p.name === name)
     if (!row) continue
-    ab += row.ab
-    h += row.h
-    bb += row.bb
-    hr += row.hr
-    const pa = ab + bb
-    const singles = Math.max(0, h - hr)
-    const totalBases = singles + hr * 4
-    const avg = ab > 0 ? h / ab : 0
-    const obp = pa > 0 ? (h + bb) / pa : 0
-    const slg = ab > 0 ? totalBases / ab : 0
-    points.push({ date: game.date, gameId: game.gameId, avg, ops: obp + slg })
+    out.push({
+      date: game.date,
+      gameId: game.gameId,
+      opp: game.away === team ? game.home : game.away,
+      isHome: game.home === team,
+      ab: row.ab,
+      h: row.h,
+      bb: row.bb,
+      hr: row.hr,
+      r: row.runs ?? row.r ?? 0,
+      rbi: row.rbi,
+      so: row.so,
+    })
   }
-
-  return points
+  return out
 }
 
-export function pitchingGameLog(games: JblGameJson[], team: string, name: string): PitchingTrendPoint[] {
+export function pitchingRawGameLog(games: JblGameJson[], team: string, name: string): PitchingRawGame[] {
   const sorted = [...games].sort((a, b) => a.date.localeCompare(b.date))
-  let ip = 0, er = 0, bb = 0, h = 0
-  const points: PitchingTrendPoint[] = []
-
+  const out: PitchingRawGame[] = []
   for (const game of sorted) {
     const row = game.boxScore.pitchers.find((p) => p.team === team && p.name === name)
     if (!row) continue
-    ip += row.ip
-    er += row.er
-    bb += row.bb
-    h += row.h
-    const era = ip > 0 ? (er * 9) / ip : 0
-    const whip = ip > 0 ? (bb + h) / ip : 0
-    points.push({ date: game.date, gameId: game.gameId, era, whip })
+    out.push({
+      date: game.date,
+      gameId: game.gameId,
+      opp: game.away === team ? game.home : game.away,
+      isHome: game.home === team,
+      ip: row.ip,
+      er: row.er,
+      bb: row.bb,
+      h: row.h,
+      so: row.so,
+      saves: row.saves,
+      hr: row.hr,
+      r: row.r,
+    })
   }
-
-  return points
+  return out
 }
 
 export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
@@ -265,6 +286,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
     wins: number
     saves: number
     games: number
+    gamesStarted: number
   }>()
 
   for (const game of games) {
@@ -284,6 +306,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
         wins: 0,
         saves: 0,
         games: 0,
+        gamesStarted: 0,
       }
       row.ip += player.ip
       row.h += player.h
@@ -295,6 +318,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
       row.wins += player.wins
       row.saves += player.saves
       row.games += 1
+      row.gamesStarted += player.gamesStarted ?? 0
       if (player.jerseyNumber) row.jerseyNumber = player.jerseyNumber
       byName.set(key, row)
     }
@@ -305,7 +329,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
       name: row.name,
       team: row.team,
       jerseyNumber: row.jerseyNumber,
-      gs: 0,
+      gs: row.gamesStarted,
       gr: row.games,
       ip: row.ip,
       w: row.wins,
@@ -319,4 +343,29 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
       sv: row.saves,
     }))
     .sort((a, b) => a.era - b.era)
+}
+
+// ── Handedness ───────────────────────────────────────────────────────────
+// Not tracked on the roster itself — read off the first pitch event where the
+// player actually batted/pitched, same approach GameDetails.tsx uses for the
+// Pitching Staff card.
+
+export function battingHandFor(games: JblGameJson[], team: string, name: string): "L" | "R" | null {
+  for (const game of games) {
+    if (game.away !== team && game.home !== team) continue
+    for (const ev of game.events) {
+      if (ev.type === "pitch" && ev.batter === name && ev.batHand) return ev.batHand
+    }
+  }
+  return null
+}
+
+export function pitchingHandFor(games: JblGameJson[], team: string, name: string): "L" | "R" | null {
+  for (const game of games) {
+    if (game.away !== team && game.home !== team) continue
+    for (const ev of game.events) {
+      if (ev.type === "pitch" && ev.pitcher === name && ev.pitchHand) return ev.pitchHand
+    }
+  }
+  return null
 }
