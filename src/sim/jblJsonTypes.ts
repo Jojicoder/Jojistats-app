@@ -136,6 +136,7 @@ export type JblPitcherBoxScore = {
   age?: number
   jerseyNumber?: number
   gamesStarted?: number
+  role?: "SP" | "LR" | "MR" | "SU" | "CL"
   ip: number
   h: number
   r: number

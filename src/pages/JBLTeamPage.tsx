@@ -225,7 +225,7 @@ export default function JBLTeamPage() {
                           </Link>
                         ))}
                         {teamPitchers.map((p) => {
-                          const role = p.gs / p.gr >= 0.5 ? "SP" : p.sv > 0 ? "CL" : "RP"
+                          const role = p.role
                           return (
                             <Link
                               key={`pit-${p.name}`}

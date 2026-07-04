@@ -1,7 +1,6 @@
 import type { BattingRawGame, PitchingRawGame } from "./stats"
 
 export type ChartMetric = "avg" | "obp" | "ops"
-export type PitchRole = "SP" | "RP" | "CL"
 export type WindowMode = "recent" | "season"
 
 export const HITTING_SUMMARY = [
@@ -18,12 +17,6 @@ export function fmtR(n: number) {
 export function dateLabel(iso: string) {
   const [, m, d] = iso.split("-")
   return `${Number(m)}/${Number(d)}`
-}
-
-export function inferPitchRole(p: { ipPerG: number; totalSaves: number }): PitchRole {
-  if (p.totalSaves >= 2) return "CL"
-  if (p.ipPerG >= 3.5) return "SP"
-  return "RP"
 }
 
 export function buildHittingPoints(log: BattingRawGame[]) {

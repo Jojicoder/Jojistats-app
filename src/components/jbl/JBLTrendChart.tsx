@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from "react"
 import { getStatColor } from "../mlb/playerStats"
 import type { BattingRawGame, PitchingRawGame } from "./stats"
+import type { PitcherRoleAbbr } from "./types"
 import {
   fmtR, dateLabel,
   buildHittingPoints, buildPitchingPoints,
-  inferPitchRole, HITTING_SUMMARY,
+  HITTING_SUMMARY,
   type ChartMetric, type WindowMode,
 } from "./JBLTrendChartUtils"
 
@@ -14,7 +15,7 @@ const CP = { top: 16, right: 16, bottom: 36, left: 48 }
 
 type Props =
   | { mode: "hitting"; log: BattingRawGame[]; teamAverage: Record<ChartMetric, number> }
-  | { mode: "pitching"; log: PitchingRawGame[]; teamAverage: number }
+  | { mode: "pitching"; log: PitchingRawGame[]; teamAverage: number; role: PitcherRoleAbbr }
 
 export default function JBLTrendChart(props: Props) {
   const { mode, log } = props
@@ -124,7 +125,7 @@ export default function JBLTrendChart(props: Props) {
 
       {mode === "pitching" && pitPoints.length > 0 && (() => {
         const p = pitPoints[pitPoints.length - 1]
-        const role = inferPitchRole(p)
+        const role = props.role === "SP" ? "SP" : props.role === "CL" ? "CL" : "RP"
         const fmtDec = (v: number) => v.toFixed(2)
         const fmtIP = (v: number) => v.toFixed(1)
 
