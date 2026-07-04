@@ -12,7 +12,7 @@ import { getStatColor } from "../mlb/playerStats"
 import type { ChartMetric } from "./JBLTrendChartUtils"
 import type { PitchingRoleKey } from "../../config/leagueConfig"
 import type { JblGameJson } from "../../sim/jblJsonTypes"
-import type { SimBatter, SimPitcher, SimPlayerMode } from "./types"
+import type { PitcherRoleAbbr, SimBatter, SimPitcher, SimPlayerMode } from "./types"
 
 // ── Batting ────────────────────────────────────────────────────────────────
 
@@ -100,8 +100,8 @@ export function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
           </thead>
           <tbody>
             {pitchers.map((p, i) => {
-              const role = p.gs / p.gr >= 0.5 ? "SP" : p.sv > 0 ? "CL" : "RP"
-              const roleColor = role === "CL" ? "text-red-600" : role === "SP" ? "text-blue-700" : "text-gray-500"
+              const role = p.role
+              const roleColor = role === "CL" ? "text-red-600" : role === "SP" ? "text-blue-700" : role === "SU" ? "text-amber-600" : "text-gray-500"
               return (
                 <tr key={`${p.team}-${p.name}`} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition-colors">
                   <td className="py-2.5 pl-4 pr-2 text-gray-400 font-mono text-xs">{i + 1}</td>
@@ -132,10 +132,10 @@ export function PitchingView({ pitchers }: { pitchers: SimPitcher[] }) {
 
 type RosterEntry =
   | { kind: "batter"; name: string; role: string; data: SimBatter }
-  | { kind: "pitcher"; name: string; role: "SP" | "RP" | "CL"; data: SimPitcher }
+  | { kind: "pitcher"; name: string; role: PitcherRoleAbbr; data: SimPitcher }
 
-function pitcherRole(p: SimPitcher): "SP" | "RP" | "CL" {
-  return p.gs / p.gr >= 0.5 ? "SP" : p.sv > 0 ? "CL" : "RP"
+function pitcherRole(p: SimPitcher): PitcherRoleAbbr {
+  return p.role
 }
 
 function StatTile({
@@ -379,7 +379,7 @@ function PlayerDetail({
             <StatTile label="SV" value={String(p.sv)} />
           </div>
         </section>
-        <JBLTrendChart mode="pitching" log={log} teamAverage={teamAvgEra} />
+        <JBLTrendChart mode="pitching" log={log} teamAverage={teamAvgEra} role={role} />
         <JBLGameLog mode="pitching" log={log} />
       </div>
     )

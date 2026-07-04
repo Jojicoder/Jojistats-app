@@ -24,10 +24,13 @@ export type SimBatter = {
   sb: number
 }
 
+export type PitcherRoleAbbr = "SP" | "LR" | "MR" | "SU" | "CL"
+
 export type SimPitcher = {
   name: string
   team: string
   jerseyNumber: number | null
+  role: PitcherRoleAbbr
   gs: number
   gr: number
   ip: number

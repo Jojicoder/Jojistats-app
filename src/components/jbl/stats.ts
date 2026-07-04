@@ -1,5 +1,5 @@
 import type { JblGameJson } from "../../sim/jblJsonTypes"
-import type { GameData, SimBatter, SimPitcher } from "./types"
+import type { GameData, PitcherRoleAbbr, SimBatter, SimPitcher } from "./types"
 
 // Baseball convention: rate stats that live in [0, 1) drop the leading zero
 // (".313", not "0.313"). Values that reach 1.000+ (e.g. a big OPS) keep it.
@@ -276,6 +276,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
     name: string
     team: string
     jerseyNumber: number | null
+    roleCounts: Map<string, number>
     ip: number
     h: number
     r: number
@@ -296,6 +297,7 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
         name: player.name,
         team: player.team,
         jerseyNumber: null,
+        roleCounts: new Map<string, number>(),
         ip: 0,
         h: 0,
         r: 0,
@@ -320,15 +322,24 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
       row.games += 1
       row.gamesStarted += player.gamesStarted ?? 0
       if (player.jerseyNumber) row.jerseyNumber = player.jerseyNumber
+      if (player.role) row.roleCounts.set(player.role, (row.roleCounts.get(player.role) ?? 0) + 1)
       byName.set(key, row)
     }
   }
 
   return [...byName.values()]
-    .map((row) => ({
+    .map((row) => {
+      // Prefer the roster-assigned role (most frequent across appearances);
+      // fall back to a share-of-starts/saves heuristic for older game data
+      // exported before the engine started reporting it.
+      const roleFromData = [...row.roleCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] as PitcherRoleAbbr | undefined
+      const role: PitcherRoleAbbr = roleFromData
+        ?? (row.gamesStarted / row.games >= 0.5 ? "SP" : row.saves > 0 ? "CL" : "MR")
+      return {
       name: row.name,
       team: row.team,
       jerseyNumber: row.jerseyNumber,
+      role,
       gs: row.gamesStarted,
       gr: row.games,
       ip: row.ip,
@@ -341,7 +352,8 @@ export function pitchingFromGames(games: JblGameJson[]): SimPitcher[] {
       bbPct: row.so + row.bb + row.h > 0 ? (row.bb / (row.so + row.bb + row.h)) * 100 : 0,
       fip: row.ip > 0 ? ((13 * row.hr + 3 * row.bb - 2 * row.so) / row.ip) + 3.1 : 0,
       sv: row.saves,
-    }))
+      }
+    })
     .sort((a, b) => a.era - b.era)
 }
 
