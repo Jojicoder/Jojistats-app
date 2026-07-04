@@ -4,17 +4,18 @@ import PageShell from "../components/PageShell"
 import PlayersTab from "../components/jbl/PlayersTab"
 import StandingsTab from "../components/jbl/StandingsTab"
 import TodayGamesTab from "../components/jbl/TodayGamesTab"
+import TeamIdentityTab from "../components/jbl/TeamIdentityTab"
 import { jblThemeStyle } from "../components/jbl/teamTheme"
 import { getJblData, type JblTeam } from "../api/jbl"
 
-type JblView = "team" | "today" | "standings" | "players"
+type JblView = "team" | "today" | "standings" | "players" | "identity"
 
 export default function JBLPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view")
   const initialView: JblView =
-    requestedView === "today" || requestedView === "standings" || requestedView === "players"
+    requestedView === "today" || requestedView === "standings" || requestedView === "players" || requestedView === "identity"
       ? requestedView
       : "team"
   const initialTeamName = searchParams.get("team") ?? ""
@@ -83,6 +84,7 @@ export default function JBLPage() {
         { label: "Players", view: "players" },
         { label: "Today's Games", view: "today" },
         { label: "Standings", view: "standings" },
+        { label: "Team Identity", view: "identity" },
         { label: "Back to Your Stats", href: "/stats" },
       ]}
     >
@@ -98,6 +100,18 @@ export default function JBLPage() {
         />
       )}
       {activeView === "players" && <PlayersTab selectedTeamName={selectedTeamName || undefined} />}
+      {activeView === "identity" && (
+        selectedTeamName ? (
+          <TeamIdentityTab
+            teamName={selectedTeamName}
+            division={jblTeams.find((team) => team.name === selectedTeamName)?.league}
+          />
+        ) : (
+          <div className="rounded-2xl bg-white p-8 text-center shadow-sm">
+            <p className="text-sm text-gray-500">Select a team from the header to view Team Identity.</p>
+          </div>
+        )
+      )}
     </PageShell>
   )
 }

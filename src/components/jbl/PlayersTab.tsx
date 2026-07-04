@@ -6,6 +6,7 @@ import {
   fmtAvg, pitchingFromGames, pitchingHandFor, pitchingRawGameLog,
 } from "./stats"
 import { teamBadge } from "./teamTheme"
+import { filterRevealedGames } from "./gameReveal"
 import JBLTrendChart from "./JBLTrendChart"
 import JBLGameLog from "./JBLGameLog"
 import { getStatColor } from "../mlb/playerStats"
@@ -485,7 +486,7 @@ export default function PlayersTab({
     async function load() {
       try {
         const { visibleThrough } = await getJblData()
-        const games = await getJblVisibleGames(visibleThrough)
+        const games = filterRevealedGames(await getJblVisibleGames(visibleThrough))
         if (cancelled) return
         setBatters(battingFromGames(games))
         setPitchers(pitchingFromGames(games))

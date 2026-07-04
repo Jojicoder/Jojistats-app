@@ -93,29 +93,33 @@ export function teamLogoUrl(name: string): string {
   return `/jbl/logos/${jblTeamSlug(name)}.png`
 }
 
-// All 18 source PNGs are now auto-cropped to their opaque-pixel bounding box
-// (see scripts used to strip the baked-in canvas padding), so this only needs
-// to correct for remaining ink-density differences (a solid crest vs. a wide,
-// sparse one like Harlem Eagles' spread wings) — derived from actual rendered
-// pixel measurement, not the raw bounding box.
+// Recalibrated for the 2026-07 monogram-logo redesign (interlocking letter
+// marks instead of crest badges) — auto-cropped to each PNG's opaque-pixel
+// bounding box, then scale is set from actual rendered ink-pixel area so
+// dense letterforms (e.g. Kensington Iron's riveted block letters) and
+// sparse ones (e.g. Queens Titans') read as the same visual size.
 const TEAM_LOGO_SCALE: Record<string, number> = {
-  "Bronx Wolves": 0.94,
-  "Brooklyn Hammers": 1.01,
+  "Bronx Wolves": 0.89,
+  "Brooklyn Hammers": 1.06,
+  "Staten Island Foxes": 1.02,
+  "Fishtown Ferals": 1.05,
+  "Manayunk Runners": 1.1,
+  "Germantown Colonials": 1.01,
+  "Capitol Hill Senators": 0.97,
+  "Anacostia Kings": 1.04,
+  "Kensington Iron": 0.81,
+
+  // The teams below were reverted to their old crest-style logos (not the
+  // monogram redesign) — these are each team's calibrated scale from that
+  // earlier era, not the ink-area measurement used for the monogram set above.
+  "Alexandria Cannons": 1.06,
   "Newark Knights": 0.94,
   "Queens Titans": 1.13,
   "Harlem Eagles": 1.47,
-  "Staten Island Foxes": 0.94,
-  "Fishtown Ferals": 0.91,
-  "Manayunk Runners": 0.93,
-  "Germantown Colonials": 1.05,
   "Fairmount Rams": 1.04,
-  "Capitol Hill Senators": 1.01,
-  "Alexandria Cannons": 1.06,
-  "Bethesda Blaze": 0.97,
+  "Bethesda Blaze": 1.1,
   "Georgetown Ravens": 1.0,
   "Silver Spring Ghosts": 1.0,
-  "Anacostia Kings": 0.96,
-  "Kensington Iron": 1.03,
   "South Philly Stallions": 0.92,
 }
 
