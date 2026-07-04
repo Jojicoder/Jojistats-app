@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import { getJblData, getJblVisibleGames, JBL_SEASON, type JblTeam } from "../api/jbl"
 import { battingFromGames, fmtAvg, pitchingFromGames } from "../components/jbl/stats"
+import { filterRevealedGames } from "../components/jbl/gameReveal"
 import { jblThemeStyle, teamBadge, teamColors } from "../components/jbl/teamTheme"
 import { getStatColor } from "../components/mlb/playerStats"
 import type { GameData, SimBatter, SimPitcher } from "../components/jbl/types"
@@ -81,7 +82,7 @@ export default function JBLTeamPage() {
     async function load() {
       try {
         const { teams, visibleThrough } = await getJblData()
-        const rawGames = await getJblVisibleGames(visibleThrough)
+        const rawGames = filterRevealedGames(await getJblVisibleGames(visibleThrough))
         if (cancelled) return
         setTeams([...teams].sort((a, b) => a.name.localeCompare(b.name)))
         setBatters(battingFromGames(rawGames))
@@ -139,6 +140,7 @@ export default function JBLTeamPage() {
         { label: "Players", href: `/jbl?team=${encodeURIComponent(team?.name ?? "")}&view=players` },
         { label: "Today's Games", href: `/jbl?team=${encodeURIComponent(team?.name ?? "")}&view=today` },
         { label: "Standings", href: `/jbl?team=${encodeURIComponent(team?.name ?? "")}&view=standings` },
+        { label: "Team Identity", href: `/jbl?team=${encodeURIComponent(team?.name ?? "")}&view=identity` },
         { label: "Back to Your Stats", href: "/stats" },
       ]}
     >

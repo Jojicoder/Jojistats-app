@@ -52,3 +52,14 @@ export function markGameWatched(gameId: string): void {
 export function isGameRevealed(gameDate: string, gameId: string): boolean {
   return isGameTimeRevealed(gameDate) || hasWatchedGame(gameId)
 }
+
+// Any list of games destined for a season aggregate, a team's "Recent
+// Results", or a player's "All Games" log needs this — getJblVisibleGames
+// returns every already-simulated game (including today's, batch-generated
+// well before the assumed reveal time), so without this filter those views
+// spoil today's result before the reveal system says it's safe to.
+export function filterRevealedGames<T extends { gameId: string; date: string; away: string; home: string }>(
+  games: T[]
+): T[] {
+  return games.filter((g) => isGameRevealed(g.date, gameStorageKey(g.gameId, g.away, g.home, g.date)))
+}
