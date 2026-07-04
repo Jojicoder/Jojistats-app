@@ -184,7 +184,7 @@ export default function JBLTeamPage() {
                         <p className="text-[10px] font-bold uppercase tracking-wider sm:text-xs sm:tracking-widest" style={{ color: c.primary }}>
                           {team.league}
                         </p>
-                        <h1 className="mt-1 text-xl font-extrabold tracking-tight text-gray-900 sm:text-3xl">
+                        <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-gray-900 sm:text-4xl">
                           {team.name}
                         </h1>
                       </div>
