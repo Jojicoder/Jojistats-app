@@ -123,26 +123,36 @@ const TEAM_LOGO_SCALE: Record<string, number> = {
   "South Philly Stallions": 0.92,
 }
 
+// Per-team vertical nudge (in px, at the "md" 38px-tall render size — scales
+// up proportionally for larger badge sizes) for logos whose art doesn't sit
+// dead-center in its canvas. Positive = down, negative = up.
+const TEAM_LOGO_OFFSET_Y: Record<string, number> = {
+  "Brooklyn Hammers": 1.5,
+}
+
 type TeamBadgeSize = "md" | "lg" | "xl" | "2xl" | "3xl"
 
-const TEAM_BADGE_SIZE_CLASS: Record<TeamBadgeSize, { frame: string; image: string }> = {
-  md: { frame: "h-11 w-11", image: "h-[38px] w-[38px]" },
-  lg: { frame: "h-14 w-14", image: "h-[48px] w-[48px]" },
-  xl: { frame: "h-20 w-20", image: "h-[70px] w-[70px]" },
-  "2xl": { frame: "h-28 w-28", image: "h-[96px] w-[96px]" },
-  "3xl": { frame: "h-36 w-36", image: "h-[124px] w-[124px]" },
+const TEAM_BADGE_SIZE_CLASS: Record<TeamBadgeSize, { frame: string; image: string; imagePx: number }> = {
+  md: { frame: "h-11 w-11", image: "h-[38px] w-[38px]", imagePx: 38 },
+  lg: { frame: "h-14 w-14", image: "h-[48px] w-[48px]", imagePx: 48 },
+  xl: { frame: "h-20 w-20", image: "h-[70px] w-[70px]", imagePx: 70 },
+  "2xl": { frame: "h-28 w-28", image: "h-[96px] w-[96px]", imagePx: 96 },
+  "3xl": { frame: "h-36 w-36", image: "h-[124px] w-[124px]", imagePx: 124 },
 }
 
 export function teamBadge(name: string, size: TeamBadgeSize = "md") {
   const scale = TEAM_LOGO_SCALE[name] ?? 1
   const sizeClass = TEAM_BADGE_SIZE_CLASS[size]
+  const offsetY = TEAM_LOGO_OFFSET_Y[name]
+    ? TEAM_LOGO_OFFSET_Y[name] * (sizeClass.imagePx / TEAM_BADGE_SIZE_CLASS.md.imagePx)
+    : 0
   return (
     <span className={`inline-flex ${sizeClass.frame} shrink-0 items-center justify-center`}>
       <img
         src={teamLogoUrl(name)}
         alt={name}
         className={`block ${sizeClass.image} object-contain`}
-        style={{ transform: `scale(${scale})` }}
+        style={{ transform: `scale(${scale}) translateY(${offsetY}px)` }}
         loading="lazy"
       />
     </span>
