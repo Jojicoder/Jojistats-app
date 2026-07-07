@@ -208,5 +208,8 @@ export type JblSeasonJson = {
     status: "scheduled" | "final"
     finalScore?: { away: number; home: number }
     gameFile: string
+    winPitcher?: string | null
+    lossPitcher?: string | null
+    savePitcher?: string | null
   }>
 }

@@ -4,8 +4,9 @@ import { supabase } from "../api/supabase-client"
 
 const exploreLinks = [
   { label: "My Stats", to: "/stats" },
-  { label: "Team Manager", to: "/manager" },
   { label: "MLB", to: "/mlb" },
+  { label: "JBL", to: "/jbl" },
+  { label: "Team Manager", to: "/manager" },
   { label: "Seasons", to: "/seasons" },
 ]
 

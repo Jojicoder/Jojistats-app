@@ -274,6 +274,13 @@ export default function TodayGamesTab({
                     </div>
                   ))}
                 </div>
+                {isFinal && (game.winPitcher || game.lossPitcher || game.savePitcher) && (
+                  <div className="mt-4 space-y-1 border-t border-gray-100 pt-3 text-xs text-gray-600">
+                    {game.winPitcher && <p><span className="font-bold text-green-800">W</span> {game.winPitcher}</p>}
+                    {game.lossPitcher && <p><span className="font-bold text-red-600">L</span> {game.lossPitcher}</p>}
+                    {game.savePitcher && <p><span className="font-bold text-blue-700">SV</span> {game.savePitcher}</p>}
+                  </div>
+                )}
                 <div className="mt-4 space-y-1 border-t border-gray-100 pt-3 text-xs text-gray-600">
                   <p>
                     <span className="font-bold text-gray-700">Venue:</span>{" "}

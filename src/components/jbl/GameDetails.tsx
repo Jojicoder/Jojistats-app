@@ -413,6 +413,38 @@ function buildLog(events: GameEvent[], upTo: number): LogEntry[] {
   return log
 }
 
+function Decisions({ game }: { game: GameData }) {
+  const rows = [
+    ["W", game.winPitcher, "bg-emerald-50 text-emerald-700"],
+    ["L", game.lossPitcher, "bg-red-50 text-red-600"],
+    ["SV", game.savePitcher, "bg-blue-50 text-blue-700"],
+  ] as const
+  const available = rows.filter(([, name]) => name)
+  if (available.length === 0) return null
+
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-sm sm:p-5">
+      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">Decisions</p>
+      <div className={`mt-3 grid gap-3 ${
+        available.length === 1
+          ? "sm:grid-cols-1"
+          : available.length === 2
+          ? "sm:grid-cols-2"
+          : "sm:grid-cols-3"
+      }`}>
+        {available.map(([label, name, badgeClass]) => (
+          <div key={label} className="flex items-center gap-2">
+            <span className={`inline-block shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wide ${badgeClass}`}>
+              {label}
+            </span>
+            <p className="truncate text-sm font-bold text-gray-900">{name}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function GameDetails({ game, isVisible }: { game: GameData; isVisible: boolean }) {
   const events = game.events
   const gameKey = gameStorageKey(game.gameId, game.away, game.home, game.date)
@@ -921,6 +953,8 @@ export default function GameDetails({ game, isVisible }: { game: GameData; isVis
           />
         </div>
       </div>
+
+      {isDone && <Decisions game={game} />}
 
       {/* Live at-bat status + visualization */}
       {!isDone && (

@@ -170,6 +170,9 @@ export type GameData = {
   awayLineup: string[]
   homeLineup: string[]
   events: GameEvent[]
+  winPitcher?: string | null
+  lossPitcher?: string | null
+  savePitcher?: string | null
 }
 
 export type LogEntry =
