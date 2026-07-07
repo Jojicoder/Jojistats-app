@@ -370,6 +370,7 @@ function PlayerDetail({
         <section className="rounded-2xl bg-white p-4 shadow-sm">
           <p className="mb-3 text-xs font-bold uppercase tracking-widest text-green-700">Pitching Stats</p>
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <StatTile label="W" value={String(p.w)} />
             <StatTile label="ERA" value={p.era.toFixed(2)} pitchingRole={pitchingRole} />
             <StatTile label="FIP" value={p.fip.toFixed(2)} pitchingRole={pitchingRole} />
             <StatTile label="WHIP" value={p.whip.toFixed(2)} pitchingRole={pitchingRole} />

@@ -18,6 +18,9 @@ export function normalizeGame(game: JblGameJson): GameData {
     lineScore: game.lineScore,
     awayLineup: game.awayLineup,
     homeLineup: game.homeLineup,
+    winPitcher: game.winPitcher,
+    lossPitcher: game.lossPitcher,
+    savePitcher: game.savePitcher,
     events: game.events.map((event) => {
       const isTop = "isTop" in event
         ? Boolean((event as { isTop?: boolean }).isTop)
