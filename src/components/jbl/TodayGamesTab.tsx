@@ -164,10 +164,14 @@ export default function TodayGamesTab({
 
       {games?.length === 0 && (
         <div className="rounded-2xl bg-white px-6 py-10 text-center shadow-sm">
-          <p className="text-lg font-bold text-gray-800">No games scheduled</p>
-          <p className="mt-1 text-sm text-gray-500">
-            JBL has no simulated games for this date. Try the previous or next day.
+          <p className="text-lg font-bold text-gray-800">
+            {isToday ? "Off day — no games today" : "No games scheduled"}
           </p>
+          {!isToday && (
+            <p className="mt-1 text-sm text-gray-500">
+              JBL has no simulated games for this date. Try the previous or next day.
+            </p>
+          )}
           <div className="mt-4 flex justify-center gap-2">
             <button
               type="button"
