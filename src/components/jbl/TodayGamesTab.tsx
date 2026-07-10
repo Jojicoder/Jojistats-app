@@ -169,7 +169,7 @@ export default function TodayGamesTab({
           </p>
           {!isToday && (
             <p className="mt-1 text-sm text-gray-500">
-              JBL has no simulated games for this date. Try the previous or next day.
+              JBL has no games for this date. Try the previous or next day.
             </p>
           )}
           <div className="mt-4 flex justify-center gap-2">
