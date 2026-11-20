@@ -144,3 +144,90 @@ export async function getPlayerRecentGamePks(playerId: number, limit = 15): Prom
     .map((s) => s.game?.gamePk)
     .filter((pk): pk is number => pk != null)
 }
+
+export type PostseasonTeam = { id: number; name: string; wins: number; isWinner: boolean }
+export type PostseasonGame = {
+  gamePk: number
+  date: string
+  gameNumber: number
+  awayId: number
+  homeId: number
+  awayScore: number | null
+  homeScore: number | null
+  final: boolean
+}
+export type PostseasonSeries = {
+  id: string // F_1 (Wild Card), D_1 (Division), L_1 (League Championship), W_1 (World Series)
+  round: "F" | "D" | "L" | "W"
+  /** AL for series 1-2 of a round (or L_1), NL for the rest; the World Series has none. */
+  league: "AL" | "NL" | null
+  bestOf: number
+  teams: [PostseasonTeam, PostseasonTeam]
+  winnerId: number | null
+  games: PostseasonGame[]
+}
+
+type ApiGame = {
+  gamePk: number
+  officialDate: string
+  gamesInSeries: number
+  seriesGameNumber: number
+  status?: { detailedState?: string; abstractGameState?: string }
+  teams: {
+    away: { team: { id: number; name: string }; score?: number; leagueRecord?: { wins: number } }
+    home: { team: { id: number; name: string }; score?: number; leagueRecord?: { wins: number } }
+  }
+}
+
+/** Real MLB postseason for one season, grouped by series. Empty before the postseason starts. */
+export async function getPostseason(season: number): Promise<PostseasonSeries[]> {
+  const json = await fetchJson(
+    `${MLB_API}/schedule/postseason/series?season=${season}&sportId=1`,
+    "Postseason"
+  )
+  const result: PostseasonSeries[] = []
+  for (const entry of (json.series ?? []) as { series: { id: string }; games: ApiGame[] }[]) {
+    const games = [...entry.games].sort((a, b) => a.seriesGameNumber - b.seriesGameNumber)
+    if (games.length === 0) continue
+    const round = entry.series.id[0] as PostseasonSeries["round"]
+    if (!["F", "D", "L", "W"].includes(round)) continue
+    const number = Number(entry.series.id.split("_")[1])
+    const first = games[0]
+    const bestOf = first.gamesInSeries
+    const latest = [...games].reverse().find((g) => g.status?.abstractGameState === "Final") ?? null
+    const ids = [first.teams.away.team, first.teams.home.team]
+    const winsOf = (id: number) => {
+      if (!latest) return 0
+      const side = latest.teams.away.team.id === id ? latest.teams.away : latest.teams.home
+      return side.leagueRecord?.wins ?? 0
+    }
+    const teams = ids.map((team) => ({
+      id: team.id,
+      name: team.name,
+      wins: winsOf(team.id),
+      isWinner: false,
+    })) as [PostseasonTeam, PostseasonTeam]
+    const needed = Math.ceil(bestOf / 2)
+    const winner = teams.find((team) => team.wins >= needed)
+    if (winner) winner.isWinner = true
+    result.push({
+      id: entry.series.id,
+      round,
+      league: round === "W" ? null : round === "L" ? (number === 1 ? "AL" : "NL") : number <= 2 ? "AL" : "NL",
+      bestOf,
+      teams,
+      winnerId: winner?.id ?? null,
+      games: games.map((g) => ({
+        gamePk: g.gamePk,
+        date: g.officialDate,
+        gameNumber: g.seriesGameNumber,
+        awayId: g.teams.away.team.id,
+        homeId: g.teams.home.team.id,
+        awayScore: g.teams.away.score ?? null,
+        homeScore: g.teams.home.score ?? null,
+        final: g.status?.abstractGameState === "Final",
+      })),
+    })
+  }
+  return result
+}

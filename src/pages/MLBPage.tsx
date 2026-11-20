@@ -2,20 +2,21 @@ import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import PlayersTab from "../components/mlb/PlayersTab"
+import PlayoffsTab from "../components/mlb/PlayoffsTab"
 import StandingsTab from "../components/mlb/StandingsTab"
 import TodayGamesTab from "../components/mlb/TodayGamesTab"
 import { getAllTeams } from "../api/mlb"
 import type { MLBTeam } from "../components/mlb/types"
 import { applyGlobalMLBTheme, clearGlobalMLBTheme, getTeamThemeStyle } from "../components/mlb/teamTheme"
 
-type MLBView = "team" | "today" | "standings" | "players"
+type MLBView = "team" | "today" | "standings" | "playoffs" | "players"
 
 export default function MLBPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view")
   const initialView: MLBView =
-    requestedView === "today" || requestedView === "standings" || requestedView === "players"
+    requestedView === "today" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "players"
       ? requestedView
       : "team"
   const initialTeamId = Number(searchParams.get("teamId"))
@@ -93,6 +94,7 @@ export default function MLBPage() {
           { label: "Players", view: "players" },
           { label: "Today's Games", view: "today" },
           { label: "Standings", view: "standings" },
+          { label: "Playoffs", view: "playoffs" },
           { label: "Back to Your Stats", href: "/stats" },
       ]}
     >
@@ -103,6 +105,7 @@ export default function MLBPage() {
         )}
         {activeView === "today" && <TodayGamesTab selectedTeamId={selectedTeamId} />}
         {activeView === "standings" && <StandingsTab selectedTeamId={selectedTeamId} />}
+        {activeView === "playoffs" && <PlayoffsTab />}
         {activeView === "players" && (
           <PlayersTab
             teams={mlbTeams}

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import PlayersTab from "../components/jbl/PlayersTab"
+import DraftTab from "../components/jbl/DraftTab"
 import NewsTab from "../components/jbl/NewsTab"
 import PlayoffsTab from "../components/jbl/PlayoffsTab"
 import StandingsTab from "../components/jbl/StandingsTab"
@@ -10,14 +11,14 @@ import TeamIdentityTab from "../components/jbl/TeamIdentityTab"
 import { jblThemeStyle } from "../components/jbl/teamTheme"
 import { getJblData, type JblTeam } from "../api/jbl"
 
-type JblView = "team" | "today" | "news" | "standings" | "playoffs" | "players" | "identity"
+type JblView = "team" | "today" | "news" | "standings" | "playoffs" | "draft" | "players" | "identity"
 
 export default function JBLPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view")
   const initialView: JblView =
-    requestedView === "today" || requestedView === "news" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "players" || requestedView === "identity"
+    requestedView === "today" || requestedView === "news" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "draft" || requestedView === "players" || requestedView === "identity"
       ? requestedView
       : "team"
   const initialTeamName = searchParams.get("team") ?? ""
@@ -88,6 +89,7 @@ export default function JBLPage() {
         { label: "News", view: "news" },
         { label: "Standings", view: "standings" },
         { label: "Playoffs", view: "playoffs" },
+        { label: "Draft", view: "draft" },
         { label: "Team Identity", view: "identity" },
         { label: "Back to Your Stats", href: "/stats" },
       ]}
@@ -105,6 +107,7 @@ export default function JBLPage() {
         />
       )}
       {activeView === "playoffs" && <PlayoffsTab />}
+      {activeView === "draft" && <DraftTab selectedTeamName={selectedTeamName || undefined} />}
       {activeView === "players" && <PlayersTab selectedTeamName={selectedTeamName || undefined} />}
       {activeView === "identity" && (
         selectedTeamName ? (

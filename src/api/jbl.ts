@@ -248,6 +248,33 @@ export async function getJblGameById(
   return { game, schedule }
 }
 
+/** Engine-published draft files for one season (draft/draft.json etc.). */
+export type JblDraftFiles = { season: number; draft: unknown; prospects: unknown; changes: unknown }
+
+/** Newest season that has a draft published (the draft exists before the first game is played). */
+export async function getJblDraft(): Promise<JblDraftFiles | null> {
+  const getJson = async (url: string) => {
+    const response = await fetch(url)
+    if (!response.ok) return null
+    if (!(response.headers.get("content-type") ?? "").includes("json")) return null
+    return response.json() as Promise<unknown>
+  }
+  for (const season of SEASON_CANDIDATES) {
+    try {
+      const root = seasonRootOf(season)
+      const [draft, prospects, changes] = await Promise.all([
+        getJson(`${root}/draft/draft.json`),
+        getJson(`${root}/draft/prospects.json`),
+        getJson(`${root}/draft/roster-changes.json`),
+      ])
+      if (draft && prospects && changes) return { season, draft, prospects, changes }
+    } catch {
+      // try the next season
+    }
+  }
+  return null
+}
+
 /** Engine-published postseason (null until playoffs.json exists for the season). */
 export async function getJblPlayoffs(): Promise<unknown | null> {
   const root = await seasonRoot()
