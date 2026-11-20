@@ -32,8 +32,9 @@ on:
         description: "incremental only: export games through this date (YYYY-MM-DD). Blank = today."
         required: false
         default: ""
-  schedule:
-    - cron: "0 1 * * *"
+  # Daily schedule paused: the 2026 season is fully exported. Re-enable for the next season.
+  # schedule:
+  #   - cron: "0 1 * * *"
 
 permissions:
   contents: write
