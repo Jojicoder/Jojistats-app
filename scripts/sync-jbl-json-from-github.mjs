@@ -26,8 +26,21 @@ await download("games/index.json")
 const indexText = await fs.readFile(path.join(outRoot, "games", "index.json"), "utf8")
 const gameFiles = JSON.parse(indexText)
 
+async function downloadGame(fileName) {
+  // Game files are published gzip-compressed (<name>.json.gz) for newer seasons.
+  const relativePath = `games/${fileName}`
+  const gz = await fetch(`${baseUrl}/${relativePath}.gz`)
+  if (gz.ok) {
+    const outPath = path.join(outRoot, `${relativePath}.gz`)
+    await fs.mkdir(path.dirname(outPath), { recursive: true })
+    await fs.writeFile(outPath, Buffer.from(await gz.arrayBuffer()))
+    return
+  }
+  await download(relativePath)
+}
+
 for (const fileName of gameFiles) {
-  await download(`games/${fileName}`)
+  await downloadGame(fileName)
 }
 
 console.log(`Synced JBL ${season} JSON from ${repo}@${ref}: ${gameFiles.length} games.`)

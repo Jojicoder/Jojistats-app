@@ -42,6 +42,31 @@ async function fetchJson<T>(url: string, resource: string): Promise<T> {
   return response.json() as Promise<T>
 }
 
+/**
+ * Per-game JSON is published gzip-compressed (<name>.json.gz) to keep the repo and
+ * deploys small; older seasons (2026) are still plain. Try the .gz first, then the
+ * plain file. Hosts differ on whether they add Content-Encoding to .gz files, so
+ * the gzip magic bytes are checked instead of trusting headers, and an SPA
+ * fallback page (HTML) for a missing .gz is treated as "not there".
+ */
+async function fetchGameJson<T>(url: string, resource: string): Promise<T> {
+  const gz = await fetch(`${url}.gz`).catch(() => null)
+  if (gz?.ok) {
+    const buffer = await gz.arrayBuffer()
+    const bytes = new Uint8Array(buffer)
+    if (bytes.length > 2 && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+      const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream("gzip"))
+      return JSON.parse(await new Response(stream).text()) as T
+    }
+    try {
+      return JSON.parse(new TextDecoder().decode(bytes)) as T
+    } catch {
+      // Not JSON (HTML fallback) — use the plain file below.
+    }
+  }
+  return fetchJson<T>(url, resource)
+}
+
 async function mapLimit<T, R>(items: T[], limit: number, worker: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = new Array(items.length)
   let nextIndex = 0
@@ -153,7 +178,7 @@ async function loadGameDetails(
   return mapLimit(
     detailFiles,
     12,
-    (file) => fetchJson<JblGameJson>(`${JBL_SEASON_ROOT}/games/${file}`, `JBL game ${file}`)
+    (file) => fetchGameJson<JblGameJson>(`${JBL_SEASON_ROOT}/games/${file}`, `JBL game ${file}`)
   )
 }
 
@@ -188,7 +213,7 @@ export async function getJblGameById(
   }
   if (!schedule) return null
 
-  const game = await fetchJson<JblGameJson>(`${JBL_SEASON_ROOT}/${schedule.gameFile}`, `JBL game ${gameId}`)
+  const game = await fetchGameJson<JblGameJson>(`${JBL_SEASON_ROOT}/${schedule.gameFile}`, `JBL game ${gameId}`)
   return { game, schedule }
 }
 

@@ -8,6 +8,7 @@ on:
       - ".github/workflows/update-jbl-season.yml"
       - "docs/jbl-season-json.md"
       - "scripts/validate-jbl-json.mjs"
+      - "scripts/compress-jbl-json.mjs"
       - "src/sim/jblJsonTypes.ts"
       - "package.json"
   workflow_dispatch:
@@ -15,7 +16,7 @@ on:
       season:
         description: "Season year to export"
         required: true
-        default: "2026"
+        default: "2027"
       engine_ref:
         description: "BaseballEngine branch/tag/SHA"
         required: false
@@ -32,9 +33,8 @@ on:
         description: "incremental only: export games through this date (YYYY-MM-DD). Blank = today."
         required: false
         default: ""
-  # Daily schedule paused: the 2026 season is fully exported. Re-enable for the next season.
-  # schedule:
-  #   - cron: "0 1 * * *"
+  schedule:
+    - cron: "0 1 * * *"
 
 permissions:
   contents: write
@@ -44,7 +44,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      SEASON: ${{ inputs.season || '2026' }}
+      SEASON: ${{ inputs.season || '2027' }}
       MODE: ${{ inputs.mode || 'incremental' }}
       THROUGH: ${{ inputs.through }}
 
@@ -67,7 +67,7 @@ jobs:
       - name: Build C++ exporters
         working-directory: engine/app
         run: |
-          make game-export CXX=g++ CXXFLAGS="-std=c++17 -O2 -Wall -Wextra -Wpedantic -I../include"
+          make game-export draft CXX=g++ CXXFLAGS="-std=c++17 -O2 -Wall -Wextra -Wpedantic -I../include"
 
       # Push events only validate that the exporter still builds and runs —
       # they write to a scratch directory so a workflow-file tweak can never
@@ -77,7 +77,10 @@ jobs:
         run: |
           set -euo pipefail
           TMP_DIR="$(mktemp -d)/season-smoke-test"
-          engine/build/JojiGameExport --season "${SEASON}" --all-games --limit 3 --out-dir "${TMP_DIR}"
+          DRAFT_ARGS=()
+          if [ "${SEASON}" -ge 2027 ]; then DRAFT_ARGS+=(--draft); fi
+          engine/build/JojiGameExport --season "${SEASON}" "${DRAFT_ARGS[@]}" --all-games --limit 3 --out-dir "${TMP_DIR}"
+          engine/build/JojiDraftRunner --season "${SEASON}" --seed "${SEASON}" --rounds 7 --out-dir "${TMP_DIR}"
           JBL_JSON_ROOT="${TMP_DIR}" node scripts/validate-jbl-json.mjs "${SEASON}"
 
       - name: Export season and detailed games
@@ -101,11 +104,32 @@ jobs:
           if [ -n "${THROUGH}" ]; then
             THROUGH_ARGS+=(--through "${THROUGH}")
           fi
-          engine/build/JojiGameExport --season "${SEASON}" --incremental --out-dir "${OUT_DIR}" "${THROUGH_ARGS[@]}"
+
+          # From 2027 the season is played after the offseason draft. The draft is seeded
+          # by the season year, and game export and the draft export both use that seed,
+          # so the published draft always matches the rosters the games were played with.
+          DRAFT_ARGS=()
+          if [ "${SEASON}" -ge 2027 ]; then
+            DRAFT_ARGS+=(--draft)
+            engine/build/JojiDraftRunner --season "${SEASON}" --seed "${SEASON}" --rounds 7 --out-dir "${OUT_DIR}"
+          fi
+
+          engine/build/JojiGameExport --season "${SEASON}" "${DRAFT_ARGS[@]}" --incremental --out-dir "${OUT_DIR}" "${THROUGH_ARGS[@]}"
+
+          # Game files are committed gzip-compressed (~11x smaller). The script verifies each
+          # file round-trips before removing the plain copy, and skips already-compressed ones.
+          node scripts/compress-jbl-json.mjs "${SEASON}"
 
       - name: Validate JBL JSON
         if: github.event_name != 'push'
-        run: node scripts/validate-jbl-json.mjs "${SEASON}"
+        run: |
+          set -euo pipefail
+          # Before Opening Day only the draft is published; there is no season.json yet.
+          if [ ! -f "public/jbl/seasons/${SEASON}/season.json" ]; then
+            echo "Season ${SEASON} has not started yet; skipping season validation."
+            exit 0
+          fi
+          node scripts/validate-jbl-json.mjs "${SEASON}"
 
       - name: Build frontend
         run: npm ci && npm run build
