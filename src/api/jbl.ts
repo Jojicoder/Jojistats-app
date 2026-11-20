@@ -1,8 +1,35 @@
 import { ALL_TEAMS, DIVISIONS, DIVISION_NAMES } from "../sim/jblSeason"
 import type { JblGameJson, JblSeasonJson } from "../sim/jblJsonTypes"
 
-export const JBL_SEASON = 2026
-export const JBL_SEASON_ROOT = `/jbl/seasons/${JBL_SEASON}`
+/** Newest first. A season is used once its first game has been played; the oldest is the fallback. */
+const SEASON_CANDIDATES = [2027, 2026]
+const seasonRootOf = (season: number) => `/jbl/seasons/${season}`
+
+let activeSeasonPromise: Promise<number> | null = null
+
+/** The season the app shows: the newest one that already has a finished game. */
+export function getJblSeason(): Promise<number> {
+  activeSeasonPromise ??= (async () => {
+    for (const season of SEASON_CANDIDATES.slice(0, -1)) {
+      try {
+        const response = await fetch(`${seasonRootOf(season)}/season.json`)
+        if (!response.ok) continue
+        // Vite dev/preview and SPA hosts answer unknown paths with index.html.
+        if (!(response.headers.get("content-type") ?? "").includes("json")) continue
+        const data = (await response.json()) as JblSeasonJson
+        if (data.schedule?.some((game) => Boolean(game.finalScore))) return season
+      } catch {
+        // fall through to the next candidate
+      }
+    }
+    return SEASON_CANDIDATES[SEASON_CANDIDATES.length - 1]
+  })()
+  return activeSeasonPromise
+}
+
+async function seasonRoot(): Promise<string> {
+  return seasonRootOf(await getJblSeason())
+}
 
 export type JblTeam = {
   id: string
@@ -170,6 +197,7 @@ async function loadGameDetails(
   schedule: JblScheduleGame[],
   gameFiles: string[],
 ): Promise<JblGameJson[]> {
+  const root = await seasonRoot()
   const availableFiles = new Set(gameFiles)
   const detailFiles = schedule
     .map((game) => game.gameFile.replace(/^games\//, ""))
@@ -178,13 +206,14 @@ async function loadGameDetails(
   return mapLimit(
     detailFiles,
     12,
-    (file) => fetchGameJson<JblGameJson>(`${JBL_SEASON_ROOT}/games/${file}`, `JBL game ${file}`)
+    (file) => fetchGameJson<JblGameJson>(`${root}/games/${file}`, `JBL game ${file}`)
   )
 }
 
 export async function getJblVisibleGames(asOfDate = todayKey()): Promise<JblGameJson[]> {
-  const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
-  const gameFiles = await fetchJson<string[]>(`${JBL_SEASON_ROOT}/games/index.json`, "JBL game index")
+  const root = await seasonRoot()
+  const season = await fetchJson<JblSeasonJson>(`${root}/season.json`, "JBL season")
+  const gameFiles = await fetchJson<string[]>(`${root}/games/index.json`, "JBL game index")
 
   return loadGameDetails(
     season.schedule.filter((game) => game.date <= asOfDate && Boolean(game.finalScore)),
@@ -193,34 +222,37 @@ export async function getJblVisibleGames(asOfDate = todayKey()): Promise<JblGame
 }
 
 export async function getJblScheduleForDate(date: string): Promise<JblScheduleGame[]> {
-  const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
+  const root = await seasonRoot()
+  const season = await fetchJson<JblSeasonJson>(`${root}/season.json`, "JBL season")
   return season.schedule.filter((game) => game.date === date)
 }
 
 export async function getJblGameById(
   gameId: string,
 ): Promise<{ game: JblGameJson; schedule: JblScheduleGame } | null> {
-  const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
+  const root = await seasonRoot()
+  const season = await fetchJson<JblSeasonJson>(`${root}/season.json`, "JBL season")
   let schedule: JblScheduleGame | undefined = season.schedule.find((candidate) => candidate.gameId === gameId)
   if (!schedule) {
     // Postseason games are listed in playoffs.json, not in the regular-season schedule,
     // so they never affect the standings.
     const playoffs = await fetchJson<{ games?: JblScheduleGame[] }>(
-      `${JBL_SEASON_ROOT}/playoffs.json`,
+      `${root}/playoffs.json`,
       "JBL playoffs",
     ).catch(() => null)
     schedule = playoffs?.games?.find((candidate) => candidate.gameId === gameId)
   }
   if (!schedule) return null
 
-  const game = await fetchGameJson<JblGameJson>(`${JBL_SEASON_ROOT}/${schedule.gameFile}`, `JBL game ${gameId}`)
+  const game = await fetchGameJson<JblGameJson>(`${root}/${schedule.gameFile}`, `JBL game ${gameId}`)
   return { game, schedule }
 }
 
 /** Engine-published postseason (null until playoffs.json exists for the season). */
 export async function getJblPlayoffs(): Promise<unknown | null> {
+  const root = await seasonRoot()
   try {
-    const response = await fetch(`${JBL_SEASON_ROOT}/playoffs.json`)
+    const response = await fetch(`${root}/playoffs.json`)
     if (!response.ok) return null
     // Vite dev/preview falls back to index.html for unknown paths.
     if (!(response.headers.get("content-type") ?? "").includes("json")) return null
@@ -231,8 +263,9 @@ export async function getJblPlayoffs(): Promise<unknown | null> {
 }
 
 export async function getJblData(asOfDate = todayKey()): Promise<JblData> {
-  const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
-  const gameFiles = await fetchJson<string[]>(`${JBL_SEASON_ROOT}/games/index.json`, "JBL game index")
+  const root = await seasonRoot()
+  const season = await fetchJson<JblSeasonJson>(`${root}/season.json`, "JBL season")
+  const gameFiles = await fetchJson<string[]>(`${root}/games/index.json`, "JBL game index")
   const visibleSchedule = season.schedule
     .filter((game) => game.date <= asOfDate)
     .filter((game) => Boolean(game.finalScore))

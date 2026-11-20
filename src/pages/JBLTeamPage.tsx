@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link, useNavigate, useParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
-import { getJblData, getJblVisibleGames, JBL_SEASON, type JblTeam } from "../api/jbl"
+import { getJblData, getJblSeason, getJblVisibleGames, type JblTeam } from "../api/jbl"
 import { battingFromGames, fmtAvg, pitchingFromGames } from "../components/jbl/stats"
 import { filterRevealedGames } from "../components/jbl/gameReveal"
 import { jblThemeStyle, teamBadge, teamColors } from "../components/jbl/teamTheme"
@@ -76,11 +76,14 @@ export default function JBLTeamPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
 
+  const [season, setSeason] = useState<number | null>(null)
+
   useEffect(() => {
     let cancelled = false
 
     async function load() {
       try {
+        setSeason(await getJblSeason())
         const { teams, visibleThrough } = await getJblData()
         const rawGames = filterRevealedGames(await getJblVisibleGames(visibleThrough))
         if (cancelled) return
@@ -192,7 +195,7 @@ export default function JBLTeamPage() {
                       </div>
                     </div>
                     <span className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-bold text-green-900">
-                      {JBL_SEASON} Season
+                      {season ?? ""} Season
                     </span>
                   </div>
 
