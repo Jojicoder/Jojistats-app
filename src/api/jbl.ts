@@ -192,6 +192,19 @@ export async function getJblGameById(
   return { game, schedule }
 }
 
+/** Engine-published postseason (null until playoffs.json exists for the season). */
+export async function getJblPlayoffs(): Promise<unknown | null> {
+  try {
+    const response = await fetch(`${JBL_SEASON_ROOT}/playoffs.json`)
+    if (!response.ok) return null
+    // Vite dev/preview falls back to index.html for unknown paths.
+    if (!(response.headers.get("content-type") ?? "").includes("json")) return null
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
 export async function getJblData(asOfDate = todayKey()): Promise<JblData> {
   const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
   const gameFiles = await fetchJson<string[]>(`${JBL_SEASON_ROOT}/games/index.json`, "JBL game index")

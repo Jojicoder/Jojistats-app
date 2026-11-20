@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import PlayersTab from "../components/jbl/PlayersTab"
+import NewsTab from "../components/jbl/NewsTab"
 import PlayoffsTab from "../components/jbl/PlayoffsTab"
 import StandingsTab from "../components/jbl/StandingsTab"
 import TodayGamesTab from "../components/jbl/TodayGamesTab"
@@ -9,14 +10,14 @@ import TeamIdentityTab from "../components/jbl/TeamIdentityTab"
 import { jblThemeStyle } from "../components/jbl/teamTheme"
 import { getJblData, type JblTeam } from "../api/jbl"
 
-type JblView = "team" | "today" | "standings" | "playoffs" | "players" | "identity"
+type JblView = "team" | "today" | "news" | "standings" | "playoffs" | "players" | "identity"
 
 export default function JBLPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view")
   const initialView: JblView =
-    requestedView === "today" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "players" || requestedView === "identity"
+    requestedView === "today" || requestedView === "news" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "players" || requestedView === "identity"
       ? requestedView
       : "team"
   const initialTeamName = searchParams.get("team") ?? ""
@@ -84,6 +85,7 @@ export default function JBLPage() {
         { label: "Team Overview", view: "team" },
         { label: "Players", view: "players" },
         { label: "Today's Games", view: "today" },
+        { label: "News", view: "news" },
         { label: "Standings", view: "standings" },
         { label: "Playoffs", view: "playoffs" },
         { label: "Team Identity", view: "identity" },
@@ -96,6 +98,7 @@ export default function JBLPage() {
         </div>
       )}
       {activeView === "today" && <TodayGamesTab selectedTeamName={selectedTeamName || undefined} />}
+      {activeView === "news" && <NewsTab selectedTeamName={selectedTeamName || undefined} />}
       {activeView === "standings" && (
         <StandingsTab
           selectedTeamId={jblTeams.find((team) => team.name === selectedTeamName)?.id}

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { getJblData, JBL_SEASON_ROOT, type JblStandingLeague } from "../../api/jbl"
+import { getJblData, getJblPlayoffs, type JblStandingLeague } from "../../api/jbl"
 import { buildBracket, seedPlayoffTeams, seedsFromPlayoffs, type BracketSeries, type BracketSlot, type PlayoffsJson } from "./playoffs"
 import { teamBadge, teamColors } from "./teamTheme"
 
@@ -80,19 +80,6 @@ function SeriesCard({ series }: { series: BracketSeries }) {
   )
 }
 
-async function loadPlayoffs(): Promise<PlayoffsJson | null> {
-  try {
-    const response = await fetch(`${JBL_SEASON_ROOT}/playoffs.json`)
-    if (!response.ok) return null
-    const type = response.headers.get("content-type") ?? ""
-    // Vite dev/preview falls back to index.html for unknown paths.
-    if (!type.includes("json")) return null
-    return (await response.json()) as PlayoffsJson
-  } catch {
-    return null
-  }
-}
-
 export default function PlayoffsTab() {
   const [standings, setStandings] = useState<JblStandingLeague[] | null>(null)
   const [playoffs, setPlayoffs] = useState<PlayoffsJson | null>(null)
@@ -100,7 +87,7 @@ export default function PlayoffsTab() {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getJblData(), loadPlayoffs()])
+    Promise.all([getJblData(), getJblPlayoffs() as Promise<PlayoffsJson | null>])
       .then(([data, results]) => {
         if (cancelled) return
         setStandings(data.standings)
