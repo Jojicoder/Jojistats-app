@@ -2,20 +2,21 @@ import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import PlayersTab from "../components/jbl/PlayersTab"
+import PlayoffsTab from "../components/jbl/PlayoffsTab"
 import StandingsTab from "../components/jbl/StandingsTab"
 import TodayGamesTab from "../components/jbl/TodayGamesTab"
 import TeamIdentityTab from "../components/jbl/TeamIdentityTab"
 import { jblThemeStyle } from "../components/jbl/teamTheme"
 import { getJblData, type JblTeam } from "../api/jbl"
 
-type JblView = "team" | "today" | "standings" | "players" | "identity"
+type JblView = "team" | "today" | "standings" | "playoffs" | "players" | "identity"
 
 export default function JBLPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view")
   const initialView: JblView =
-    requestedView === "today" || requestedView === "standings" || requestedView === "players" || requestedView === "identity"
+    requestedView === "today" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "players" || requestedView === "identity"
       ? requestedView
       : "team"
   const initialTeamName = searchParams.get("team") ?? ""
@@ -84,6 +85,7 @@ export default function JBLPage() {
         { label: "Players", view: "players" },
         { label: "Today's Games", view: "today" },
         { label: "Standings", view: "standings" },
+        { label: "Playoffs", view: "playoffs" },
         { label: "Team Identity", view: "identity" },
         { label: "Back to Your Stats", href: "/stats" },
       ]}
@@ -99,6 +101,7 @@ export default function JBLPage() {
           selectedTeamId={jblTeams.find((team) => team.name === selectedTeamName)?.id}
         />
       )}
+      {activeView === "playoffs" && <PlayoffsTab />}
       {activeView === "players" && <PlayersTab selectedTeamName={selectedTeamName || undefined} />}
       {activeView === "identity" && (
         selectedTeamName ? (

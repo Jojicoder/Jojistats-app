@@ -176,7 +176,16 @@ export async function getJblGameById(
   gameId: string,
 ): Promise<{ game: JblGameJson; schedule: JblScheduleGame } | null> {
   const season = await fetchJson<JblSeasonJson>(`${JBL_SEASON_ROOT}/season.json`, "JBL season")
-  const schedule = season.schedule.find((candidate) => candidate.gameId === gameId)
+  let schedule: JblScheduleGame | undefined = season.schedule.find((candidate) => candidate.gameId === gameId)
+  if (!schedule) {
+    // Postseason games are listed in playoffs.json, not in the regular-season schedule,
+    // so they never affect the standings.
+    const playoffs = await fetchJson<{ games?: JblScheduleGame[] }>(
+      `${JBL_SEASON_ROOT}/playoffs.json`,
+      "JBL playoffs",
+    ).catch(() => null)
+    schedule = playoffs?.games?.find((candidate) => candidate.gameId === gameId)
+  }
   if (!schedule) return null
 
   const game = await fetchJson<JblGameJson>(`${JBL_SEASON_ROOT}/${schedule.gameFile}`, `JBL game ${gameId}`)

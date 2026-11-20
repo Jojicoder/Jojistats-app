@@ -1,0 +1,41 @@
+{
+  "schemaVersion":1,
+  "season":2026,
+  "format":"mlb-6",
+  "champion":"Fishtown Ferals",
+  "seeds":[
+    {"seed":1,"team":"Fishtown Ferals","division":"Mid League","wins":106,"losses":56,"divisionWinner":true},
+    {"seed":2,"team":"Brooklyn Hammers","division":"North League","wins":105,"losses":57,"divisionWinner":true},
+    {"seed":3,"team":"Capitol Hill Senators","division":"South League","wins":86,"losses":76,"divisionWinner":true},
+    {"seed":4,"team":"Bronx Wolves","division":"North League","wins":105,"losses":57,"divisionWinner":false},
+    {"seed":5,"team":"Kensington Iron","division":"Mid League","wins":100,"losses":62,"divisionWinner":false},
+    {"seed":6,"team":"Manayunk Runners","division":"Mid League","wins":87,"losses":75,"divisionWinner":false}
+  ],
+  "series":[
+    {"id":"wc1","round":"Wild Card Series","bestOf":3,"top":{"team":"Capitol Hill Senators","seed":3},"bottom":{"team":"Manayunk Runners","seed":6},"wins":{"Capitol Hill Senators":0,"Manayunk Runners":2},"winner":"Manayunk Runners","games":["2026-P-wc1-G1","2026-P-wc1-G2"]},
+    {"id":"wc2","round":"Wild Card Series","bestOf":3,"top":{"team":"Bronx Wolves","seed":4},"bottom":{"team":"Kensington Iron","seed":5},"wins":{"Bronx Wolves":1,"Kensington Iron":2},"winner":"Kensington Iron","games":["2026-P-wc2-G1","2026-P-wc2-G2","2026-P-wc2-G3"]},
+    {"id":"sf1","round":"Division Series","bestOf":5,"top":{"team":"Fishtown Ferals","seed":1},"bottom":{"team":"Kensington Iron","seed":5},"wins":{"Fishtown Ferals":3,"Kensington Iron":0},"winner":"Fishtown Ferals","games":["2026-P-sf1-G1","2026-P-sf1-G2","2026-P-sf1-G3"]},
+    {"id":"sf2","round":"Division Series","bestOf":5,"top":{"team":"Brooklyn Hammers","seed":2},"bottom":{"team":"Manayunk Runners","seed":6},"wins":{"Brooklyn Hammers":3,"Manayunk Runners":1},"winner":"Brooklyn Hammers","games":["2026-P-sf2-G1","2026-P-sf2-G2","2026-P-sf2-G3","2026-P-sf2-G4"]},
+    {"id":"final","round":"Championship Series","bestOf":7,"top":{"team":"Fishtown Ferals","seed":1},"bottom":{"team":"Brooklyn Hammers","seed":2},"wins":{"Fishtown Ferals":4,"Brooklyn Hammers":2},"winner":"Fishtown Ferals","games":["2026-P-final-G1","2026-P-final-G2","2026-P-final-G3","2026-P-final-G4","2026-P-final-G5","2026-P-final-G6"]}
+  ],
+  "games":[
+    {"gameId":"2026-P-wc1-G1","date":"2026-09-27","away":"Manayunk Runners","home":"Capitol Hill Senators","venue":"Capitol Park","status":"final","finalScore":{"away":11,"home":5},"gameFile":"playoffs/games/2026-P-wc1-G1.json","winPitcher":"Mel Ross","lossPitcher":"Damon Field","savePitcher":null,"series":"wc1","gameNumber":1},
+    {"gameId":"2026-P-wc1-G2","date":"2026-09-28","away":"Manayunk Runners","home":"Capitol Hill Senators","venue":"Capitol Park","status":"final","finalScore":{"away":6,"home":2},"gameFile":"playoffs/games/2026-P-wc1-G2.json","winPitcher":"Curt Nash","lossPitcher":"Damon Field","savePitcher":"Curt Nash","series":"wc1","gameNumber":2},
+    {"gameId":"2026-P-wc2-G1","date":"2026-09-27","away":"Kensington Iron","home":"Bronx Wolves","venue":"Wolf Den","status":"final","finalScore":{"away":7,"home":5},"gameFile":"playoffs/games/2026-P-wc2-G1.json","winPitcher":"Mick Wade","lossPitcher":"Rex Moore","savePitcher":"Mick Wade","series":"wc2","gameNumber":1},
+    {"gameId":"2026-P-wc2-G2","date":"2026-09-28","away":"Kensington Iron","home":"Bronx Wolves","venue":"Wolf Den","status":"final","finalScore":{"away":1,"home":3},"gameFile":"playoffs/games/2026-P-wc2-G2.json","winPitcher":"Ivan Reyes","lossPitcher":"Ray Lowe","savePitcher":"Clay Burns","series":"wc2","gameNumber":2},
+    {"gameId":"2026-P-wc2-G3","date":"2026-09-29","away":"Kensington Iron","home":"Bronx Wolves","venue":"Wolf Den","status":"final","finalScore":{"away":2,"home":1},"gameFile":"playoffs/games/2026-P-wc2-G3.json","winPitcher":"Ray Lowe","lossPitcher":"Rex Moore","savePitcher":null,"series":"wc2","gameNumber":3},
+    {"gameId":"2026-P-sf1-G1","date":"2026-10-01","away":"Kensington Iron","home":"Fishtown Ferals","venue":"Ferals Field","status":"final","finalScore":{"away":2,"home":12},"gameFile":"playoffs/games/2026-P-sf1-G1.json","winPitcher":"Jake Ford","lossPitcher":"Pat Cross","savePitcher":null,"series":"sf1","gameNumber":1},
+    {"gameId":"2026-P-sf1-G2","date":"2026-10-02","away":"Kensington Iron","home":"Fishtown Ferals","venue":"Ferals Field","status":"final","finalScore":{"away":2,"home":3},"gameFile":"playoffs/games/2026-P-sf1-G2.json","winPitcher":"Rex Holt","lossPitcher":"Ray Lowe","savePitcher":"Rex Holt","series":"sf1","gameNumber":2},
+    {"gameId":"2026-P-sf1-G3","date":"2026-10-03","away":"Fishtown Ferals","home":"Kensington Iron","venue":"Iron Works","status":"final","finalScore":{"away":3,"home":1},"gameFile":"playoffs/games/2026-P-sf1-G3.json","winPitcher":"Rich Daly","lossPitcher":"Al Greene","savePitcher":"Rex Holt","series":"sf1","gameNumber":3},
+    {"gameId":"2026-P-sf2-G1","date":"2026-10-01","away":"Manayunk Runners","home":"Brooklyn Hammers","venue":"Iron Yard","status":"final","finalScore":{"away":0,"home":3},"gameFile":"playoffs/games/2026-P-sf2-G1.json","winPitcher":"Cole Maddox","lossPitcher":"Curt Nash","savePitcher":"Sal Reyes","series":"sf2","gameNumber":1},
+    {"gameId":"2026-P-sf2-G2","date":"2026-10-02","away":"Manayunk Runners","home":"Brooklyn Hammers","venue":"Iron Yard","status":"final","finalScore":{"away":1,"home":4},"gameFile":"playoffs/games/2026-P-sf2-G2.json","winPitcher":"Kai Tanaka","lossPitcher":"Joe Vick","savePitcher":"Sal Reyes","series":"sf2","gameNumber":2},
+    {"gameId":"2026-P-sf2-G3","date":"2026-10-03","away":"Brooklyn Hammers","home":"Manayunk Runners","venue":"Canal Park","status":"final","finalScore":{"away":1,"home":2},"gameFile":"playoffs/games/2026-P-sf2-G3.json","winPitcher":"Mel Ross","lossPitcher":"Kirk Soto","savePitcher":"Bud Finn","series":"sf2","gameNumber":3},
+    {"gameId":"2026-P-sf2-G4","date":"2026-10-04","away":"Brooklyn Hammers","home":"Manayunk Runners","venue":"Canal Park","status":"final","finalScore":{"away":1,"home":0},"gameFile":"playoffs/games/2026-P-sf2-G4.json","winPitcher":"Trey Holt","lossPitcher":"Curt Nash","savePitcher":"Sal Reyes","series":"sf2","gameNumber":4},
+    {"gameId":"2026-P-final-G1","date":"2026-10-06","away":"Brooklyn Hammers","home":"Fishtown Ferals","venue":"Ferals Field","status":"final","finalScore":{"away":8,"home":5},"gameFile":"playoffs/games/2026-P-final-G1.json","winPitcher":"Cole Maddox","lossPitcher":"Tony Ruiz","savePitcher":null,"series":"final","gameNumber":1},
+    {"gameId":"2026-P-final-G2","date":"2026-10-07","away":"Brooklyn Hammers","home":"Fishtown Ferals","venue":"Ferals Field","status":"final","finalScore":{"away":1,"home":5},"gameFile":"playoffs/games/2026-P-final-G2.json","winPitcher":"Jake Ford","lossPitcher":"Hank Grim","savePitcher":null,"series":"final","gameNumber":2},
+    {"gameId":"2026-P-final-G3","date":"2026-10-08","away":"Fishtown Ferals","home":"Brooklyn Hammers","venue":"Iron Yard","status":"final","finalScore":{"away":7,"home":1},"gameFile":"playoffs/games/2026-P-final-G3.json","winPitcher":"Sam Cruz","lossPitcher":"Dale Penn","savePitcher":null,"series":"final","gameNumber":3},
+    {"gameId":"2026-P-final-G4","date":"2026-10-09","away":"Fishtown Ferals","home":"Brooklyn Hammers","venue":"Iron Yard","status":"final","finalScore":{"away":5,"home":2},"gameFile":"playoffs/games/2026-P-final-G4.json","winPitcher":"Carl Fox","lossPitcher":"Don Wells","savePitcher":null,"series":"final","gameNumber":4},
+    {"gameId":"2026-P-final-G5","date":"2026-10-10","away":"Fishtown Ferals","home":"Brooklyn Hammers","venue":"Iron Yard","status":"final","finalScore":{"away":1,"home":5},"gameFile":"playoffs/games/2026-P-final-G5.json","winPitcher":"Cole Maddox","lossPitcher":"Carl Fox","savePitcher":"Don Wells","series":"final","gameNumber":5},
+    {"gameId":"2026-P-final-G6","date":"2026-10-11","away":"Brooklyn Hammers","home":"Fishtown Ferals","venue":"Ferals Field","status":"final","finalScore":{"away":1,"home":2},"gameFile":"playoffs/games/2026-P-final-G6.json","winPitcher":"Rex Holt","lossPitcher":"Don Wells","savePitcher":"Rex Holt","series":"final","gameNumber":6}
+  ]
+}
