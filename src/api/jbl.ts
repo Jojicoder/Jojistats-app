@@ -268,6 +268,35 @@ async function fetchJsonOrNull(url: string): Promise<unknown | null> {
   }
 }
 
+export type JblStatBatter = {
+  name: string; team: string; pos: string; age: number | null
+  g: number; ab: number; r: number; h: number; rbi: number; bb: number; so: number; hr: number
+}
+export type JblStatPitcher = {
+  name: string; team: string; role: string
+  g: number; gs: number; outs: number; h: number; r: number; er: number; bb: number; so: number; hr: number
+  w: number; l: number; sv: number
+}
+export type JblSeasonStats = {
+  season: number
+  throughDate: string
+  gamesPlayed: number
+  qualifying: { pa: number; outs: number }
+  leagueEra: number
+  awards: {
+    mvp: { name: string; team: string; pos: string; value: number } | null
+    bestPitcher: { name: string; team: string; role: string; value: number } | null
+  }
+  batters: JblStatBatter[]
+  pitchers: JblStatPitcher[]
+}
+
+/** stats.json (season totals built by scripts/build-jbl-stats.mjs); null if the season has none yet. */
+export async function getJblStats(season?: number): Promise<JblSeasonStats | null> {
+  const year = season ?? (await getJblSeason())
+  return (await fetchJsonOrNull(`${seasonRootOf(year)}/stats.json`)) as JblSeasonStats | null
+}
+
 /** Seasons that have at least one finished game, newest first (the archive's season picker). */
 export async function getJblArchiveSeasons(): Promise<number[]> {
   const found: number[] = []

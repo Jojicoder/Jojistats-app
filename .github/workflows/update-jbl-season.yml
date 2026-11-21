@@ -9,6 +9,7 @@ on:
       - "docs/jbl-season-json.md"
       - "scripts/validate-jbl-json.mjs"
       - "scripts/compress-jbl-json.mjs"
+      - "scripts/build-jbl-stats.mjs"
       - "src/sim/jblJsonTypes.ts"
       - "package.json"
   workflow_dispatch:
@@ -119,6 +120,8 @@ jobs:
           # Game files are committed gzip-compressed (~11x smaller). The script verifies each
           # file round-trips before removing the plain copy, and skips already-compressed ones.
           node scripts/compress-jbl-json.mjs "${SEASON}"
+          # Season totals for the Leaders tab and awards (skipped before the first game exists).
+          if [ -f "${OUT_DIR}/season.json" ]; then node scripts/build-jbl-stats.mjs "${SEASON}"; fi
 
       - name: Validate JBL JSON
         if: github.event_name != 'push'

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { getJblArchiveSeasons, getJblSeasonArchive, jblTeamSlug, type JblSeasonArchive, type JblTeam } from "../../api/jbl"
+import { getJblArchiveSeasons, getJblSeasonArchive, getJblStats, jblTeamSlug, type JblSeasonArchive, type JblSeasonStats, type JblTeam } from "../../api/jbl"
+import { leaderBoards } from "./LeadersTab"
 import type { PlayoffsJson } from "./playoffs"
 import { teamBadge, teamColors } from "./teamTheme"
 
@@ -29,6 +30,7 @@ export default function ArchiveTab() {
   const [seasons, setSeasons] = useState<number[] | null>(null)
   const [season, setSeason] = useState<number | null>(null)
   const [archive, setArchive] = useState<JblSeasonArchive | null>(null)
+  const [stats, setStats] = useState<JblSeasonStats | null>(null)
 
   useEffect(() => {
     getJblArchiveSeasons()
@@ -43,6 +45,8 @@ export default function ArchiveTab() {
     if (season === null) return
     let cancelled = false
     setArchive(null)
+    setStats(null)
+    getJblStats(season).then((result) => !cancelled && setStats(result)).catch(() => {})
     getJblSeasonArchive(season).then((result) => !cancelled && setArchive(result)).catch(() => {})
     return () => {
       cancelled = true
@@ -109,6 +113,58 @@ export default function ArchiveTab() {
               </div>
             )}
           </div>
+
+          {stats && (
+            <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">
+              <h3 className="text-xs font-black uppercase tracking-widest text-gray-500">
+                {complete ? "Awards" : "Award race"}
+              </h3>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                {[
+                  stats.awards.mvp && { label: "MVP", ...stats.awards.mvp, detail: `${stats.awards.mvp.pos} · ${stats.awards.mvp.value} batting runs` },
+                  stats.awards.bestPitcher && { label: "Best pitcher", ...stats.awards.bestPitcher, detail: `${stats.awards.bestPitcher.role} · ${stats.awards.bestPitcher.value} runs saved` },
+                ]
+                  .filter((a): a is NonNullable<typeof a> => Boolean(a))
+                  .map((award) => (
+                    <div key={award.label} className="flex items-center gap-3 rounded-xl bg-amber-50 p-3 ring-1 ring-amber-200">
+                      {teamBadge(award.team, "lg")}
+                      <div className="min-w-0">
+                        <div className="text-[10px] font-black uppercase tracking-widest text-amber-700">{award.label}</div>
+                        <div className="truncate text-sm font-black text-gray-900">{award.name}</div>
+                        <div className="truncate text-xs text-gray-500">{award.team} · {award.detail}</div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+              <h4 className="mt-4 text-[11px] font-bold uppercase tracking-wider text-gray-400">Stat leaders</h4>
+              <ul className="mt-1 grid gap-x-6 sm:grid-cols-2">
+                {(() => {
+                  const boards = leaderBoards(stats)
+                  const pick = [
+                    boards.batting.find((b) => b.key === "hr"),
+                    boards.batting.find((b) => b.key === "avg"),
+                    boards.batting.find((b) => b.key === "rbi"),
+                    boards.pitching.find((b) => b.key === "era"),
+                    boards.pitching.find((b) => b.key === "so"),
+                    boards.pitching.find((b) => b.key === "w"),
+                    boards.pitching.find((b) => b.key === "sv"),
+                  ]
+                  return pick.map((board) => {
+                    const first = board?.entries[0]
+                    return board && first ? (
+                      <li key={board.key} className="flex items-center gap-2 border-b border-gray-50 py-2 text-sm">
+                        <span className="w-28 shrink-0 text-xs font-semibold text-gray-500">{board.label}</span>
+                        <span className="min-w-0 flex-1 truncate font-bold text-gray-900">
+                          {first.name} <span className="font-normal text-gray-400">· {first.team}</span>
+                        </span>
+                        <span className="font-mono font-black tabular-nums text-gray-700">{first.value}</span>
+                      </li>
+                    ) : null
+                  })
+                })()}
+              </ul>
+            </div>
+          )}
 
           {playoffs && playoffs.series.length > 0 && (
             <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-black/5">

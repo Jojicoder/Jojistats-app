@@ -5,7 +5,7 @@ import type { PlayoffsJson } from "./playoffs"
 // playoffs.json) — no per-game files are loaded, so it stays cheap. Everything
 // here is deterministic: the same data always produces the same stories.
 
-export type NewsCategory = "season" | "playoffs" | "standings" | "streaks" | "milestones" | "games"
+export type NewsCategory = "offseason" | "season" | "playoffs" | "standings" | "streaks" | "milestones" | "games"
 
 export type NewsItem = {
   id: string
@@ -21,6 +21,7 @@ export type NewsItem = {
 
 export const NEWS_CATEGORY_LABELS: Record<NewsCategory | "all", string> = {
   all: "All",
+  offseason: "Offseason",
   season: "Season",
   playoffs: "Playoffs",
   standings: "Standings",
@@ -434,4 +435,74 @@ export function buildNews(
   return items.sort((a, b) =>
     a.date !== b.date ? b.date.localeCompare(a.date) : b.importance - a.importance || a.id.localeCompare(b.id),
   )
+}
+
+// ── Offseason: the draft ─────────────────────────────────────────────────────
+
+type DraftFiles = { season: number; draft: unknown; prospects: unknown; changes: unknown }
+
+/** News items for the draft (no date in the draft files: they are filed on Dec 1 before the season). */
+export function buildDraftNews(files: DraftFiles): NewsItem[] {
+  const draft = files.draft as { season: number; rounds: number; picks: { round: number; overall: number; team: string; prospectId: number }[] }
+  const prospects = new Map(
+    (files.prospects as { prospects: { id: number; name: string; age: number; position: string; overall: number; potential: number }[] }).prospects.map((p) => [p.id, p]),
+  )
+  const changes = (files.changes as { changes: { team: string; type: string; player: string; slot: string | null; replaced: string | null }[] }).changes
+  const date = `${files.season - 1}-12-01`
+  const items: NewsItem[] = []
+
+  const first = draft.picks.find((pick) => pick.overall === 1)
+  const firstPlayer = first && prospects.get(first.prospectId)
+  if (first && firstPlayer) {
+    items.push({
+      id: `draft-${files.season}-first`,
+      date,
+      category: "offseason",
+      importance: 3,
+      headline: `${first.team} take ${firstPlayer.name} first overall`,
+      body: `The ${first.team} opened the ${files.season} draft with ${firstPlayer.name}, a ${firstPlayer.age}-year-old ${firstPlayer.position} rated ${firstPlayer.overall} with a ceiling of ${firstPlayer.potential}.`,
+      teams: [first.team],
+    })
+  }
+
+  const promoted = changes.filter((c) => c.type === "promoted")
+  items.push({
+    id: `draft-${files.season}-recap`,
+    date,
+    category: "offseason",
+    importance: 2,
+    headline: `${files.season} draft: ${draft.picks.length} picks, ${promoted.length} rookies make a roster`,
+    body: `${draft.rounds} rounds are done. Rookies only take a bench or bullpen spot when they clearly beat the player ahead of them; the rest start in the minors.`,
+    teams: [],
+  })
+
+  for (const team of [...new Set(promoted.map((c) => c.team))]) {
+    const moves = promoted.filter((c) => c.team === team)
+    const names = moves.map((m) => `${m.player} (for ${m.replaced})`).join(", ")
+    items.push({
+      id: `draft-${files.season}-${team}`,
+      date,
+      category: "offseason",
+      importance: moves.length >= 3 ? 2 : 1,
+      headline: `${team} add ${moves.length} rookie${moves.length === 1 ? "" : "s"} to the roster`,
+      body: `${names}.`,
+      teams: [team],
+    })
+  }
+
+  const topPicks = draft.picks.filter((pick) => pick.overall >= 2 && pick.overall <= 3)
+  for (const pick of topPicks) {
+    const player = prospects.get(pick.prospectId)
+    if (!player) continue
+    items.push({
+      id: `draft-${files.season}-pick-${pick.overall}`,
+      date,
+      category: "offseason",
+      importance: 2,
+      headline: `${pick.team} select ${player.name} with the ${ordinal(pick.overall)} pick`,
+      body: `${player.age}-year-old ${player.position}, rated ${player.overall} (ceiling ${player.potential}).`,
+      teams: [pick.team],
+    })
+  }
+  return items
 }

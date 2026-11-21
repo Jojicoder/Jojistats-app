@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
-import { getJblData, getJblPlayoffs, jblTeamSlug } from "../../api/jbl"
+import { getJblData, getJblDraft, getJblPlayoffs, jblTeamSlug } from "../../api/jbl"
 import { DIVISIONS, DIVISION_NAMES } from "../../sim/jblSeason"
-import { buildNews, NEWS_CATEGORY_LABELS, type NewsCategory, type NewsItem } from "./news"
+import { buildDraftNews, buildNews, NEWS_CATEGORY_LABELS, type NewsCategory, type NewsItem } from "./news"
 import type { PlayoffsJson } from "./playoffs"
 import { teamBadge, teamColors } from "./teamTheme"
 
 const PAGE_SIZE = 30
-const CATEGORY_ORDER: (NewsCategory | "all")[] = ["all", "playoffs", "season", "standings", "streaks", "milestones", "games"]
+const CATEGORY_ORDER: (NewsCategory | "all")[] = ["all", "offseason", "playoffs", "season", "standings", "streaks", "milestones", "games"]
 
 const IMPORTANCE_LABEL = { 3: "Top story", 2: "", 1: "" } as const
 
@@ -79,10 +79,12 @@ export default function NewsTab({ selectedTeamName }: { selectedTeamName?: strin
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getJblData(), getJblPlayoffs()])
-      .then(([data, playoffs]) => {
+    Promise.all([getJblData(), getJblPlayoffs(), getJblDraft().catch(() => null)])
+      .then(([data, playoffs, draft]) => {
         if (cancelled) return
-        setNews(buildNews(data.season, playoffs as PlayoffsJson | null, DIVISIONS, DIVISION_NAMES))
+        const items = buildNews(data.season, playoffs as PlayoffsJson | null, DIVISIONS, DIVISION_NAMES)
+        if (draft) items.push(...buildDraftNews(draft))
+        setNews(items.sort((a, b) => b.date.localeCompare(a.date) || b.importance - a.importance))
       })
       .catch(() => {
         if (!cancelled) setError("Failed to load JBL news.")

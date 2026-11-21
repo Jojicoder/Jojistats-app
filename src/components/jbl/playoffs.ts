@@ -72,7 +72,7 @@ export type Bracket = {
   champion: JblTeam | null
 }
 
-function compareRecord(a: JblTeam, b: JblTeam) {
+export function compareRecord(a: JblTeam, b: JblTeam) {
   if (b.pct !== a.pct) return b.pct - a.pct
   if (b.wins !== a.wins) return b.wins - a.wins
   const diffA = a.rs - a.ra
