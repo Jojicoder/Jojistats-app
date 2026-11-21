@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import PageShell from "../components/PageShell"
 import PlayersTab from "../components/jbl/PlayersTab"
+import ArchiveTab from "../components/jbl/ArchiveTab"
 import DraftTab from "../components/jbl/DraftTab"
 import NewsTab from "../components/jbl/NewsTab"
 import PlayoffsTab from "../components/jbl/PlayoffsTab"
@@ -11,14 +12,14 @@ import TeamIdentityTab from "../components/jbl/TeamIdentityTab"
 import { jblThemeStyle } from "../components/jbl/teamTheme"
 import { getJblData, type JblTeam } from "../api/jbl"
 
-type JblView = "team" | "today" | "news" | "standings" | "playoffs" | "draft" | "players" | "identity"
+type JblView = "team" | "today" | "news" | "standings" | "playoffs" | "draft" | "archive" | "players" | "identity"
 
 export default function JBLPage() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const requestedView = searchParams.get("view")
   const initialView: JblView =
-    requestedView === "today" || requestedView === "news" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "draft" || requestedView === "players" || requestedView === "identity"
+    requestedView === "today" || requestedView === "news" || requestedView === "standings" || requestedView === "playoffs" || requestedView === "draft" || requestedView === "archive" || requestedView === "players" || requestedView === "identity"
       ? requestedView
       : "team"
   const initialTeamName = searchParams.get("team") ?? ""
@@ -90,6 +91,7 @@ export default function JBLPage() {
         { label: "Standings", view: "standings" },
         { label: "Playoffs", view: "playoffs" },
         { label: "Draft", view: "draft" },
+        { label: "Archive", view: "archive" },
         { label: "Team Identity", view: "identity" },
         { label: "Back to Your Stats", href: "/stats" },
       ]}
@@ -107,6 +109,7 @@ export default function JBLPage() {
         />
       )}
       {activeView === "playoffs" && <PlayoffsTab />}
+      {activeView === "archive" && <ArchiveTab />}
       {activeView === "draft" && <DraftTab selectedTeamName={selectedTeamName || undefined} />}
       {activeView === "players" && <PlayersTab selectedTeamName={selectedTeamName || undefined} />}
       {activeView === "identity" && (

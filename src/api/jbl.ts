@@ -248,6 +248,51 @@ export async function getJblGameById(
   return { game, schedule }
 }
 
+export type JblSeasonArchive = {
+  season: number
+  playedGames: number
+  totalGames: number
+  standings: JblStandingLeague[]
+  playoffs: unknown | null
+}
+
+async function fetchJsonOrNull(url: string): Promise<unknown | null> {
+  try {
+    const response = await fetch(url)
+    if (!response.ok) return null
+    // SPA hosts answer missing files with index.html.
+    if (!(response.headers.get("content-type") ?? "").includes("json")) return null
+    return await response.json()
+  } catch {
+    return null
+  }
+}
+
+/** Seasons that have at least one finished game, newest first (the archive's season picker). */
+export async function getJblArchiveSeasons(): Promise<number[]> {
+  const found: number[] = []
+  for (const season of SEASON_CANDIDATES) {
+    const data = (await fetchJsonOrNull(`${seasonRootOf(season)}/season.json`)) as JblSeasonJson | null
+    if (data?.schedule?.some((game) => Boolean(game.finalScore))) found.push(season)
+  }
+  return found
+}
+
+/** Final (or current) standings and postseason of any published season. */
+export async function getJblSeasonArchive(season: number): Promise<JblSeasonArchive | null> {
+  const root = seasonRootOf(season)
+  const data = (await fetchJsonOrNull(`${root}/season.json`)) as JblSeasonJson | null
+  if (!data) return null
+  const finished = data.schedule.filter((game) => Boolean(game.finalScore))
+  return {
+    season,
+    playedGames: finished.length,
+    totalGames: data.schedule.length,
+    standings: buildStandings(hydrateTeams(data, finished)),
+    playoffs: await fetchJsonOrNull(`${root}/playoffs.json`),
+  }
+}
+
 /** Engine-published draft files for one season (draft/draft.json etc.). */
 export type JblDraftFiles = { season: number; draft: unknown; prospects: unknown; changes: unknown }
 

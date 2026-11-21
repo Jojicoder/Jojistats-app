@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import { getStandings, MLB_SEASON } from "../../api/mlb"
 import type { DivisionRecord } from "./types"
+import WildCardTable from "./WildCardTable"
 
 // ── Standings ─────────────────────────────────────────────────────────
 
@@ -22,6 +23,7 @@ export default function StandingsTab({
 }) {
   const [divisions, setDivisions] = useState<DivisionRecord[] | null>(null)
   const [error, setError] = useState("")
+  const [mode, setMode] = useState<"division" | "wildcard">("division")
 
   useEffect(() => {
     getStandings()
@@ -44,8 +46,32 @@ export default function StandingsTab({
     )
   }
 
+  const modeToggle = (
+    <div className="flex gap-2">
+      {([["division", "Divisions"], ["wildcard", "Wild Card"]] as const).map(([key, label]) => (
+        <button
+          key={key}
+          onClick={() => setMode(key)}
+          className={`rounded-full px-4 py-1.5 text-sm font-bold ${mode === key ? "bg-green-900 text-white" : "bg-white text-gray-600 shadow-sm hover:bg-gray-50"}`}
+        >
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+
+  if (mode === "wildcard") {
+    return (
+      <div className="space-y-4">
+        {modeToggle}
+        <WildCardTable selectedTeamId={selectedTeamId} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
+      {modeToggle}
       {LEAGUES.map(({ name, prefix }) => {
         const leagueDivs = sorted.filter((d) => d.name.startsWith(prefix))
         return (
