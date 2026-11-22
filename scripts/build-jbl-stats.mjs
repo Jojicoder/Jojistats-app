@@ -26,11 +26,9 @@ function readJson(file) {
 const seasonJson = JSON.parse(fs.readFileSync(path.join(root, "season.json"), "utf8"))
 const finished = seasonJson.schedule.filter((game) => game.finalScore)
 
-// "6.1" means 6 and 1/3 innings.
-const toOuts = (ip) => {
-  const whole = Math.floor(ip + 1e-9)
-  return whole * 3 + Math.round((ip - whole) * 10)
-}
+// The box score stores innings as a decimal (6.0, 2.3, 0.7 = 6, 2 1/3, 2/3), not baseball
+// notation, so convert with ip * 3 (a ".3" is one out, a ".7" is two).
+const toOuts = (ip) => Math.round(ip * 3)
 
 const batters = new Map()
 const pitchers = new Map()
