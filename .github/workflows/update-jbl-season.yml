@@ -40,6 +40,11 @@ on:
 permissions:
   contents: write
 
+# One update at a time: a manual run started while the daily one is still going waits its turn.
+concurrency:
+  group: update-jbl-season
+  cancel-in-progress: false
+
 jobs:
   update-season:
     runs-on: ubuntu-latest
@@ -149,4 +154,10 @@ jobs:
             exit 0
           fi
           git commit -m "auto: JBL ${SEASON} update ($(date -u +%F))"
-          git push
+          # Someone else may have pushed while this job ran: rebase onto it and retry.
+          for attempt in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            echo "Push attempt ${attempt} failed; retrying."
+            sleep 5
+          done
+          exit 1
