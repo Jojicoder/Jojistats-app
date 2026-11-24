@@ -323,7 +323,7 @@ export async function getJblSeasonArchive(season: number): Promise<JblSeasonArch
 }
 
 /** Engine-published draft files for one season (draft/draft.json etc.). */
-export type JblDraftFiles = { season: number; draft: unknown; prospects: unknown; changes: unknown }
+export type JblDraftFiles = { season: number; draft: unknown; prospects: unknown; changes: unknown; progression: unknown | null }
 
 /** Newest season that has a draft published (the draft exists before the first game is played). */
 export async function getJblDraft(): Promise<JblDraftFiles | null> {
@@ -336,12 +336,13 @@ export async function getJblDraft(): Promise<JblDraftFiles | null> {
   for (const season of SEASON_CANDIDATES) {
     try {
       const root = seasonRootOf(season)
-      const [draft, prospects, changes] = await Promise.all([
+      const [draft, prospects, changes, progression] = await Promise.all([
         getJson(`${root}/draft/draft.json`),
         getJson(`${root}/draft/prospects.json`),
         getJson(`${root}/draft/roster-changes.json`),
+        getJson(`${root}/progression/progression.json`).catch(() => null),
       ])
-      if (draft && prospects && changes) return { season, draft, prospects, changes }
+      if (draft && prospects && changes) return { season, draft, prospects, changes, progression }
     } catch {
       // try the next season
     }

@@ -26,6 +26,15 @@ type Change = {
   replaced: string | null
   overall: number
 }
+type Retirement = {
+  team: string
+  player: string
+  pitcher: boolean
+  age: number
+  overall: number
+  slot: string
+  replacement: string
+}
 type DraftData = {
   season: number
   seed: number
@@ -33,6 +42,7 @@ type DraftData = {
   picks: Pick[]
   prospects: Map<number, Prospect>
   changes: Change[]
+  retirements: Retirement[]
 }
 
 const ROLE_LABEL: Record<string, string> = {
@@ -94,6 +104,7 @@ export default function DraftTab({ selectedTeamName }: { selectedTeamName?: stri
           picks: draft.picks,
           prospects: new Map(prospects.map((p) => [p.id, p])),
           changes,
+          retirements: (files.progression as { retirements?: Retirement[] } | null)?.retirements ?? [],
         })
       })
       .catch(() => {})
@@ -125,17 +136,19 @@ export default function DraftTab({ selectedTeamName }: { selectedTeamName?: stri
 
   const picks = data.picks.filter((p) => (!teamFilter || p.team === teamFilter) && (!round || p.round === round))
   const moves = data.changes.filter((c) => c.type !== "minors" && (!teamFilter || c.team === teamFilter))
+  const retirements = data.retirements.filter((r) => !teamFilter || r.team === teamFilter)
   const promoted = data.changes.filter((c) => c.type === "promoted").length
 
   return (
     <div className="space-y-4">
       <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
         <h2 className="text-lg font-black text-gray-900">{data.season} JBL Draft</h2>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {[
             ["Rounds", data.rounds],
             ["Picks", data.picks.length],
             ["Make a roster", promoted],
+            ["Retirements", data.retirements.length],
             ["Prospects", data.prospects.size],
           ].map(([label, value]) => (
             <div key={label} className="rounded-xl bg-gray-50 p-3">
@@ -230,6 +243,35 @@ export default function DraftTab({ selectedTeamName }: { selectedTeamName?: stri
           </ul>
         )}
       </div>
+
+      {data.retirements.length > 0 && (
+        <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5">
+          <h3 className="text-sm font-black uppercase tracking-widest text-gray-500">Retirements</h3>
+          <p className="mt-1 text-xs text-gray-500">
+            Veterans retire from age 34 on. The best backup takes over the job and a drafted prospect fills the open spot.
+          </p>
+          {retirements.length === 0 ? (
+            <p className="mt-3 text-sm text-gray-500">No retirements for this team.</p>
+          ) : (
+            <ul className="mt-3 divide-y divide-gray-100">
+              {retirements.map((r, index) => (
+                <li key={index} className="flex items-center gap-3 py-2 text-sm">
+                  <span style={{ color: teamColors(r.team).primary }}>{teamBadge(r.team, "md")}</span>
+                  <span className="w-20 shrink-0 rounded bg-gray-100 px-2 py-0.5 text-center text-[10px] font-black uppercase tracking-wider text-gray-600">
+                    Retired
+                  </span>
+                  <span className="min-w-0 flex-1 text-gray-800">
+                    <span className="font-bold">{r.player}</span>
+                    <span className="text-gray-400"> · age {r.age} · {r.slot}</span>
+                    <span className="text-gray-500"> (replaced by {r.replacement})</span>
+                  </span>
+                  <Overall value={r.overall} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   )
 }
